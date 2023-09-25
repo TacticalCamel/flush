@@ -55,3 +55,7 @@ Egy érdekes témát szerettem volna választani, ami nem egy ezredik unalmas we
     </tr>
   </tbody>
 </table>
+
+## Felhasznált eszközök
+- <a href="https://github.com/antlr/antlr4">ANTLR4<a/>
+- C# 11 (.NET Core 7)
