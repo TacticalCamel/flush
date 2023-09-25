@@ -1,9 +1,10 @@
 //module imports
 import moduleone
 import moduletwo
+import auto
 
 //in parameters
-in f32 x, f32 y, i32 z
+in f32 x, f32 y, f32 z
 
 //out parameters
 out i32 a, i32 b, i32 c
@@ -25,7 +26,7 @@ if(n > 10){
     n /= 1 + 3 * 4;
 }
 else if(n < 0){
-    n *= 10;
+    n *= -01.234;
     n++++++;
 }
 else{
@@ -55,9 +56,9 @@ object custom_obj = {
 };
 
 //generic type
-list<i32> list = [0, 1, 2, 3, 4];
+list list = [0, 1, 2, 3, 4 * 5 - -3];
 
 //array
-array<i32> = [5, 6, 7, 8];
+array = [5, 6, 7, 8];
 
 return -1;

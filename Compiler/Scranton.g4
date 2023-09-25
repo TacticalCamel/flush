@@ -1,215 +1,262 @@
 ﻿grammar Scranton;
 
-// átugrott tokenek
+// fragmentek
+fragment DEC_DIGIT
+	: [0-9]
+	;
+
+fragment HEX_DIGIT
+	: [0-9a-fA-F]
+	;
+
+fragment BIN_DIGIT
+	: [01]
+	;
+
+fragment HEX_PREFIX
+	: '0x'
+	| '0X'
+	;
+
+fragment BIN_PREFIX
+	: '0b'
+	| '0B'
+	;
+	
+fragment NUMBER_SIGN
+	: '+'
+	| '-'
+	;
+
+fragment LETTER
+	: [a-zA-Z]
+	;
+	
+fragment UNDERSCORE
+	: '_'
+	;
+
+// lexer szabályok
 WS
-    : [ \t\r\n]+ -> skip
-    ;
-    
+	: [ \t\r\n]+ -> skip
+	;
+	
 LINE_COMMENT
-    : '//' ~[\r\n]* -> skip
-    ;
-    
+	: '//' ~[\r\n]* -> skip
+	;
+	
 BLOCK_COMMENT
-    : '/*' .*? '*/' -> skip
-    ;
+	: '/*' .*? '*/' -> skip
+	;
 
-// elválasztók
 PARAM_SEPARATOR
-    : ','
-    ;
-STATEMENT_SEPARATOR
-    : ';'
-    ;
+	: ','
+	;
 
-// konstans értékek
+STATEMENT_SEPARATOR
+	: ';'
+	;
+
 INT_DEC
-    : [+-]? [0-9]+
-    ;
-    
+	: NUMBER_SIGN? DEC_DIGIT+
+	;
+	
 INT_HEX
-    : [+-]? '0x' [0-9a-fA-F]+
-    ;
-    
+	: NUMBER_SIGN? HEX_PREFIX HEX_DIGIT+
+	;
+	
 INT_BIN
-    : [+-]? '0b' [01]+
-    ; 
+	: NUMBER_SIGN? BIN_PREFIX BIN_DIGIT+
+	; 
 
 FLOAT
-    : [+-]? [0-9]+ '.' [0-9]+
-    ;
-
+	: NUMBER_SIGN? DEC_DIGIT+ '.' DEC_DIGIT+
+	;
+	
 STRING
-    : '"' .*? '"'
-    ;
-    
+	: '"' .*? '"'
+	;
+	
 CHAR
-    : '\'' . '\''
-    | '\'\\' . '\''
-    | '\'\\' ('u' | 'U') [0-9]+  '\''
-    ;
-    
-CONST_KEYWORDS
-    : 'true'
-    | 'false'
-    | 'null'
-    ;
+	: '\'' . '\''
+	| '\'\\' . '\''
+	| '\'\\' ('u' | 'U') [0-9]+  '\''
+	;
+	
+NULL
+	: 'null'
+	;
+	
+TRUE
+	: 'true'
+	;
 
-// azonósítók
+FALSE
+	: 'false'
+	;
+	
 IDENTIFIER
-    : [a-zA-Z_][a-zA-Z0-9_]*
-    ;
+	: [a-zA-Z_][a-zA-Z0-9_]*
+	;
 
-// gyökérelem és nagyobb építőblokkok
-script
-    : importStatement* inParams? outParams? line* EOF
-    ;
+// parser szabályok
+program
+	: import_segment parameter_segment code_segment EOF
+	;
+	
+import_segment
+	: import_statement*
+	;
 
-importStatement
-    : 'import' IDENTIFIER
-    ;
+parameter_segment
+	: in_parameters? out_parameters?
+	| out_parameters? in_parameters?
+	;
 
-inParams
-    : 'in' (IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER
-    ;
+code_segment
+	: (line | function_definition)*
+	;
 
-outParams
-    : 'out' (IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER
-    ;
+import_statement
+	: 'import' IDENTIFIER
+	| 'import' 'auto'
+	;
+
+in_parameters
+	: 'in' (NULL | ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER))
+	;
+
+out_parameters
+	: 'out' (NULL | ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER))
+	;
 
 line
-    : statement STATEMENT_SEPARATOR
-    | block
-    | ifBlock
-    | forBlock
-    | whileBlock
-    | functionDefinition
-    ;
-    
-// vezérlési szerkezetek
-block
-    : '{' line* '}'
-    ;
-    
-ifBlock
-    : 'if' '(' expression ')' block ('else' 'if' '(' expression ')' block)* ('else' block)?
-    ;
-    
-forBlock
-    : 'for' '(' variableDeclaration? STATEMENT_SEPARATOR expression? STATEMENT_SEPARATOR expression? ')' block
-    ;
-    
-whileBlock
-    : 'while' '(' expression ')' block
-    ;
+	: statement STATEMENT_SEPARATOR
+	| if_block
+	| for_block
+	| while_block
+	| block
+	;
 
-// többi top level
+function_definition
+	: IDENTIFIER IDENTIFIER '(' ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* (IDENTIFIER IDENTIFIER))? ')' block
+	;
+
 statement
-    : variableDeclaration
-    | 'return' expression?
-    | expression
-    ;    
+	: variable_declaration
+	| 'return' expression?
+	| expression
+	;
+   
+if_block
+	: 'if' '(' expression ')' block ('else' 'if' '(' expression ')' block)* ('else' block)?
+	;
+	
+for_block
+	: 'for' '(' variable_declaration? STATEMENT_SEPARATOR expression? STATEMENT_SEPARATOR expression? ')' block
+	;
+	
+while_block
+	: 'while' '(' expression ')' block
+	;
 
-functionDefinition
-    : IDENTIFIER IDENTIFIER '(' ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* (IDENTIFIER IDENTIFIER))? ')' block
-    ;
+block
+	: '{' line* '}'
+	;
 
-variableDeclaration
-    : IDENTIFIER IDENTIFIER ('=' expression)?
-    ;
-
-// operátorok
-opMemberAccess
-    : '.'
-    ;
-
-opSign
-    : '+'
-    | '-'
-    ;
-
-opUnary
-    : '++'
-    | '--'
-    ;
-    
-opMultiplicative
-    : '*'
-    | '/'
-    | '%'
-    ;
-    
-opAdditive
-    : '+'
-    | '-'
-    ;
-    
-opComparison
-    : '=='
-    | '!='
-    | '>='
-    | '<='
-    | '>'
-    | '<'
-    ;
-
-opLogical
-    : ('&' | 'and')
-    | ('^' | 'xor')
-    | ('|' | 'or')
-    ;
-    
-opAssignment
-    : '='
-    | '+='
-    | '-='
-    | '*='
-    | '/='
-    | '%='
-    | '&='
-    | '^='
-    | '|='
-    ;
-
-// kifejezések
+variable_declaration
+	: IDENTIFIER IDENTIFIER ('=' expression)?
+	;
+	
 expression
-    : constant
-    | functionCall
-    | objectCtor
-    | collectionCtor
-    | IDENTIFIER
-    | '(' expression ')'
-    | expression opMemberAccess expression
-    | opSign expression
-    | expression opUnary
-    | expression opMultiplicative expression
-    | expression opAdditive expression
-    | expression opComparison expression
-    | expression opLogical expression
-    | expression opAssignment expression
-    ;
-
-genericType
-    : IDENTIFIER '<' IDENTIFIER '>'
-    ;
-
+	: constant
+	| function_call
+	| object_ctor
+	| collection_ctor
+	| IDENTIFIER
+	| '(' expression ')'
+	| expression op_member_access expression
+	| op_sign expression
+	| expression op_unary
+	| expression op_multiplicative expression
+	| expression op_additive expression
+	| expression op_comparison expression
+	| expression op_logical expression
+	| expression op_assignment expression
+	;
+	
 constant
-    : FLOAT
-    | INT_DEC
-    | INT_HEX
-    | INT_BIN
-    | STRING
-    | CHAR
-    | CONST_KEYWORDS
-    ;
+	: FLOAT
+	| INT_DEC
+	| INT_HEX
+	| INT_BIN
+	| STRING
+	| CHAR
+	| NULL
+	| TRUE
+	| FALSE
+	;
 
-functionCall
-    : IDENTIFIER '(' ((expression PARAM_SEPARATOR)* expression)? ')'
-    ;
-    
-objectCtor
-    : '{' ((IDENTIFIER '=' expression PARAM_SEPARATOR)* (IDENTIFIER '=' expression))? '}'
-    ;
-    
-collectionCtor
-    : '[' ((expression PARAM_SEPARATOR)* expression)? ']'
-    ;
+function_call
+	: IDENTIFIER '(' ((expression PARAM_SEPARATOR)* expression)? ')'
+	;
+	
+object_ctor
+	: '{' ((IDENTIFIER '=' expression PARAM_SEPARATOR)* (IDENTIFIER '=' expression))? '}'
+	;
+	
+collection_ctor
+	: '[' ((expression PARAM_SEPARATOR)* expression)? ']'
+	;
+
+op_member_access
+	: '.'
+	;
+
+op_sign
+	: '+'
+	| '-'
+	;
+
+op_unary
+	: '++'
+	| '--'
+	;
+	
+op_multiplicative
+	: '*'
+	| '/'
+	| '%'
+	;
+	
+op_additive
+	: '+'
+	| '-'
+	;
+	
+op_comparison
+	: '=='
+	| '!='
+	| '>='
+	| '<='
+	| '>'
+	| '<'
+	;
+
+op_logical
+	: ('&' | 'and')
+	| ('^' | 'xor')
+	| ('|' | 'or')
+	;
+	
+op_assignment
+	: '='
+	| '+='
+	| '-='
+	| '*='
+	| '/='
+	| '%='
+	| '&='
+	| '^='
+	| '|='
+	;

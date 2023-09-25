@@ -12,8 +12,7 @@ import auto
 ```
 in  <típus> <változónév>, <típus> <változónév>, ...
 out <típus> <változónév>, <típus> <változónév>, ...
-```
-```
+
 in  null
 out null
 ```
