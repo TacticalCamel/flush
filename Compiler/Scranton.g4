@@ -47,18 +47,24 @@ CHAR
     | '\'\\' . '\''
     | '\'\\' ('u' | 'U') [0-9]+  '\''
     ;
+    
+CONST_KEYWORDS
+    : 'true'
+    | 'false'
+    | 'null'
+    ;
 
-// 
+// azonósítók
 IDENTIFIER
     : [a-zA-Z_][a-zA-Z0-9_]*
     ;
 
-//
+// gyökérelem és nagyobb építőblokkok
 script
-    : import_statement* inParams? out_params? line* EOF
+    : importStatement* inParams? outParams? line* EOF
     ;
 
-import_statement
+importStatement
     : 'import' IDENTIFIER
     ;
 
@@ -66,110 +72,78 @@ inParams
     : 'in' (IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER
     ;
 
-out_params
+outParams
     : 'out' (IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER
     ;
 
 line
-    : block
-    | if_block
-    | for_block
-    | while_block
-    | statement STATEMENT_SEPARATOR
-    | function_definition
+    : statement STATEMENT_SEPARATOR
+    | block
+    | ifBlock
+    | forBlock
+    | whileBlock
+    | functionDefinition
     ;
-  
+    
+// vezérlési szerkezetek
 block
     : '{' line* '}'
     ;
     
-if_block
+ifBlock
     : 'if' '(' expression ')' block ('else' 'if' '(' expression ')' block)* ('else' block)?
     ;
     
-for_block
-    : 'for' '(' variable_declaration? STATEMENT_SEPARATOR expression? STATEMENT_SEPARATOR expression? ')' block
+forBlock
+    : 'for' '(' variableDeclaration? STATEMENT_SEPARATOR expression? STATEMENT_SEPARATOR expression? ')' block
     ;
     
-while_block
+whileBlock
     : 'while' '(' expression ')' block
     ;
-    
-statement
-    : variable_declaration
-    | return_statement
-    | expression
-    ;
-    
-return_statement
-    : 'return' expression? 
-    ; 
 
-function_definition
+// többi top level
+statement
+    : variableDeclaration
+    | 'return' expression?
+    | expression
+    ;    
+
+functionDefinition
     : IDENTIFIER IDENTIFIER '(' ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* (IDENTIFIER IDENTIFIER))? ')' block
     ;
-    
-function_call
-    : IDENTIFIER '(' ((expression PARAM_SEPARATOR)* expression)? ')'
-    ;
 
-
-variable_declaration
+variableDeclaration
     : IDENTIFIER IDENTIFIER ('=' expression)?
     ;
-    
-constant
-    : FLOAT
-    | INT_DEC
-    | INT_HEX
-    | INT_BIN
-    | STRING
-    | CHAR
-    | 'null'
-    | 'true'
-    | 'false'
-    ;
-    
-expression
-    : constant
-    | IDENTIFIER
-    | '(' expression ')'
-    | expression member_access expression
-    | sign_operator expression
-    | expression unary_operator
-    | expression multiplicative_operator expression
-    | expression additive_operator expression
-    | expression comparison_operator expression
-    | expression logical_operator expression
-    | expression assignment_operator expression
-    | function_call
-    ;
 
-member_access
+// operátorok
+opMemberAccess
     : '.'
     ;
 
-unary_operator
+opSign
+    : '+'
+    | '-'
+    ;
+
+opUnary
     : '++'
     | '--'
     ;
     
-sign_operator
-    : '+'
-    | '-'
-    ;
- 
-multiplicative_operator
+opMultiplicative
     : '*'
     | '/'
     | '%'
     ;
-additive_operator
+    
+opAdditive
     : '+'
     | '-'
     ;
     
-comparison_operator
+opComparison
     : '=='
     | '!='
     | '>='
@@ -178,17 +152,64 @@ comparison_operator
     | '<'
     ;
 
-logical_operator
-    : '|'
-    | '&'
-    | '^'
+opLogical
+    : ('&' | 'and')
+    | ('^' | 'xor')
+    | ('|' | 'or')
     ;
     
-assignment_operator
+opAssignment
     : '='
     | '+='
     | '-='
     | '*='
     | '/='
     | '%='
+    | '&='
+    | '^='
+    | '|='
+    ;
+
+// kifejezések
+expression
+    : constant
+    | functionCall
+    | objectCtor
+    | collectionCtor
+    | IDENTIFIER
+    | '(' expression ')'
+    | expression opMemberAccess expression
+    | opSign expression
+    | expression opUnary
+    | expression opMultiplicative expression
+    | expression opAdditive expression
+    | expression opComparison expression
+    | expression opLogical expression
+    | expression opAssignment expression
+    ;
+
+genericType
+    : IDENTIFIER '<' IDENTIFIER '>'
+    ;
+
+constant
+    : FLOAT
+    | INT_DEC
+    | INT_HEX
+    | INT_BIN
+    | STRING
+    | CHAR
+    | CONST_KEYWORDS
+    ;
+
+functionCall
+    : IDENTIFIER '(' ((expression PARAM_SEPARATOR)* expression)? ')'
+    ;
+    
+objectCtor
+    : '{' ((IDENTIFIER '=' expression PARAM_SEPARATOR)* (IDENTIFIER '=' expression))? '}'
+    ;
+    
+collectionCtor
+    : '[' ((expression PARAM_SEPARATOR)* expression)? ']'
     ;
