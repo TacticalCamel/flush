@@ -8,7 +8,7 @@ Egy program "import" utasításokkal kezdődhet, melyek célja jelezni az értel
 import <modulnév>
 import auto
 ```
-Ez után helyezkedhetnek el az "in" és "out" paraméterek, tetszőleges sorrendben. Az "in" paraméterek a program bemeneti értékei, az "out" paraméterek visszatérési értékei. Mindkét esetben egy függvény fejlécéhez hasonlóan kell felsorolni a változók típusait és neveit. Mindkét sor külön-külön elhagyható, illetve a "null" kifejezéssel expliciten megadható, hogy nincs ilyen paraméter. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó NULL lesz. Minden kimeneti paraméter kezdeti értéke NULL. 
+<br> Ez után helyezkedhetnek el az "in" és "out" paraméterek, tetszőleges sorrendben. Az "in" paraméterek a program bemeneti értékei, az "out" paraméterek visszatérési értékei. Mindkét esetben egy függvény fejlécéhez hasonlóan kell felsorolni a változók típusait és neveit. <br><br> Mindkét sor külön-külön elhagyható, illetve a "null" kifejezéssel expliciten megadható, hogy nincs ilyen paraméter. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó NULL lesz. Minden kimeneti paraméter kezdeti értéke NULL. 
 ```
 in  <típus> <változónév>, <típus> <változónév>, ...
 out <típus> <változónév>, <típus> <változónév>, ...
@@ -17,3 +17,5 @@ out <típus> <változónév>, <típus> <változónév>, ...
 in  null
 out null
 ```
+<br> Ezt követően helyezkedhet el bármilyen más programkód, egészen a fájl végéig.
+
