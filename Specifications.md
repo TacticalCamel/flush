@@ -19,7 +19,6 @@ out null
 <br> Ezt követően helyezkedik el bármilyen más programkód.
 
 ### Típusok
-A nyelvben minden adattípus referencia alapján kerül átadásra, így minden változó értéke lehet `null` is.
 
 #### Előjeles egész számok
 Rövidített nevük az "i", mint "integer" prefix, amit a bitek száma követ. Így létezik `i8`, `i16`, `i32` és `i64`.
@@ -39,5 +38,14 @@ Rövidített nevük az "f", mint "float" prefix, amit a bitek száma követ. Íg
 f32 x = 0.1234;
 f64 y = 3.1415927;
 ```
+#### Karakterek
 
 
+### Változók
+Minden típus ősosztálya (közvetlenül vagy közvetetten) az `object`. Minden típus referenciatípus, azaz paraméterben való átadáskor, vagy függvényből való visszatéréskor egy változóról nem készül másolat. Ennek köszönhetően minden változó értéke lehet `null` is.
+Egy változó létrehozásakor kötelező azt egy típussal ellátni, értéket adni viszont opcionális, melynek hiányában `null` lesz a kezdőérték.
+```
+<típus> <név>;
+<típus> <név> = <érték>;
+```
+A változókra azonosítókkal tudunk hivatkozni. Ezek számokat (0-9), kis- és nagybetűket (a-z és A-Z) és alsóvonásokat (_) tartalmazhatnak azzal a kitétellel, hogy az első karakter nem lehet szám. Például a `_name` és a `_0` azonosítók helyesek, viszont a `2name` nem.
