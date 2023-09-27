@@ -7,7 +7,6 @@ internal static class Program {
         string code = File.ReadAllText("../../../../Code examples/example.sra");
 
         TestParser.Parse(code);
-
-        Console.WriteLine("Hello, World!");
+        
     }
 }

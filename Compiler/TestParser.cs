@@ -11,6 +11,12 @@ public static class TestParser {
         CommonTokenStream tokenStream = new(lexer);
         
         ScrantonParser parser = new(tokenStream);
+
+        ScrantonParser.ProgramContext? v = parser.program();
+
+        string imports = string.Join(", ", v.import_segment().import_statement().Select(x => x.children[1].GetText()));
+        
+        Console.WriteLine($"imports = [{imports}]");
     }
 }
 

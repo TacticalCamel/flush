@@ -1,7 +1,7 @@
 //module imports
-import moduleone
-import moduletwo
 import auto
+import module_one
+import module_two
 
 //in parameters
 in f32 x, f32 y, f32 z
@@ -37,9 +37,10 @@ else{
 while(false){
     n = example_function(n, 5);
     
-    module.class.function(1, 2);
+    module.clazz.function(1, 2);
 }
 
+//function definition
 i32 example_function(i32 h, i32 g){
     /*
         multi
@@ -49,16 +50,27 @@ i32 example_function(i32 h, i32 g){
     return g * h; //line comment
 }
 
+//object initializer
 object custom_obj = {
     attr1 = "this string",
     attr2 = 65,
     attr3 = null
 };
 
-//generic type
-list list = [0, 1, 2, 3, 4 * 5 - -3];
+//array initializer
+array arr = [0, 1, 2, 3, 4 * 5 - -3];
 
-//array
-array = [5, 6, 7, 8];
+//class definition
+class vec2 {
+	f32 x;
+	f32 y;
+	
+	f32 length(){
+		return math.sqrt(x * x + y * y);
+	}
+	
+}
 
+//return statement
 return -1;
+

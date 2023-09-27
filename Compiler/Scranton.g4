@@ -114,20 +114,20 @@ parameter_segment
 	;
 
 code_segment
-	: (line | function_definition)*
+	: (line | function_definition | class_definition)*
 	;
 
 import_statement
-	: 'import' IDENTIFIER
-	| 'import' 'auto'
+	: 'import' IDENTIFIER #manual_import
+	| 'import' 'auto' #auto_import
 	;
 
 in_parameters
-	: 'in' (NULL | ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER))
+	: 'in' (NULL | parameter_list_not_empty)
 	;
 
 out_parameters
-	: 'out' (NULL | ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* IDENTIFIER IDENTIFIER))
+	: 'out' (NULL | parameter_list_not_empty)
 	;
 
 line
@@ -139,7 +139,24 @@ line
 	;
 
 function_definition
-	: IDENTIFIER IDENTIFIER '(' ((IDENTIFIER IDENTIFIER PARAM_SEPARATOR)* (IDENTIFIER IDENTIFIER))? ')' block
+	: variable_with_type '(' parameter_list ')' block
+	;
+	
+property_definition
+	: variable_with_type STATEMENT_SEPARATOR
+	;
+	
+class_definition
+	: class_header '{' class_member* '}'
+	;
+	
+class_header
+	: 'class' IDENTIFIER
+	;
+	
+class_member
+	: function_definition
+	| property_definition
 	;
 
 statement
@@ -165,7 +182,7 @@ block
 	;
 
 variable_declaration
-	: IDENTIFIER IDENTIFIER ('=' expression)?
+	: variable_with_type ('=' expression)?
 	;
 	
 expression
@@ -180,6 +197,7 @@ expression
 	| expression op_unary
 	| expression op_multiplicative expression
 	| expression op_additive expression
+	| expression op_shift expression
 	| expression op_comparison expression
 	| expression op_logical expression
 	| expression op_assignment expression
@@ -209,6 +227,30 @@ collection_ctor
 	: '[' ((expression PARAM_SEPARATOR)* expression)? ']'
 	;
 
+//
+
+parameter_list
+	: ((variable_with_type PARAM_SEPARATOR)* variable_with_type)?
+	;
+	
+parameter_list_not_empty
+	: (variable_with_type PARAM_SEPARATOR)* variable_with_type
+	;
+
+variable_with_type
+	: type variable_name
+	;
+	
+type
+	: IDENTIFIER
+	;
+	
+variable_name
+	: IDENTIFIER
+	;
+	
+//
+
 op_member_access
 	: '.'
 	;
@@ -234,6 +276,11 @@ op_additive
 	| '-'
 	;
 	
+op_shift
+	: '<<'
+	| '>>'
+	;
+	
 op_comparison
 	: '=='
 	| '!='
@@ -251,11 +298,13 @@ op_logical
 	
 op_assignment
 	: '='
-	| '+='
-	| '-='
 	| '*='
 	| '/='
 	| '%='
+	| '+='
+	| '-='
+	| '<<='
+	| '>>='
 	| '&='
 	| '^='
 	| '|='
