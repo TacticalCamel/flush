@@ -1,4 +1,4 @@
-﻿# Nyelv specifikációi
+﻿# Nyelv specifikációk
 
 ## Egy program felépítése
 Egy program `import` utasításokkal kezdődhet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
@@ -45,12 +45,29 @@ Nevük az "f" (mint "float") prefix, amit a bitek száma követ. Létezik 16, 32
 f32 x = 0.1234;
 f64 y = 3.1415927;
 ```
-#### Karakterek
-Egy karakter unicode kódolású, 16 biten helyezkedik el.
-
 #### Boolean
 A `bool` névre hallgató osztály, ami csak a `true` (igaz), vagy a `false` (hamis) értéket veheti fel.
 ```
 bool x = true;
 bool y = 3 > 4;
+```
+#### Karakterek
+A `char` osztály egyetlen unicode kódolású karaktert képvisel, amely 16 biten helyezkedik el.
+```
+char a = 'a';
+char b = '\n';
+char c = '\u0020'
+```
+
+### Szöveg
+A `string` osztály egy 0 vagy több karakter sorozatából álló szöveget képvisel.
+```
+string a = "";
+string b = "text";
+string c = "multiple\nlines\n";
+
+string d = f"string b: {b}";
+string e = v"also
+multiple
+lines";
 ```
