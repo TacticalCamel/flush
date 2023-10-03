@@ -10,7 +10,7 @@ import auto
 ```
 
 ## 2 Paraméter szegmens
-A programnak lehetnek be- és kimeneti paraméterei. A megfelelő kulcsszó után egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva lehet felsorolni a paraméterek típusait és azonosítóit. A be- és kimenő paraméterek sorrendje felcserélhető, külön-külön elhagyhatóak, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya.
+A programnak lehetnek be- és kimeneti paraméterei. A megfelelő kulcsszó után egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva lehet felsorolni egy vagy több paraméter típusát és azonosítóját. A be- és kimenő paraméterek sorrendje felcserélhető, külön-külön elhagyhatóak, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya.
 
 ### 2.1 Bemeneti paraméterek
 Az `in` paraméterek a program bemeneti értékei. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó `null` lesz.
