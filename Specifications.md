@@ -2,14 +2,14 @@
 
 Egy program forráskódja három alapvető részből épül fel. Az import szegmens, a paraméter szegmens és a kód szegmens. Ezek az átláthatóság érdekében csak az előbb felsorolt sorrendben követhetik egymást.
 
-## 1 Az import szegmens
+## 1 Import szegmens
 Nulla vagy több `import` utasításból álló programrészlet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére, hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
 ```
 import <modulnév>
 import auto
 ```
 
-## 2 A paraméter szegmens
+## 2 Paraméter szegmens
 A programnak lehetnek be- és kimeneti paraméterei. A megfelelő kulcsszó után egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva lehet felsorolni a paraméterek típusait és azonosítóit. A be- és kimenő paraméterek sorrendje felcserélhető, külön-külön elhagyhatóak, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya.
 
 ### 2.1 Bemeneti paraméterek
@@ -27,7 +27,17 @@ out null
 ```
 
 ## 3 Kód szegmens
-Itt helyezkedik el a programkód, ami futtatásra kerül.
+Itt helyezkedik el a programkód, ami futtatásra kerül. 
+
+### 3.1 Függvény definíció
+
+### 3.2 Osztály definíció
+
+### 3.3 Sor
+
+
+
+
 
 ## Változók
 Minden típus ősosztálya (közvetlenül vagy közvetetten) az `object`. Minden típus referenciatípus, azaz paraméterben való átadáskor, vagy függvényből való visszatéréskor egy változóról nem készül másolat. Ennek köszönhetően minden változó értéke lehet `null` is.
