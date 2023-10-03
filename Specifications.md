@@ -1,19 +1,33 @@
 ﻿# Nyelv specifikációk
 
-## Egy program felépítése
-Egy program `import` utasításokkal kezdődhet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
+## 1. Programok
+Egy program forráskódja három alapvető részből épül fel. Az import szegmens, a paraméter szegmens és a kód szegmens. Ezek az átláthatóság érdekében csak az előbb felsorolt sorrendben követhetik egymást.
+
+### 1.1 Az import szegmens
+Nulla vagy több `import` utasításból álló programrészlet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
 ```
 import <modulnév>
 import auto
 ```
-<br> Ez után helyezkedhetnek el tetszőleges sorrendben az `in` és `out` paraméterek. Az `in` paraméterek a program bemeneti értékei, az `out` paraméterek visszatérési értékei. Mindkét esetben egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva kell felsorolni a változók típusait és neveit. <br><br> Mindkét paramétertípus külön-külön elhagyható, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó `null` lesz. Minden kimeneti paraméter kezdeti értéke `null`.
+
+### 1.2 A paraméter szegmens
+A programnak lehetnek be- és kimeneti paraméterei. A megfelelő kulcsszó után egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva lehet felsorolni a paraméterek típusait és azonosítóit. A be- és kimenő paraméterek sorrendje felcserélhető, külön-külön elhagyhatóak, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya.
+
+#### 1.2.1 Bemeneti paraméterek
+Az `in` paraméterek a program bemeneti értékei. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó `null` lesz.
 ```
 in  <típus> <változónév>, <típus> <változónév>, ...
-out <típus> <változónév>, <típus> <változónév>, ...
-
 in  null
+```
+
+#### 1.2.2 Kimeneti paraméterek
+Az `out` paraméterek visszatérési értékei. Minden kimeneti paraméter kezdetben `null`, és a program futása során kaphatnak újabb értéket.
+```
+out <típus> <változónév>, <típus> <változónév>, ...
 out null
 ```
+
+## 1.3 Kód szegmens
 <br> Ezt követően helyezkedik el bármilyen más programkód.
 
 ## Változók
