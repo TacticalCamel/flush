@@ -1,20 +1,43 @@
-﻿# Nyelv specifikációi
+﻿# Nyelv specifikációk
 
-## Egy program felépítése
-Egy program `import` utasításokkal kezdődhet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
+Egy program forráskódja három alapvető részből épül fel. Az import szegmens, a paraméter szegmens és a kód szegmens. Ezek az átláthatóság érdekében csak az előbb felsorolt sorrendben követhetik egymást.
+
+## 1 Import szegmens
+Nulla vagy több `import` utasításból álló programrészlet, melyek célja jelezni az értelmezőnek, hogy az adott modulból használunk kódot. Rendelkezésre áll automatikus importálás használata is, amivel az értelmező minden elérhető modulban keresi az szükséges osztályokat, és importálja azt, amely szükséges is. Ez természetesen időigényes, illetve egyes nevek ütközéséhez vezethet. Annak ellenére, hogy felesleges, az automatikus importálás nem zárja ki több import utasítás használatát.
 ```
 import <modulnév>
 import auto
 ```
-<br> Ez után helyezkedhetnek el tetszőleges sorrendben az `in` és `out` paraméterek. Az `in` paraméterek a program bemeneti értékei, az `out` paraméterek visszatérési értékei. Mindkét esetben egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva kell felsorolni a változók típusait és neveit. <br><br> Mindkét paramétertípus külön-külön elhagyható, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó `null` lesz. Minden kimeneti paraméter kezdeti értéke `null`.
+
+## 2 Paraméter szegmens
+A programnak lehetnek be- és kimeneti paraméterei. A megfelelő kulcsszó után egy függvény fejlécéhez hasonlóan, `,`-vel elválasztva lehet felsorolni egy vagy több paraméter típusát és azonosítóját. A be- és kimenő paraméterek sorrendje felcserélhető, külön-külön elhagyhatóak, illetve paraméterek felsorolása helyett a `null` kifejezéssel expliciten jelezhető a paraméterek hiánya.
+
+### 2.1 Bemeneti paraméterek
+Az `in` paraméterek a program bemeneti értékei. Ha a program indulásakor egy bemeneti paraméter nem kap értéket, vagy a kapott érték nem megfelelő típusú, a változó `null` lesz.
 ```
 in  <típus> <változónév>, <típus> <változónév>, ...
-out <típus> <változónév>, <típus> <változónév>, ...
-
 in  null
+```
+
+### 2.2 Kimeneti paraméterek
+Az `out` paraméterek visszatérési értékei. Minden kimeneti paraméter kezdetben `null`, és a program futása során kaphatnak újabb értéket.
+```
+out <típus> <változónév>, <típus> <változónév>, ...
 out null
 ```
-<br> Ezt követően helyezkedik el bármilyen más programkód.
+
+## 3 Kód szegmens
+Itt helyezkedik el a programkód, ami futtatásra kerül. 
+
+### 3.1 Függvény definíció
+
+### 3.2 Osztály definíció
+
+### 3.3 Sor
+
+
+
+
 
 ## Változók
 Minden típus ősosztálya (közvetlenül vagy közvetetten) az `object`. Minden típus referenciatípus, azaz paraméterben való átadáskor, vagy függvényből való visszatéréskor egy változóról nem készül másolat. Ennek köszönhetően minden változó értéke lehet `null` is.
@@ -45,12 +68,29 @@ Nevük az "f" (mint "float") prefix, amit a bitek száma követ. Létezik 16, 32
 f32 x = 0.1234;
 f64 y = 3.1415927;
 ```
-#### Karakterek
-Egy karakter unicode kódolású, 16 biten helyezkedik el.
-
 #### Boolean
 A `bool` névre hallgató osztály, ami csak a `true` (igaz), vagy a `false` (hamis) értéket veheti fel.
 ```
 bool x = true;
 bool y = 3 > 4;
+```
+#### Karakterek
+A `char` osztály egyetlen unicode kódolású karaktert képvisel, amely 16 biten helyezkedik el.
+```
+char a = 'a';
+char b = '\n';
+char c = '\u0020'
+```
+
+### Szöveg
+A `string` osztály egy 0 vagy több karakter sorozatából álló szöveget képvisel.
+```
+string a = "";
+string b = "text";
+string c = "multiple\nlines\n";
+
+string d = f"string b: {b}";
+string e = v"also
+multiple
+lines";
 ```

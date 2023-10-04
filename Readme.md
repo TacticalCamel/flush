@@ -1,8 +1,8 @@
 #  Tématerv
 
-<p align="center">
+<h3 align="center">
     [<a href="Specifications.md">Specifikációk</a>]
-</p>
+</h3>
 
 ## A téma
 A szakdolgozat témája egy programozási nyelv és az ehhez tartozó fordítóprogram megtervezése és elkészítése. 
@@ -57,5 +57,7 @@ Egy érdekes témát szerettem volna választani, ami nem egy ezredik unalmas we
 </table>
 
 ## Felhasznált eszközök
-- <a href="https://github.com/antlr/antlr4">ANTLR4<a/>
-- C# 11 (.NET Core 7)
+- Jetbrains Rider - Fejlesztői környezet
+- C# 12 (.NET Core 8) - Projekt programozási nyelve
+- <a href="https://github.com/antlr/antlr4">ANTLR4<a/> - Nyelvtani szabályok, fordító kódgenerálás
+
