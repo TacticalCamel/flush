@@ -2,10 +2,10 @@
 
 internal sealed class ModuleImports {
     public string[] ModuleNames { get; }
-    public bool AutoImportsEnabled { get; }
+    public bool AutoImportEnabled { get; }
 
-    public ModuleImports(string[] moduleNames, bool autoImportsEnabled) {
+    public ModuleImports(string[] moduleNames, bool autoImportEnabled) {
         ModuleNames = moduleNames;
-        AutoImportsEnabled = autoImportsEnabled;
+        AutoImportEnabled = autoImportEnabled;
     }
 }

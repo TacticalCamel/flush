@@ -1,3 +1,6 @@
+//file module
+module test
+
 //module imports
 import auto
 import module_one
@@ -37,7 +40,9 @@ else{
 while(false){
     n = example_function(n, 5);
     
-    module.clazz.function(1, 2);
+    _module._class._function(1, 2);
+    
+    break;
 }
 
 //function definition

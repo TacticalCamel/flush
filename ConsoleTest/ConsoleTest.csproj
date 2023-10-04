@@ -11,4 +11,10 @@
       <ProjectReference Include="..\Compiler\Compiler.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="CodeSamples\example.sra">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
