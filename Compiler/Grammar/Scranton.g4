@@ -12,7 +12,7 @@ program_header
 
 // 1.1 Modul szegmens
 module_segment
-	: (KW_MODULE IDENTIFIER)?
+	: (KW_MODULE var_name)?
 	;
 
 // 1.2 Import szegmens
@@ -21,7 +21,7 @@ import_segment
 	;
 
 import_statement
-	: KW_IMPORT IDENTIFIER
+	: KW_IMPORT var_name
 	| KW_IMPORT KW_AUTO
 	;
 
@@ -32,7 +32,7 @@ parameter_segment
 	;
 
 script_parameter_list
-	: (variable_with_type PARAM_SEPARATOR)* variable_with_type
+	: (var_with_type PARAM_SEP)* var_with_type
 	;
 
 // 1.3.1 Bemeneti paraméterek
@@ -52,7 +52,7 @@ program_body
 
 // 2.1 Függvény definíció
 global_function_def
-	: variable_with_type '(' parameter_list ')' block
+	: var_with_type HEAD_START function_def_param_list HEAD_END block
 	;
 
 // 2.2 Osztály definíció
@@ -61,7 +61,7 @@ class_def
 	;
 
 class_header
-	: 'class' IDENTIFIER
+	: KW_CLASS var_type
 	;
 
 class_body
@@ -69,18 +69,22 @@ class_body
 	;
 
 class_member
-	: global_function_def
-	| property_definition
+	: method_def
+	| property_def
 	;
 
-property_definition
-	: variable_with_type STATEMENT_SEPARATOR
+method_def
+	: var_with_type HEAD_START function_def_param_list HEAD_END block
+	;
+
+property_def
+	: var_with_type ST_SEP
 	;
 
 // 2.3 Utasítás
 statement
-	: control_statement STATEMENT_SEPARATOR
-	| regular_statement STATEMENT_SEPARATOR
+	: control_statement ST_SEP
+	| regular_statement ST_SEP
 	| block_statement
 	;
 
@@ -95,27 +99,27 @@ control_statement
 
 // 2.3.1.1 Return utasítás
 return_statement
-	: 'return' expression?
+	: KW_RETURN expression?
 	;
 
 // 2.3.1.2 Break utasítás
 break_statement
-	: 'break'
+	: KW_BREAK
 	;
 
 // 2.3.1.3 Skip utasítás
 skip_statement
-	: 'skip'
+	: KW_SKIP
 	;
 
 // 2.3.1.4 Goto utasítás
 goto_statement
-	: 'goto' IDENTIFIER
+	: KW_GOTO var_name
 	;
 
 // 2.3.1.5 Label utasítás
 label_statement
-	: 'label' IDENTIFIER
+	: KW_LABEL var_name
 	;
 
 // 2.3.2 Blokk utasítás
@@ -134,23 +138,23 @@ block
 
 // 2.3.2.2 If blokk
 if_block
-	: KW_IF '(' expression ')' block (KW_ELSE KW_IF '(' expression ')' block)* (KW_ELSE block)?
+	: KW_IF HEAD_START expression HEAD_END block (KW_ELSE KW_IF HEAD_START expression HEAD_END block)* (KW_ELSE block)?
 	;
 
 // 2.3.2.3 For block
 for_block
-	: KW_FOR '(' variable_declaration? STATEMENT_SEPARATOR expression? STATEMENT_SEPARATOR expression? ')' block (KW_ELSE block)?
-	| KW_FOR '(' variable_with_type 'in' variable_name ')' block (KW_ELSE block)?
+	: KW_FOR HEAD_START variable_declaration? ST_SEP expression? ST_SEP expression? HEAD_END block (KW_ELSE block)?
+	| KW_FOR HEAD_START var_with_type 'in' var_name HEAD_END block (KW_ELSE block)?
 	;
 
 // 2.3.2.4 While block
 while_block
-	: KW_WHILE '(' expression ')' block (KW_ELSE block)?
+	: KW_WHILE HEAD_START expression HEAD_END block (KW_ELSE block)?
 	;
 
 // 2.3.2.5 Try block
 try_block
-	: KW_TRY block KW_CATCH '(' variable_with_type ')' block
+	: KW_TRY block KW_CATCH HEAD_START var_with_type HEAD_END block
 	;
 
 // 2.3.3 Általános utasítás
@@ -161,7 +165,7 @@ regular_statement
 
 // 2.3.3.1 Változó deklaráció
 variable_declaration
-	: variable_with_type ('=' expression)?
+	: var_with_type (OP_EQ expression)?
 	;
 
 // 2.3.3.2 Kifejezés
@@ -170,8 +174,8 @@ expression
 	| function_call
 	| object_ctor
 	| collection_ctor
-	| IDENTIFIER
-	| '(' expression ')'
+	| var_name
+	| HEAD_START expression HEAD_END
 	| expression op_member_access expression
 	| op_sign expression
 	| expression op_unary
@@ -189,8 +193,8 @@ constant
 	| INT_DEC
 	| INT_HEX
 	| INT_BIN
-	| STRING
-	| CHAR
+	| STRING_LITERAL
+	| CHAR_LITERAL
 	| KW_NULL
 	| KW_TRUE
 	| KW_FALSE
@@ -198,32 +202,44 @@ constant
 
 // 2.3.3.2.2 Függvényhívás
 function_call
-	: IDENTIFIER '(' ((expression PARAM_SEPARATOR)* expression)? ')'
+	: var_name HEAD_START expression_param_list HEAD_END
 	;
 
 // 2.3.3.2.3
 object_ctor
-	: BLOCK_START ((IDENTIFIER '=' expression PARAM_SEPARATOR)* (IDENTIFIER '=' expression))? BLOCK_END
+	: var_type BLOCK_START object_ctor_param_list BLOCK_END
 	;
 
 // 2.3.3.2.4
 collection_ctor
-	: '[' ((expression PARAM_SEPARATOR)* expression)? ']'
+	: INDEX_START expression_param_list INDEX_END
 	;
 
-parameter_list
-	: ((variable_with_type PARAM_SEPARATOR)* variable_with_type)?
+function_def_param_list
+	: ((var_with_type PARAM_SEP)* var_with_type)?
 	;
 
-variable_with_type
-	: type variable_name
+expression_param_list
+	: ((expression PARAM_SEP)* expression)?
 	;
 
-type
+object_ctor_param_list
+	: ((object_ctor_param PARAM_SEP)* object_ctor_param)?
+	;
+
+object_ctor_param
+	: var_name OP_EQ expression
+	;
+
+var_with_type
+	: var_type var_name
+	;
+
+var_type
 	: IDENTIFIER
 	;
 
-variable_name
+var_name
 	: IDENTIFIER
 	;
 
@@ -273,7 +289,7 @@ op_logical
 	;
 
 op_assignment
-	: '='
+	: OP_EQ
 	| '*='
 	| '/='
 	| '%='
@@ -299,11 +315,11 @@ BLOCK_COMMENT
 	: '/*' .*? '*/' -> skip
 	;
 
-PARAM_SEPARATOR
+PARAM_SEP
 	: ','
 	;
 
-STATEMENT_SEPARATOR
+ST_SEP
 	: ';'
 	;
 
@@ -323,11 +339,11 @@ FLOAT
 	: NUMBER_SIGN? DEC_DIGIT+ '.' DEC_DIGIT+
 	;
 	
-STRING
+STRING_LITERAL
 	: '"' .*? '"'
 	;
 	
-CHAR
+CHAR_LITERAL
 	: '\'' . '\''
 	| '\'\\' . '\''
 	| '\'\\' ('u' | 'U') [0-9]+  '\''
@@ -388,6 +404,30 @@ KW_ELSE
 KW_MODULE
 	: 'module'
 	;
+
+KW_CLASS
+	: 'class'
+	;
+
+KW_RETURN
+	: 'return'
+	;
+
+KW_BREAK
+	: 'break'
+	;
+
+KW_SKIP
+	: 'skip'
+	;
+
+KW_GOTO
+	: 'goto'
+	;
+
+KW_LABEL
+	: 'label'
+	;
 	
 BLOCK_START
 	: '{'
@@ -397,8 +437,28 @@ BLOCK_END
 	: '}'
 	;
 
+HEAD_START
+    : '('
+    ;
+
+HEAD_END
+	: ')'
+	;
+
+INDEX_START
+	: '['
+	;
+
+INDEX_END
+	: ']'
+	;
+
+OP_EQ
+	: '='
+	;
+
 IDENTIFIER
-	: [a-zA-Z_][a-zA-Z0-9_]*
+	: (LETTER | UNDERSCORE)(LETTER | UNDERSCORE | DEC_DIGIT)*
 	;
 
 // fragmentek

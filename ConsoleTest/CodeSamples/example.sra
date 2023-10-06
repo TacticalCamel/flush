@@ -56,7 +56,7 @@ i32 example_function(i32 h, i32 g){
 }
 
 //object initializer
-object custom_obj = {
+object custom_obj = obj_type{
     attr1 = "this string",
     attr2 = 65,
     attr3 = null
