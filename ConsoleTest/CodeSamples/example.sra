@@ -13,11 +13,12 @@ in f32 x, f32 y, f32 z
 out i32 a, i32 b, i32 c
 
 //variable declarations
-string str = "this is a string\n";
-string str2;
-char ch = '\t';
-ch = '\u2224';
-f32 n = 0;
+i32 m;
+f32 n = 0.12;
+string str = "this is a string";
+char char_regular = 'a';
+char char_escaped = '\n';
+char char_unicode = '\u0032';
 
 //for block
 for(i32 i = 0; i < 10; i++){
@@ -39,7 +40,6 @@ else{
 //while block
 while(false){
     n = example_function(n, 5);
-    
     _module._class._function(1, 2);
     
     break;
@@ -56,7 +56,7 @@ i32 example_function(i32 h, i32 g){
 }
 
 //object initializer
-object custom_obj = {
+object custom_obj = ObjType{
     attr1 = "this string",
     attr2 = 65,
     attr3 = null
