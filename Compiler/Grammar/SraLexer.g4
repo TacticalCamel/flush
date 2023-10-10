@@ -159,6 +159,10 @@ IDENTIFIER
 	: [a-zA-Z_][a-zA-Z0-9_]*
 	;
 
+ANY
+	: .
+	;
+
 // Fragment
 fragment DEC_DIGIT
 	: [0-9]

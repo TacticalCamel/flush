@@ -19,6 +19,7 @@
       <Content Include="Grammar\Scranton.g4" />
       <Content Include="Grammar\SraExpressions.g4" />
       <Content Include="Grammar\SraLexer.g4" />
+      <Content Include="Grammar\SraStatements.g4" />
     </ItemGroup>
 
 </Project>

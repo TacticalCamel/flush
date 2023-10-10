@@ -5,20 +5,20 @@ import SraLexer;
 // Kifejezés
 expression
 	: constant
-	| function_call
-	| object_ctor
-	| collection_ctor
+	| functionCall
+	| objectConstructor
+	| collectionConstructor
 	| IDENTIFIER
 	| HEAD_START expression HEAD_END
-	| expression op_member_access expression
-	| op_sign expression
-	| expression op_unary
-	| expression op_multiplicative expression
-	| expression op_additive expression
-	| expression op_shift expression
-	| expression op_comparison expression
-	| expression op_logical expression
-	| expression op_assignment expression
+	| expression opMemberAccess expression
+	| opSign expression
+	| expression opUnary
+	| expression opMultiplicative expression
+	| expression opAdditive expression
+	| expression opShift expression
+	| expression opComparison expression
+	| expression opLogical expression
+	| expression opAssignment expression
 	;
 
 // Konstans
@@ -35,56 +35,56 @@ constant
 	;
 
 // Függvényhívás
-function_call
-	: IDENTIFIER HEAD_START param_list HEAD_END
+functionCall
+	: IDENTIFIER HEAD_START parameterList HEAD_END
 	;
 
-param_list
+parameterList
 	: ((expression PARAM_SEP)* expression)?
 	;
 
 // Objektum konstruktor
-object_ctor
+objectConstructor
 	: IDENTIFIER BLOCK_START ((IDENTIFIER '=' expression PARAM_SEP)* (IDENTIFIER '=' expression))? BLOCK_END
 	;
 
 // Collekció konstruktor
-collection_ctor
-	: INDEX_START param_list INDEX_END
+collectionConstructor
+	: INDEX_START parameterList INDEX_END
 	;
 
 // Operátor
-op_member_access
+opMemberAccess
 	: '.'
 	;
 
-op_sign
+opSign
 	: '+'
 	| '-'
 	;
 
-op_unary
+opUnary
 	: '++'
 	| '--'
 	;
 
-op_multiplicative
+opMultiplicative
 	: '*'
 	| '/'
 	| '%'
 	;
 
-op_additive
+opAdditive
 	: '+'
 	| '-'
 	;
 
-op_shift
+opShift
 	: '<<'
 	| '>>'
 	;
 
-op_comparison
+opComparison
 	: '=='
 	| '!='
 	| '>='
@@ -93,13 +93,13 @@ op_comparison
 	| '<'
 	;
 
-op_logical
+opLogical
 	: ('&' | 'and')
 	| ('^' | 'xor')
 	| ('|' | 'or')
 	;
 
-op_assignment
+opAssignment
 	: '='
 	| '*='
 	| '/='
