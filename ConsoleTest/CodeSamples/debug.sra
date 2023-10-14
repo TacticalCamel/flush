@@ -1,0 +1,1 @@
+var f = (Event e, Event f) -> e.Time;
