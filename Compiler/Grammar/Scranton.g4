@@ -14,7 +14,7 @@ programHeader
 
 // 1.1 Modul szegmens
 moduleSegment
-	: (KW_MODULE Name=IDENTIFIER)?
+	: (KW_MODULE Name=ID)?
 	;
 
 // 1.2 Import szegmens
@@ -24,7 +24,7 @@ importSegment
 
 importStatement
 	: KW_IMPORT Name=KW_AUTO #AutoImport
-	| KW_IMPORT Name=IDENTIFIER #ManualImport
+	| KW_IMPORT Name=ID #ManualImport
 	;
 
 // 1.3 Paraméter szegmens
@@ -49,25 +49,29 @@ outParameters
 
 // 2 Program test
 programBody
-	: (functionDef | classDef | statement)*
+	: (functionDefinition | classDefinition | statement)*
 	;
 
 // 2.1 Függvény definíció
-functionDef
-	: varWithType HEAD_START parameterList HEAD_END block
+functionDefinition
+	: functionModifiers varWithType HEAD_START parameterList HEAD_END block
 	;
 
-parameterList
-	: ((varWithType PARAM_SEP)* varWithType)?
+functionModifiers
+	: functionModifier*
+	;
+
+functionModifier
+	: 'private'
 	;
 
 // 2.2 Osztály definíció
-classDef
+classDefinition
 	: classHeader classBody
 	;
 
 classHeader
-	: KW_CLASS IDENTIFIER
+	: KW_CLASS Name=ID
 	;
 
 classBody
@@ -75,12 +79,12 @@ classBody
 	;
 
 classMember
-	: functionDef
+	: functionDefinition
 	| propertyDef
 	;
 
 propertyDef
-	: varWithType STATEMENT_SEP
+	: Type=variableType Name=ID STATEMENT_SEP
 	;
 
 // 2.3 Utasítás
@@ -106,8 +110,8 @@ controlStatement
 	: KW_RETURN expression? #ReturnStatement
 	| KW_BREAK #BreakStatement
 	| KW_CONTINUE #ContinueStatement
-	| KW_GOTO Name=IDENTIFIER #GotoStatement
-	| KW_LABEL Name=IDENTIFIER #LabelStatement
+	| KW_GOTO Name=ID #GotoStatement
+	| KW_LABEL Name=ID #LabelStatement
 	;
 
 // 2.3.3 Blokk utasítás
@@ -132,7 +136,7 @@ ifBlock
 // 2.3.3.3 For block
 forBlock
 	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END block (KW_ELSE block)?
-	| KW_FOR HEAD_START varWithType 'in' IDENTIFIER HEAD_END block (KW_ELSE block)?
+	| KW_FOR HEAD_START varWithType 'in' ID HEAD_END block (KW_ELSE block)?
 	;
 
 // 2.3.3.4 While block
@@ -144,11 +148,6 @@ whileBlock
 tryBlock
 	: KW_TRY block KW_CATCH HEAD_START varWithType HEAD_END block
 	;
-
-// Közös szabály
-varWithType
-	: Type=IDENTIFIER Name=IDENTIFIER
-	;
 	
 // Kifejezés
 expression
@@ -157,7 +156,7 @@ expression
 	| lambda
 	| objectConstructor
 	| collectionConstructor
-	| IDENTIFIER
+	| ID
 	| HEAD_START expression HEAD_END
 	| expression opMemberAccess expression
 	| opSign expression
@@ -185,7 +184,7 @@ constant
 
 // Függvényhívás
 functionCall
-	: IDENTIFIER HEAD_START expressionList HEAD_END
+	: ID HEAD_START expressionList HEAD_END
 	;
 
 expressionList
@@ -194,7 +193,7 @@ expressionList
 
 // Objektum konstruktor
 objectConstructor
-	: IDENTIFIER BLOCK_START ((IDENTIFIER '=' expression PARAM_SEP)* (IDENTIFIER '=' expression))? BLOCK_END
+	: ID BLOCK_START ((ID '=' expression PARAM_SEP)* (ID '=' expression))? BLOCK_END
 	;
 
 // Collekció konstruktor
@@ -265,4 +264,18 @@ opAssignment
 	| '&='
 	| '^='
 	| '|='
+	;
+
+// Közös szabály
+varWithType
+	: Type=variableType Name=ID
+	;
+
+variableType
+	: ID #SimpleType
+	| ID '<' varWithType '>' #GenericType
+	;
+
+parameterList
+	: ((varWithType PARAM_SEP)* varWithType)?
 	;

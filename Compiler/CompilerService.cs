@@ -1,4 +1,5 @@
-﻿
+﻿using System.Reflection;
+
 [assembly: CLSCompliant(false)]
 
 namespace Compiler;
@@ -10,19 +11,21 @@ using Antlr4.Runtime;
 using ProgramContext = Grammar.ScrantonParser.ProgramContext;
 
 public static class CompilerService {
+    private static Dictionary<string, Assembly> LoadedModules { get; } = new();
+
     public static object? Compile(string code, CompilerOptions options = CompilerOptions.Static) {
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
         CommonTokenStream tokenStream = new(lexer);
         ScrantonParser parser = new(tokenStream);
-        
+
         ScrantonVisitor visitor = new();
         ProgramContext context = parser.program();
-        
+
         object? r = visitor.VisitProgram(context);
 
-        foreach (var message in visitor.Messages.OrderBy(x => x.Start)) {
-            ConsoleColor color = message.Level switch {
+        foreach (CompilerWarning warning in visitor.Script.Warnings.OrderBy(x => x.Start)) {
+            ConsoleColor color = warning.Level switch {
                 WarningLevel.Hint => ConsoleColor.Green,
                 WarningLevel.Warning => ConsoleColor.Yellow,
                 WarningLevel.Error => ConsoleColor.Red,
@@ -30,18 +33,49 @@ public static class CompilerService {
             };
 
             Console.ForegroundColor = color;
-            Console.WriteLine(message);
+            Console.WriteLine(warning);
             Console.ForegroundColor = ConsoleColor.Gray;
         }
-        
+
         Console.WriteLine();
 
-        foreach (var i in visitor.Instructions) {
+        Console.WriteLine($"auto imports {(visitor.Script.AutoImportEnabled ? "on" : "off")}");
+        foreach (string i in visitor.Script.ImportedModules) {
+            Console.WriteLine($"import {i}");
+            
+            try {
+                Assembly assembly = Assembly.Load(i);
+                Type[] types = assembly.GetTypes();
+
+                Console.WriteLine($"[{string.Join(", ", (IEnumerable<Type>)types)}]");
+            }
+            catch (Exception e) {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        Console.WriteLine();
+
+        foreach (string i in visitor.Script.Instructions) {
             Console.WriteLine(i);
         }
-        
+
         return r;
     }
 
-}
+    private static Assembly? LoadModule(string moduleName) {
+        LoadedModules.TryGetValue(moduleName, out Assembly? assembly);
 
+        if (assembly is not null) return assembly;
+
+        try {
+            assembly = Assembly.Load(moduleName);
+            LoadedModules[moduleName] = assembly;
+        }
+        catch {
+            // ignored
+        }
+
+        return assembly;
+    }
+}

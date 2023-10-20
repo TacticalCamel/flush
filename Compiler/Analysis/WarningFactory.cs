@@ -11,7 +11,7 @@ internal static class WarningFactory {
         return new CompilerWarning(WarningLevel.Warning,201, "Auto import is already enabled", rule);
     }
     
-    public static CompilerWarning ModuleAlreadyImportedError(ParserRuleContext rule) {
-        return new CompilerWarning(WarningLevel.Error, 301, "Module is already imported", rule);
+    public static CompilerWarning ModuleAlreadyImportedWarning(ParserRuleContext rule) {
+        return new CompilerWarning(WarningLevel.Warning, 202, "Module is already imported", rule);
     }
 }

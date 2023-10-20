@@ -1,4 +1,4 @@
-namespace Modules.Core; 
+namespace Core; 
 
 public class Char {
     

@@ -20,5 +20,10 @@
       <Content Include="Grammar\Scranton.g4" />
       <Content Include="Grammar\SraLexer.g4" />
     </ItemGroup>
-
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Core\Core.csproj" />
+      <ProjectReference Include="..\System\System.csproj" />
+      <ProjectReference Include="..\Web\Web.csproj" />
+    </ItemGroup>
 </Project>
