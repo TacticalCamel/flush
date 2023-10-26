@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Linq.Expressions;
+using System.Reflection;
 
 [assembly: CLSCompliant(false)]
 
@@ -10,72 +11,102 @@ using Visitor;
 using Antlr4.Runtime;
 using ProgramContext = Grammar.ScrantonParser.ProgramContext;
 
-public static class CompilerService {
-    private static Dictionary<string, Assembly> LoadedModules { get; } = new();
+public static class CompilerService{
+    private static Dictionary<string, Assembly> LoadedModules{ get; } = new();
 
-    public static object? Compile(string code, CompilerOptions options = CompilerOptions.Static) {
+    public static object? Compile(string code, CompilerOptions options = CompilerOptions.Static){
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
         CommonTokenStream tokenStream = new(lexer);
         ScrantonParser parser = new(tokenStream);
 
-        ScrantonVisitor visitor = new();
         ProgramContext context = parser.program();
+        ScriptBuilder scriptBuilder = new(code);
+        ScrantonVisitor visitor = new(scriptBuilder);
 
-        object? r = visitor.VisitProgram(context);
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
+        try{
+            visitor.TraverseAst(context);
+            Console.WriteLine("Successful compilation");
+        }
+        catch (OperationCanceledException){
+            Console.WriteLine("Compilation cancelled after error");
+        }
+        catch (Exception e){
+            Console.WriteLine($"Unexpected compilation error: {e.Message}");
+        }
+        Console.WriteLine();
 
-        foreach (CompilerWarning warning in visitor.Script.Warnings.OrderBy(x => x.Start)) {
-            ConsoleColor color = warning.Level switch {
+        DebugInfo(scriptBuilder);
+        return null;
+    }
+
+    private static Assembly? LoadModule(string moduleName){
+        LoadedModules.TryGetValue(moduleName, out Assembly? assembly);
+
+        if (assembly is not null) return assembly;
+
+        try{
+            assembly = Assembly.Load(moduleName);
+            LoadedModules[moduleName] = assembly;
+        }
+        catch{
+            // ignored
+        }
+
+        return assembly;
+    }
+
+    private static void DebugInfo(ScriptBuilder scriptBuilder){
+        LogLn("WARNINGS [");
+        foreach (CompilerWarning warning in scriptBuilder.Warnings.OrderBy(x => x.Start)){
+            ConsoleColor color = warning.Level switch{
                 WarningLevel.Hint => ConsoleColor.Green,
                 WarningLevel.Warning => ConsoleColor.Yellow,
                 WarningLevel.Error => ConsoleColor.Red,
                 _ => ConsoleColor.Gray
             };
 
-            Console.ForegroundColor = color;
-            Console.WriteLine(warning);
-            Console.ForegroundColor = ConsoleColor.Gray;
+            LogLn($"    {warning}", color);
         }
+        LogLn("]\n");
+        
+        LogLn($"MODULE [\n    {scriptBuilder.ModuleName}\n]\n");
 
-        Console.WriteLine();
-
-        Console.WriteLine($"auto imports {(visitor.Script.AutoImportEnabled ? "on" : "off")}");
-        foreach (string i in visitor.Script.ImportedModules) {
-            Console.WriteLine($"import {i}");
+        LogLn($"IMPORTS (auto={(scriptBuilder.AutoImportEnabled ? "true" : "false")}) [");
+        foreach (string module in scriptBuilder.ImportedModules){
+            Log($"\"{module}\": ");
             
-            try {
-                Assembly assembly = Assembly.Load(i);
+            Assembly? assembly = LoadModule(module);
+
+            if (assembly is null){
+                LogLn("<not-found>", ConsoleColor.Red);
+            }
+            else{
                 Type[] types = assembly.GetTypes();
-
-                Console.WriteLine($"[{string.Join(", ", (IEnumerable<Type>)types)}]");
-            }
-            catch (Exception e) {
-                Console.WriteLine(e.Message);
+                LogLn($"[{string.Join(", ", (IEnumerable<Type>)types)}]", ConsoleColor.Green);
             }
         }
+        LogLn("]\n");
+        
 
-        Console.WriteLine();
+        LogLn("INSTRUCTIONS [");
+        foreach (string instruction in scriptBuilder.Instructions){
+            ConsoleColor color = instruction.StartsWith("SKIP") ? ConsoleColor.Red : ConsoleColor.Green;
+            LogLn($"    {instruction}", color);
+        }
+        LogLn("]");
+        
+        return;
 
-        foreach (string i in visitor.Script.Instructions) {
-            Console.WriteLine(i);
+        void Log(object? obj, ConsoleColor color = ConsoleColor.Gray){
+            Console.ForegroundColor = color;
+            Console.Write(obj);
         }
 
-        return r;
-    }
-
-    private static Assembly? LoadModule(string moduleName) {
-        LoadedModules.TryGetValue(moduleName, out Assembly? assembly);
-
-        if (assembly is not null) return assembly;
-
-        try {
-            assembly = Assembly.Load(moduleName);
-            LoadedModules[moduleName] = assembly;
+        void LogLn(object? obj = null, ConsoleColor color = ConsoleColor.Gray){
+            Log(obj, color);
+            Console.WriteLine();
         }
-        catch {
-            // ignored
-        }
-
-        return assembly;
     }
 }

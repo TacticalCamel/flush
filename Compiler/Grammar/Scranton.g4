@@ -67,7 +67,7 @@ functionModifier
 
 // 2.2 Osztály definíció
 classDefinition
-	: classHeader classBody
+	: Header=classHeader Body=classBody
 	;
 
 classHeader
@@ -157,16 +157,16 @@ expression
 	| objectConstructor
 	| collectionConstructor
 	| ID
-	| HEAD_START expression HEAD_END
-	| expression opMemberAccess expression
-	| opSign expression
-	| expression opUnary
-	| expression opMultiplicative expression
-	| expression opAdditive expression
-	| expression opShift expression
-	| expression opComparison expression
-	| expression opLogical expression
-	| expression opAssignment expression
+	| HEAD_START expression HEAD_END //#NestedExpression
+	| expression opMemberAccess expression //#MemberAccessExpression
+	| opSign expression //#SignExpression
+	| expression opUnary //#UnaryExpression
+	| expression opMultiplicative expression //#MultiplicativeExpression
+	| expression opAdditive expression //#AdditiveExpression
+	| expression opShift expression //#ShiftExpression
+	| expression opComparison expression //#ComparisonExpression
+	| expression opLogical expression //#LogicalExpression
+	| expression opAssignment expression //#AssigmentExpression
 	;
 
 // Konstans

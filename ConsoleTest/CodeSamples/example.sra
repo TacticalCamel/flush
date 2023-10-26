@@ -5,6 +5,8 @@ module example
 import math
 import system
 import auto
+import core
+import core
 
 //in parameters
 in f32 x, f32 y, f32 z

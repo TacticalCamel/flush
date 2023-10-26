@@ -4,73 +4,121 @@ using Analysis;
 using Grammar;
 using static Grammar.ScrantonParser;
 
-internal sealed class ScrantonVisitor: ScrantonBaseVisitor<object?> {
-    public Script Script { get; } = new();
+internal sealed class ScrantonVisitor(ScriptBuilder scriptBuilder) : ScrantonBaseVisitor<object?> {
+    public ScriptBuilder ScriptBuilder { get; } = scriptBuilder;
+
+    public void TraverseAst(ProgramContext context){
+        
+        VisitProgram(context);
+    }
+
+    public void Abort(){
+        throw new OperationCanceledException();
+    }
     
     public override object? VisitModuleSegment(ModuleSegmentContext context) {
-        Script.ModuleName = context.Name?.Text;
-
+        ScriptBuilder.ModuleName = context.Name.Text;
         return null;
     }
 
     public override object? VisitImportSegment(ImportSegmentContext context) {
-        if (Script is { AutoImportEnabled: true, ImportedModules.Count: > 0 }) {
-            Script.Warnings.Add(WarningFactory.ManualImportsRedundantHint(context));
+        if (ScriptBuilder is { AutoImportEnabled: true, ImportedModules.Count: > 0 }) {
+            ScriptBuilder.Warnings.Add(WarningFactory.ManualImportsRedundantHint(context));
         }
         
         return base.VisitImportSegment(context);;
     }
 
     public override object? VisitAutoImport(AutoImportContext context) {
-        if (Script.AutoImportEnabled) {
-            Script.Warnings.Add(WarningFactory.AutoImportAlreadyEnabledWarning(context));
+        if (ScriptBuilder.AutoImportEnabled) {
+            ScriptBuilder.Warnings.Add(WarningFactory.AutoImportAlreadyEnabledWarning(context));
         }
         else {
-            Script.AutoImportEnabled = true;
+            ScriptBuilder.AutoImportEnabled = true;
         }
         
         return null;
     }
 
     public override object? VisitManualImport(ManualImportContext context) {
-        bool success = Script.ImportedModules.Add(context.Name.Text);
+        bool success = ScriptBuilder.ImportedModules.Add(context.Name.Text);
         
         if (!success) {
-            Script.Warnings.Add(WarningFactory.ModuleAlreadyImportedWarning(context));
+            ScriptBuilder.Warnings.Add(WarningFactory.ModuleAlreadyImportedWarning(context));
         }
         
         return null;
     }
 
     public override object? VisitInParameters(InParametersContext context) {
-        VarWithTypeContext[] v = context.ParameterList.varWithType();
-        
-        foreach(var vv in v) Script.Instructions.Add($"DECL {vv.Type.GetText()} {vv.Name.Text}");
+        VarWithTypeContext[]? parameters = context.ParameterList?.varWithType();
+        if(parameters is null) return null;
+
+        foreach (VarWithTypeContext parameter in parameters) {
+            ScriptBuilder.Instructions.Add($"DECL {parameter.Name.Text}:{parameter.Type.GetText()}, VALUE args[\"{parameter.Name.Text}\"]");
+        }
         
         return base.VisitInParameters(context);
     }
 
     public override object? VisitOutParameters(OutParametersContext context) {
-        VarWithTypeContext[] v = context.ParameterList.varWithType();
-        
-        foreach(var vv in v) Script.Instructions.Add($"DECL {vv.Type.GetText()} {vv.Name.Text}");
+        VarWithTypeContext[]? parameters = context.ParameterList?.varWithType();
+        if(parameters is null) return null;
+
+        foreach (VarWithTypeContext parameter in parameters) {
+            ScriptBuilder.Instructions.Add($"DECL {parameter.Name.Text}:{parameter.Type.GetText()}, VALUE null");
+        }
         
         return base.VisitOutParameters(context);
     }
 
-    public override object? VisitRegularStatement(RegularStatementContext context) {
-        Script.Instructions.Add($"ST {context.GetText()}");
-        
-        return base.VisitRegularStatement(context);
+    public override object? VisitFunctionDefinition(FunctionDefinitionContext context) {
+        ScriptBuilder.Instructions.Add($"SKIP FUNC DEF {context.varWithType().Name.Text}");
+        return null;
+    }
+
+    public override object? VisitClassDefinition(ClassDefinitionContext context) {
+        ScriptBuilder.Instructions.Add($"SKIP TYPE DEF {context.Header.Name.Text}");
+        return null;
+    }
+    
+    public override object? VisitVariableDeclaration(VariableDeclarationContext context){
+        ScriptBuilder.Instructions.Add($"SKIP DECL {context.GetText()}");
+        return null;
+    }
+
+    public override object? VisitExpression(ExpressionContext context){
+        ScriptBuilder.Instructions.Add($"SKIP EXPR {context.GetText()}");
+        return null;
     }
 
     public override object? VisitControlStatement(ControlStatementContext context) {
-        return base.VisitControlStatement(context);
+        ScriptBuilder.Instructions.Add($"SKIP CTR_ST {context.GetText()}");
+        return null;
     }
 
-    public override object? VisitBlockStatement(BlockStatementContext context) {
-        return base.VisitBlockStatement(context);
+    public override object? VisitBlock(BlockContext context) {
+        ScriptBuilder.Instructions.Add("SKIP BLOCK");
+        return null;
     }
-    
-    
+
+    public override object? VisitIfBlock(IfBlockContext context) {
+        ScriptBuilder.Instructions.Add("SKIP IF BLOCK");
+        return null;
+    }
+
+    public override object? VisitForBlock(ForBlockContext context) {
+        ScriptBuilder.Instructions.Add("SKIP FOR BLOCK");
+        return null;
+    }
+
+    public override object? VisitWhileBlock(WhileBlockContext context) {
+        ScriptBuilder.Instructions.Add("SKIP WHILE BLOCK");
+        return null;
+    }
+
+    public override object? VisitTryBlock(TryBlockContext context) {
+        ScriptBuilder.Instructions.Add("SKIP TRY BLOCK");
+        return null;
+    }
 }

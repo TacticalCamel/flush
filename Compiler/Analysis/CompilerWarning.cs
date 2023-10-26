@@ -10,6 +10,6 @@ internal sealed class CompilerWarning(WarningLevel level, int id, string message
     public Position Stop { get; } = new(rule.stop.Line, rule.stop.Column);
 
     public override string ToString() {
-        return $"{Level} at {Start} SRA{Id:D3}: {Message}";
+        return $"{Start} {Level} SRA{Id:D3}: {Message}";
     }
 }
