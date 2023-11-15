@@ -7,7 +7,7 @@ internal static class Program {
         string code;
         
         try {
-            code = File.ReadAllText("CodeSamples/example.sra");
+            code = File.ReadAllText("CodeSamples/purge_directory.sra");
         }
         catch (Exception e) {
             Console.WriteLine(e.Message);

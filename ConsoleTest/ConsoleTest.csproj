@@ -13,10 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="CodeSamples\example.sra">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="CodeSamples\error.sra">
+      <None Update="CodeSamples\purge_directory.sra">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="CodeSamples\debug.sra">

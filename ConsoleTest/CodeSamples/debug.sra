@@ -3,9 +3,10 @@ module debug
 import core
 import system 
 
-in i32 limit
-out null
+in void
+out void
 
-for(i32 i = 0; i < limit; i++){
-	print(i * 2 + 4 % 5);
-}
+if(0) return;
+if(0) 1 + 1;
+if(0) { 1 + 1; }
+

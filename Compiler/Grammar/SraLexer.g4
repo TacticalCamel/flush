@@ -47,6 +47,10 @@ PARAM_SEP
 STATEMENT_SEP
 	: ';'
 	;
+	
+COLON
+	: ':'
+	;
 
 // Kulcsszó
 KW_MODULE
@@ -127,6 +131,18 @@ KW_LABEL
 
 KW_RETURN
 	: 'return'
+	;
+	
+KW_PUBLIC
+	: 'public'
+	;
+	
+KW_VOID
+	: 'void'
+	;
+	
+KW_NEW
+	: 'new'
 	;
 
 // Zárójel

@@ -39,22 +39,22 @@ scriptParameterList
 
 // 1.3.1 Bemeneti paraméterek
 inParameters
-	: KW_IN (KW_NULL | ParameterList=scriptParameterList)
+	: KW_IN (KW_VOID | ParameterList=scriptParameterList)
 	;
 
 // 1.3.2 Kimeneti paraméterek
 outParameters
-	: KW_OUT (KW_NULL | ParameterList=scriptParameterList)
+	: KW_OUT (KW_VOID | ParameterList=scriptParameterList)
 	;
 
 // 2 Program test
 programBody
-	: (functionDefinition | classDefinition | statement)*
+	: (functionDefinition | typeDefinition | statement)*
 	;
 
 // 2.1 Függvény definíció
 functionDefinition
-	: functionModifiers varWithType HEAD_START parameterList HEAD_END block
+	: Modifiers=functionModifiers ReturnType=returnType Name=ID HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 functionModifiers
@@ -62,29 +62,63 @@ functionModifiers
 	;
 
 functionModifier
-	: 'private'
+	: KW_PUBLIC
 	;
 
-// 2.2 Osztály definíció
-classDefinition
-	: Header=classHeader Body=classBody
+// 2.2 Típus definíció
+typeDefinition
+	: shortTypeDefinition
+	| longTypeDefinition
+	;
+
+shortTypeDefinition
+	: Header=classHeader INDEX_START Body=parameterList INDEX_END
+	;
+	
+longTypeDefinition
+	: Header=classHeader BLOCK_START Body=classBody BLOCK_END
 	;
 
 classHeader
-	: KW_CLASS Name=ID
+	: Modifiers=classModifiers KW_CLASS Name=ID (COLON inheritanceList)?
+	;
+
+inheritanceList
+	: ((typeName PARAM_SEP)* typeName)?
 	;
 
 classBody
-	: BLOCK_START classMember* BLOCK_END
+	: classMember*
 	;
 
 classMember
 	: functionDefinition
-	| propertyDef
+	| propertyDefinition
+	| constructorDefinition
+	;
+	
+classModifiers
+	: classModifier*
 	;
 
-propertyDef
-	: Type=variableType Name=ID STATEMENT_SEP
+classModifier
+	: KW_PUBLIC
+	;
+
+propertyDefinition
+	: Modifiers=propertyModifiers Type=typeName Name=ID STATEMENT_SEP
+	;
+	
+propertyModifiers
+	: propertyModifier*
+	;
+	
+propertyModifier
+	: KW_PUBLIC
+	;
+
+constructorDefinition
+	: KW_NEW HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 // 2.3 Utasítás
@@ -130,23 +164,23 @@ block
 
 // 2.3.3.2 If blokk
 ifBlock
-	: KW_IF HEAD_START expression HEAD_END block (KW_ELSE KW_IF HEAD_START expression HEAD_END block)* (KW_ELSE block)?
+	: KW_IF HEAD_START expression HEAD_END statement (KW_ELSE KW_IF HEAD_START expression HEAD_END statement)* (KW_ELSE statement)?
 	;
 
 // 2.3.3.3 For block
 forBlock
-	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END block (KW_ELSE block)?
-	| KW_FOR HEAD_START varWithType 'in' ID HEAD_END block (KW_ELSE block)?
+	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END statement (KW_ELSE statement)?
+	| KW_FOR HEAD_START varWithType 'in' ID HEAD_END statement (KW_ELSE statement)?
 	;
 
 // 2.3.3.4 While block
 whileBlock
-	: KW_WHILE HEAD_START expression HEAD_END block (KW_ELSE block)?
+	: KW_WHILE HEAD_START expression HEAD_END statement (KW_ELSE statement)?
 	;
 
 // 2.3.3.5 Try block
 tryBlock
-	: KW_TRY block KW_CATCH HEAD_START varWithType HEAD_END block
+	: KW_TRY statement KW_CATCH HEAD_START varWithType HEAD_END statement
 	;
 	
 // Kifejezés
@@ -159,6 +193,7 @@ expression
 	| ID
 	| HEAD_START expression HEAD_END //#NestedExpression
 	| expression opMemberAccess expression //#MemberAccessExpression
+	| opNegate expression
 	| opSign expression //#SignExpression
 	| expression opUnary //#UnaryExpression
 	| expression opMultiplicative expression //#MultiplicativeExpression
@@ -209,6 +244,10 @@ lambda
 // Operátor
 opMemberAccess
 	: '.' #MemberAccessOperator
+	;
+
+opNegate
+	: '!'
 	;
 
 opSign
@@ -268,12 +307,17 @@ opAssignment
 
 // Közös szabály
 varWithType
-	: Type=variableType Name=ID
+	: Type=typeName Name=ID
 	;
 
-variableType
-	: ID #SimpleType
-	| ID '<' varWithType '>' #GenericType
+typeName
+	: Name=ID #SimpleType
+	| Name=ID '<' ContainedName=typeName '>' #GenericType
+	;
+
+returnType
+	: typeName
+	| KW_VOID
 	;
 
 parameterList
