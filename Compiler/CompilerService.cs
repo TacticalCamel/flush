@@ -19,7 +19,7 @@ public static class CompilerService{
 
         ProgramContext programContext = parser.program();
         ScrantonVisitor visitor = new(programContext);
-
+        
         try{
             ScriptBuilder scriptBuilder = visitor.TraverseAst();
             LogLn("Successful compilation", ConsoleColor.DarkBlue);
@@ -29,7 +29,7 @@ public static class CompilerService{
             LogLn("Compilation cancelled after error", ConsoleColor.DarkRed);
         }
         catch (Exception e){
-            LogLn($"Unexpected compilation error: {e.Message}", ConsoleColor.DarkRed);
+            LogLn($"Unexpected compilation error\n{e}", ConsoleColor.DarkRed);
         }
 
     }

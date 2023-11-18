@@ -1,6 +1,22 @@
 grammar Scranton;
 
-import SraLexer;
+// ⣀⣠⣤⣤⣤⣤⢤⣤⣄⣀⣀⣀⣀⡀⡀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+// ⠄⠉⠹⣾⣿⣛⣿⣿⣞⣿⣛⣺⣻⢾⣾⣿⣿⣿⣶⣶⣶⣄⡀⠄⠄⠄
+// ⠄⠄⠠⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣿⣿⣿⣿⣿⣿⣆⠄⠄
+// ⠄⠄⠘⠛⠛⠛⠛⠋⠿⣷⣿⣿⡿⣿⢿⠟⠟⠟⠻⠻⣿⣿⣿⣿⡀⠄
+// ⠄⢀⠄⠄⠄⠄⠄⠄⠄⠄⢛⣿⣁⠄⠄⠒⠂⠄⠄⣀⣰⣿⣿⣿⣿⡀
+// ⠄⠉⠛⠺⢶⣷⡶⠃⠄⠄⠨⣿⣿⡇⠄⡺⣾⣾⣾⣿⣿⣿⣿⣽⣿⣿
+// ⠄⠄⠄⠄⠄⠛⠁⠄⠄⠄⢀⣿⣿⣧⡀⠄⠹⣿⣿⣿⣿⣿⡿⣿⣻⣿
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠉⠛⠟⠇⢀⢰⣿⣿⣿⣏⠉⢿⣽⢿⡏
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠠⠤⣤⣴⣾⣿⣿⣾⣿⣿⣦⠄⢹⡿⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠒⣳⣶⣤⣤⣄⣀⣀⡈⣀⢁⢁⢁⣈⣄⢐⠃⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⣰⣿⣛⣻⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡯⠄⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⣬⣽⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠄⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⢘⣿⣿⣻⣛⣿⡿⣟⣻⣿⣿⣿⣿⡟⠄⠄⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠛⢛⢿⣿⣿⣿⣿⣿⣿⣷⡿⠁⠄⠄⠄
+// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠉⠉⠉⠉⠈⠄⠄⠄⠄⠄⠄
+// Nyilván számít a sorrend
+import SraKeywords, SraLiterals, SraSeparators, SraOperators, SraCommon;
 
 // Egy program felépítése
 program
@@ -14,7 +30,7 @@ programHeader
 
 // 1.1 Modul szegmens
 moduleSegment
-	: (KW_MODULE Name=ID)?
+	: (KW_MODULE Name=id)?
 	;
 
 // 1.2 Import szegmens
@@ -24,7 +40,7 @@ importSegment
 
 importStatement
 	: KW_IMPORT Name=KW_AUTO #AutoImport
-	| KW_IMPORT Name=ID #ManualImport
+	| KW_IMPORT Name=id #ManualImport
 	;
 
 // 1.3 Paraméter szegmens
@@ -54,7 +70,7 @@ programBody
 
 // 2.1 Függvény definíció
 functionDefinition
-	: Modifiers=functionModifiers ReturnType=returnType Name=ID HEAD_START ParameterList=parameterList HEAD_END Body=block
+	: Modifiers=functionModifiers ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 functionModifiers
@@ -80,7 +96,7 @@ longTypeDefinition
 	;
 
 classHeader
-	: Modifiers=classModifiers KW_CLASS Name=ID (COLON inheritanceList)?
+	: Modifiers=classModifiers KW_CLASS Name=id (COLON inheritanceList)?
 	;
 
 inheritanceList
@@ -106,7 +122,7 @@ classModifier
 	;
 
 propertyDefinition
-	: Modifiers=propertyModifiers Type=typeName Name=ID STATEMENT_SEP
+	: Modifiers=propertyModifiers Type=typeName Name=id STATEMENT_SEP
 	;
 	
 propertyModifiers
@@ -136,7 +152,7 @@ regularStatement
 
 // 2.3.1.1 Változó deklaráció
 variableDeclaration
-	: varWithType ('=' expression)?
+	: varWithType (OP_ASSIGN expression)?
 	;
 
 // 2.3.2 Vezérlési utasítás
@@ -144,8 +160,8 @@ controlStatement
 	: KW_RETURN expression? #ReturnStatement
 	| KW_BREAK #BreakStatement
 	| KW_CONTINUE #ContinueStatement
-	| KW_GOTO Name=ID #GotoStatement
-	| KW_LABEL Name=ID #LabelStatement
+	| KW_GOTO Name=id #GotoStatement
+	| KW_LABEL Name=id #LabelStatement
 	;
 
 // 2.3.3 Blokk utasítás
@@ -170,7 +186,7 @@ ifBlock
 // 2.3.3.3 For block
 forBlock
 	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END statement (KW_ELSE statement)?
-	| KW_FOR HEAD_START varWithType 'in' ID HEAD_END statement (KW_ELSE statement)?
+	| KW_FOR HEAD_START varWithType KW_IN id HEAD_END statement (KW_ELSE statement)?
 	;
 
 // 2.3.3.4 While block
@@ -190,21 +206,19 @@ expression
 	| lambda
 	| objectConstructor
 	| collectionConstructor
-	| ID
-	| HEAD_START expression HEAD_END //#NestedExpression
-	| expression opMemberAccess expression //#MemberAccessExpression
-	| opNegate expression
-	| opSign expression //#SignExpression
-	| expression opUnary //#UnaryExpression
-	| expression opMultiplicative expression //#MultiplicativeExpression
-	| expression opAdditive expression //#AdditiveExpression
-	| expression opShift expression //#ShiftExpression
-	| expression opComparison expression //#ComparisonExpression
-	| expression opLogical expression //#LogicalExpression
-	| expression opAssignment expression //#AssigmentExpression
+	| id
+	| HEAD_START expression HEAD_END
+	| expression OP_MEMBER_ACCESS expression 
+	| opLeftUnary expression
+	| expression opRightUnary
+	| expression opMultiplicative expression
+	| expression opAdditive expression
+	| expression opShift expression
+	| expression opComparison expression
+	| expression opLogical expression
+	| expression opAssignment expression
 	;
 
-// Konstans
 constant
 	: FLOAT_LIT
 	| DEC_LIT
@@ -217,102 +231,90 @@ constant
 	| KW_FALSE
 	;
 
-// Függvényhívás
 functionCall
-	: ID HEAD_START expressionList HEAD_END
+	: id HEAD_START expressionList HEAD_END
 	;
 
 expressionList
 	: ((expression PARAM_SEP)* expression)?
 	;
 
-// Objektum konstruktor
 objectConstructor
-	: ID BLOCK_START ((ID '=' expression PARAM_SEP)* (ID '=' expression))? BLOCK_END
+	: id BLOCK_START ((id OP_ASSIGN expression PARAM_SEP)* (id OP_ASSIGN expression))? BLOCK_END
 	;
 
-// Collekció konstruktor
 collectionConstructor
 	: INDEX_START expressionList INDEX_END
 	;
 
-// Lambda
 lambda
-	: HEAD_START parameterList HEAD_END '->' (block | expression) 
+	: HEAD_START parameterList HEAD_END OP_POINTER (block | expression) 
 	;
 
-// Operátor
-opMemberAccess
-	: '.' #MemberAccessOperator
+opLeftUnary
+	: OP_PLUS
+	| OP_MINUS
+	| OP_NOT
 	;
 
-opNegate
-	: '!'
-	;
-
-opSign
-	: '+' #PlusSignOperator
-	| '-' #MinusSignOperator
-	;
-
-opUnary
-	: '++' #IncrementOperator
-	| '--' #DecrementOperator
+opRightUnary
+	: OP_INCREMENT
+	| OP_DECREMENT
 	;
 
 opMultiplicative
-	: '*' #MultiplyOperator
-	| '/' #DivideOperator
-	| '%' #ModulusOperator
+	: OP_MULTIPLY
+	| OP_DIVIDE
+	| OP_MODULUS
 	;
 
 opAdditive
-	: '+' #AddOperator
-	| '-' #SubtractOperator
+	: OP_PLUS
+    | OP_MINUS
 	;
 
 opShift
-	: '<<' #ShiftLeftOperator
-	| '>>' #ShiftRightOperator
+	: OP_SHIFT_LEFT
+	| OP_SHIFT_RIGHT
 	;
 
 opComparison
-	: '==' #EqualOperator
-	| '!=' #NotEqualOperator
-	| '>=' #GreaterOrEqualOperator
-	| '<=' #LessOrEqualOperator
-	| '>' #GreaterThanOperator
-	| '<' #LessThanOperator
+	: OP_EQ
+	| OP_NOT_EQ
+	| OP_LESS
+	| OP_GREATER
+	| OP_LESS_EQ
+	| OP_GREATER_EQ
 	;
 
 opLogical
-	: ('&' | 'and') #AndOperator
-	| ('^' | 'xor') #XorOperator
-	| ('|' | 'or') #OrOperator
+	: OP_AND
+	| OP_XOR
+	| OP_OR
 	;
 
 opAssignment
-	: '='
-	| '*='
-	| '/='
-	| '%='
-	| '+='
-	| '-='
-	| '<<='
-	| '>>='
-	| '&='
-	| '^='
-	| '|='
+	: OP_ASSIGN
+	| OP_MULTIPLY_ASSIGN
+	| OP_DIVIDE_ASSIGN
+	| OP_MODULUS_ASSIGN
+	| OP_PLUS_ASSIGN
+	| OP_MINUS_ASSIGN
+	| OP_SHIFT_LEFT_ASSIGN
+	| OP_SHIFT_RIGHT_ASSIGN
+	| OP_AND_ASSIGN
+	| OP_XOR_ASSIGN
+	| OP_OR_ASSIGN
 	;
 
 // Közös szabály
 varWithType
-	: Type=typeName Name=ID
+	: Type=typeName Name=id
 	;
 
 typeName
-	: Name=ID #SimpleType
-	| Name=ID '<' ContainedName=typeName '>' #GenericType
+	: Name=id #SimpleType
+	| Name=id OP_LESS (typeName PARAM_SEP)* typeName OP_GREATER #GenericType
 	;
 
 returnType
@@ -322,4 +324,18 @@ returnType
 
 parameterList
 	: ((varWithType PARAM_SEP)* varWithType)?
+	;
+	
+id
+	: ID
+	| contextual_keyword
+	;
+
+contextual_keyword
+	: KW_MODULE
+	| KW_IMPORT
+	| KW_IN
+	| KW_OUT
+	| KW_CLASS
+	| KW_PUBLIC
 	;

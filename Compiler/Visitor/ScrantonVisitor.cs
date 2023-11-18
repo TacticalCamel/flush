@@ -13,12 +13,12 @@ internal sealed class ScrantonVisitor(ProgramContext programContext) : ScrantonB
     }
 
     public override object? VisitModuleSegment(ModuleSegmentContext context){
-        ScriptBuilder.SetModule(context.Name.Text);
+        ScriptBuilder.SetModule(context.Name.GetText());
         return null;
     }
     
     public override object? VisitManualImport(ManualImportContext context){
-        bool success = ScriptBuilder.AddImport(context.Name.Text);
+        bool success = ScriptBuilder.AddImport(context.Name.GetText());
 
         if (!success){
             ScriptBuilder.AddWarning(WarningType.ModuleAlreadyImported, context);

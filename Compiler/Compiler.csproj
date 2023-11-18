@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -18,7 +17,11 @@
     
     <ItemGroup>
       <Content Include="Grammar\Scranton.g4" />
-      <Content Include="Grammar\SraLexer.g4" />
+      <Content Include="Grammar\SraCommon.g4" />
+      <Content Include="Grammar\SraKeywords.g4" />
+      <Content Include="Grammar\SraLiterals.g4" />
+      <Content Include="Grammar\SraSeparators.g4" />
+      <Content Include="Grammar\SraOperators.g4" />
     </ItemGroup>
     
     <ItemGroup>

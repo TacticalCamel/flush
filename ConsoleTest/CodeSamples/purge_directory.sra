@@ -2,6 +2,7 @@ module examples
 
 import core
 import system
+import auto
 
 in string root_path, list<string> types
 out bool success, i32 count
