@@ -1,11 +1,11 @@
 namespace Compiler.Visitor;
 
-internal sealed class TypeInfo(string typeName, TypeInfo? containedType){
+internal sealed class TypeInfo(string typeName, TypeInfo[] containedTypes){
     public string TypeName{ get; } = typeName;
-    public TypeInfo? ContainedType{ get; } = containedType;
-    public bool IsGeneric => ContainedType is not null;
+    public TypeInfo[] ContainedTypes{ get; } = containedTypes;
+    public bool IsGeneric => ContainedTypes.Length > 0;
 
     public override string ToString(){
-        return ContainedType is null ? TypeName : $"{typeName}<{ContainedType}>";
+        return IsGeneric ? $"{TypeName}<{string.Join(',', (IEnumerable<TypeInfo>)ContainedTypes)}>" : TypeName;
     }
 }

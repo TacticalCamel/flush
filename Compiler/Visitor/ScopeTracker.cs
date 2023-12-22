@@ -1,31 +1,32 @@
 namespace Compiler.Visitor;
 
 internal sealed class ScopeTracker{
-    private const int ID_UNASSIGNED = -1;
-    private List<int> ParentIds{ get; } = new(){ID_UNASSIGNED};
-    private int NextId{ get; set; } = 1;
+    private readonly struct Scope(int parentIndex){
+        public int ParentIndex{ get; } = parentIndex;
+    }
 
-    public int CurrentScope{ get; private set; } = 0;
+    private int CurrentScopeIndex{ get; set; }
+    private List<Scope> Scopes{ get; } = new(){ new Scope(-1) };
 
     public int EnterScope(){
-        // set the new scope's parent as the current scope
-        ParentIds.Add(CurrentScope);
-        
-        // change the current id to the new scope's
-        CurrentScope = NextId++;
-        
-        // return current scope id
-        return CurrentScope;
+        // create a new scope with the current scope as parent
+        Scopes.Add(new Scope(CurrentScopeIndex));
+
+        // set the current index to the index of the last element (the scope we just added) 
+        CurrentScopeIndex = Scopes.Count - 1;
+
+        // return the current index
+        return CurrentScopeIndex;
     }
 
     public int ExitScope(){
-        // get parent id
-        int parentId = ParentIds[CurrentScope];
-        
-        // if current scope is not the root, exit it
-        if(parentId != ID_UNASSIGNED) CurrentScope = parentId;
-        
-        // return current scope id
-        return CurrentScope;
+        // get parent index
+        int parentIndex = Scopes[CurrentScopeIndex].ParentIndex;
+
+        // if current scope is not root, exit it
+        if (parentIndex != -1) CurrentScopeIndex = parentIndex;
+
+        // return current index
+        return CurrentScopeIndex;
     }
 }

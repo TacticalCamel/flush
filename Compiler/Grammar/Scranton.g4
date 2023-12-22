@@ -157,11 +157,9 @@ variableDeclaration
 
 // 2.3.2 Vezérlési utasítás
 controlStatement
-	: KW_RETURN expression? #ReturnStatement
+	: KW_RETURN Value=expression? #ReturnStatement
 	| KW_BREAK #BreakStatement
 	| KW_CONTINUE #ContinueStatement
-	| KW_GOTO Name=id #GotoStatement
-	| KW_LABEL Name=id #LabelStatement
 	;
 
 // 2.3.3 Blokk utasítás
@@ -201,22 +199,22 @@ tryBlock
 	
 // Kifejezés
 expression
-	: constant
-	| functionCall
-	| lambda
-	| objectConstructor
-	| collectionConstructor
-	| id
-	| HEAD_START expression HEAD_END
-	| expression OP_MEMBER_ACCESS expression 
-	| opLeftUnary expression
-	| expression opRightUnary
-	| expression opMultiplicative expression
-	| expression opAdditive expression
-	| expression opShift expression
-	| expression opComparison expression
-	| expression opLogical expression
-	| expression opAssignment expression
+	: Constant=constant #ConstantExpression
+	| FunctionCall=functionCall #FunctionCallExpression
+	| Lambda=lambda #LambdaExpression
+	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
+	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
+	| Identifier=id #IdentifierExpression
+	| HEAD_START expression HEAD_END #NestedExpression
+	| Left=expression OP_MEMBER_ACCESS Right=expression  #MemberAccessOperatorExpression
+	| LeftUnaryOperator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
+	| Left=expression RightUnaryOperator=opRightUnary #RightUnaryOperatorExpression
+	| Left=expression MultiplicativeOperator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
+	| Left=expression AdditiveOperator=opAdditive Right=expression #AdditiveOperatorExpression
+	| Left=expression ShiftOperator=opShift Right=expression #ShiftOperatorExpression
+	| Left=expression ComparisonOperator=opComparison Right=expression #ComparisonOperatorExpression
+	| Left=expression LogicalOperator=opLogical Right=expression #LogicalOperatorExpression
+	| Left=expression AssigmentOperator=opAssignment Right=expression #AssigmentOperatorExpression
 	;
 
 constant

@@ -11,7 +11,7 @@ using ProgramContext = Grammar.ScrantonParser.ProgramContext;
 public static class CompilerService{
     private static Dictionary<string, Assembly> LoadedModules{ get; } = new();
 
-    public static void Compile(string code, CompilerOptions options = CompilerOptions.Static){
+    public static void Compile(string code, CompilerOptions options = CompilerOptions.None){
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
         CommonTokenStream tokenStream = new(lexer);

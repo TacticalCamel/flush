@@ -10,12 +10,7 @@ out bool success, i32 count
 success = false;
 count = 0;
 
-list<string> paths = file.get_files(root_path): {
-	on_error: (error e) -> {
-		log("error: " + e.message);
-		circuit.exit();
-	}
-};
+list<string> paths = file.get_files(root_path);
 
 for(string path in paths){
 	if(file.is_directory(path)) skip;

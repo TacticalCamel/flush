@@ -52,14 +52,6 @@ KW_CONTINUE
 	: 'skip'
 	;
 
-KW_GOTO
-	: 'goto'
-	;
-
-KW_LABEL
-	: 'label'
-	;
-
 KW_NULL
 	: 'null'
 	;

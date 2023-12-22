@@ -3,6 +3,9 @@ module examples
 import core
 import math
 
+in void
+out void
+
 class vec2 [f32 x, f32 y]
 
 f32 vec2_normalized(f32 x, f32 y){
