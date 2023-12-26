@@ -76,6 +76,10 @@ KW_PUBLIC
 	: 'public'
 	;
 	
+KW_PRIVATE
+    : 'private'
+    ;
+	
 KW_VOID
 	: 'void'
 	;

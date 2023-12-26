@@ -30,8 +30,12 @@ programHeader
 
 // 1.1 Modul szegmens
 moduleSegment
-	: (KW_MODULE Name=id)?
+	: moduleStatement?
 	;
+
+moduleStatement
+    : KW_MODULE Name=id
+    ;
 
 // 1.2 Import szegmens
 importSegment
@@ -70,15 +74,7 @@ programBody
 
 // 2.1 Függvény definíció
 functionDefinition
-	: Modifiers=functionModifiers ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
-	;
-
-functionModifiers
-	: functionModifier*
-	;
-
-functionModifier
-	: KW_PUBLIC
+	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 // 2.2 Típus definíció
@@ -96,7 +92,7 @@ longTypeDefinition
 	;
 
 classHeader
-	: Modifiers=classModifiers KW_CLASS Name=id (COLON inheritanceList)?
+	: Modifiers=modifierList KW_CLASS Name=id (COLON inheritanceList)?
 	;
 
 inheritanceList
@@ -112,27 +108,11 @@ classMember
 	| propertyDefinition
 	| constructorDefinition
 	;
-	
-classModifiers
-	: classModifier*
-	;
-
-classModifier
-	: KW_PUBLIC
-	;
 
 propertyDefinition
-	: Modifiers=propertyModifiers Type=typeName Name=id STATEMENT_SEP
+	: Modifiers=modifierList Type=typeName Name=id STATEMENT_SEP
 	;
 	
-propertyModifiers
-	: propertyModifier*
-	;
-	
-propertyModifier
-	: KW_PUBLIC
-	;
-
 constructorDefinition
 	: KW_NEW HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
@@ -323,7 +303,16 @@ returnType
 parameterList
 	: ((varWithType PARAM_SEP)* varWithType)?
 	;
-	
+
+modifierList
+	: modifier*
+	;
+
+modifier
+	: KW_PUBLIC
+	| KW_PRIVATE
+	;
+
 id
 	: ID
 	| contextual_keyword
@@ -336,4 +325,5 @@ contextual_keyword
 	| KW_OUT
 	| KW_CLASS
 	| KW_PUBLIC
+	| KW_PRIVATE
 	;

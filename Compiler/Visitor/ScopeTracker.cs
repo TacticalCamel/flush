@@ -5,8 +5,9 @@ internal sealed class ScopeTracker{
         public int ParentIndex{ get; } = parentIndex;
     }
 
-    private int CurrentScopeIndex{ get; set; }
-    private List<Scope> Scopes{ get; } = new(){ new Scope(-1) };
+    private List<Scope> Scopes{ get; } = [new Scope(-1)];
+
+    public int CurrentScopeIndex { get; private set; }
 
     public int EnterScope(){
         // create a new scope with the current scope as parent

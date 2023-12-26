@@ -2,61 +2,60 @@
 
 namespace Compiler;
 
-using System.Reflection;
 using Grammar;
 using Visitor;
 using Antlr4.Runtime;
-using ProgramContext = Grammar.ScrantonParser.ProgramContext;
 
-public static class CompilerService{
-    private static Dictionary<string, Assembly> LoadedModules{ get; } = new();
+public sealed class CompilerService(TextWriter? outputStream = null) {
+	private TextWriter Out { get; } = outputStream ?? Console.Out;
 
-    public static void Compile(string code, CompilerOptions options = CompilerOptions.None){
-        AntlrInputStream inputStream = new(code);
-        ScrantonLexer lexer = new(inputStream);
-        CommonTokenStream tokenStream = new(lexer);
-        ScrantonParser parser = new(tokenStream);
+	public void Compile(string code) {
+		//CompilerSettings settings = ProcessCompilerOptions(args ?? Array.Empty<string>());
+		
+		ProcessSourceCode(code);
+	}
 
-        ProgramContext programContext = parser.program();
-        ScrantonVisitor visitor = new(programContext);
-        
-        try{
-            ScriptBuilder scriptBuilder = visitor.TraverseAst();
-            LogLn("Successful compilation", ConsoleColor.DarkBlue);
-            LogLn(scriptBuilder);
-        }
-        catch (OperationCanceledException){
-            LogLn("Compilation cancelled after error", ConsoleColor.DarkRed);
-        }
-        catch (Exception e){
-            LogLn($"Unexpected compilation error\n{e}", ConsoleColor.DarkRed);
-        }
+	/*private CompilerSettings ProcessCompilerOptions(string[] options) {
+		const string SHORT_NAME_PREFIX = "-";
+		const string LONG_NAME_PREFIX = "--";
+		
+		CompilerSettings results = new() {
+			IsStatic = false,
+			TreatWarningsAsErrors = false,
+			IgnoredWarningIds = [],
+			IncludeMetaData = true,
+			CompileToPlainText = false,
+			OutputDirectory = "",
+			SourceCode = ""
+		};
+		
+		return results;
+	}*/
 
-    }
+	private void ProcessSourceCode(string code) {
+		ScriptBuilder scriptBuilder = new();
+		
+		AntlrInputStream inputStream = new(code);
+		ScrantonLexer lexer = new(inputStream);
+		lexer.AddErrorListener(scriptBuilder);
 
-    private static Assembly? LoadModule(string moduleName){
-        LoadedModules.TryGetValue(moduleName, out Assembly? assembly);
+		CommonTokenStream tokenStream = new(lexer);
+		ScrantonParser parser = new(tokenStream);
+		parser.AddErrorListener(scriptBuilder);
 
-        if (assembly is not null) return assembly;
+		ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
 
-        try{
-            assembly = Assembly.Load(moduleName);
-            LoadedModules[moduleName] = assembly;
-        }
-        catch{
-            // ignored
-        }
-
-        return assembly;
-    }
-    
-    private static void Log(object? obj, ConsoleColor color = ConsoleColor.Gray){
-        Console.ForegroundColor = color;
-        Console.Write(obj);
-    }
-
-    private static void LogLn(object? obj = null, ConsoleColor color = ConsoleColor.Gray){
-        Log(obj, color);
-        Console.WriteLine();
-    }
+		try {
+			visitor.TraverseAst();
+			Out.WriteLine("Successful compilation");
+		}
+		catch (OperationCanceledException) {
+			Out.WriteLine("Compilation cancelled after error");
+		}
+		catch (Exception e) {
+			Out.WriteLine($"Unexpected compilation error: {e}");
+		}
+		
+		Out.WriteLine(scriptBuilder);
+	}
 }

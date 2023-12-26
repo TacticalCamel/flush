@@ -3,7 +3,7 @@
 using Compiler;
 
 internal static class Program {
-    private static void Main() {
+    private static void Main(string[] args) {
         string code;
         
         try {
@@ -13,7 +13,9 @@ internal static class Program {
             Console.WriteLine(e.Message);
             return;
         }
+
+        CompilerService compilerService = new(Console.Out);
         
-        CompilerService.Compile(code);
+        compilerService.Compile(code);
     }
 }

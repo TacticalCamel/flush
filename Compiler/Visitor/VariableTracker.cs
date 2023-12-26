@@ -7,7 +7,7 @@ internal sealed class VariableTracker{
         public string Identifier{ get; }
     }
 
-    private List<int> Separators{ get; } = new();
+    private List<int> Separators{ get; } = [];
     private List<Variable> Variables{ get; }
 
     public void EnterScope(){
