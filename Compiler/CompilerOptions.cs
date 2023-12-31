@@ -1,41 +1,52 @@
 namespace Compiler;
 
-using Analysis;
-using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
-internal sealed class CompilerOptions {
-    [Display(Name = "help", ShortName = "h", Description = "Display help options.")]
-    public bool DisplayHelp { get; init; } = false;
-
-    [Display(Name = "static", ShortName = "s", Description = "Include referenced code into the compiled program.")]
-    public bool IsStatic { get; init; } = false;
-
-    [Display(Name = "warnings-as-errors", Description = "Treat warnings as if they were errors.")]
-    public bool TreatWarningsAsErrors { get; init; } = false;
-
-    [Display(Name = "ignore-warnings", Description = "Ignore all listed non-fatal warnings. This may cause a faulty program to be compiled anyway.")]
-    public int[] IgnoredWarningIds { get; init; } = [];
-
-    [Display(Name = "no-meta", Description = "Do not include metadata in the compiled program.")]
-    public bool IncludeMetaData { get; init; } = true;
-
-    [Display(Name = "plain-text", Description = "Compile to a plain text representation instead of bytecode. The output file is not executable, but human-readable for debug purposes.")]
-    public bool CompileToPlainText { get; init; } = false;
-
-    [Display(Name = "output", ShortName = "o", Description = "Output the compiled program to the given directory on the local machine.")]
-    public string? OutputDirectory { get; init; } = null;
-
-    [Display(Name = "file", Description = "The path of the input file to compile.")]
-    public string? SourceCode { get; init; } = null;
+public sealed class CompilerOptions {
+    private const string PREFIX_SHORT = "-";
+    private const string PREFIX_LONG = "--";
     
-    [Display(Name = "code", Description = "The source code to compile.")]
-    public string? SourcePath { get; init; } = null;
+    [CompilerFlag(Name = "static", ShortName = "s", Description = "Include referenced code into the compiled program.")]
+    public bool IsStatic { get; init; }
 
-    private CompilerOptions() {
-        
+    [CompilerFlag(Name = "warnings-as-errors", ShortName = "wae", Description = "Treat warnings as if they were errors.")]
+    public bool TreatWarningsAsErrors { get; init; }
+
+    [CompilerFlag(Name = "no-meta", ShortName = "nm", Description = "Do not include metadata in the compiled program.")]
+    public bool ExcludeMetaData { get; init; }
+
+    [CompilerFlag(Name = "plain-text", ShortName = "pt", Description = "Compile to a plain text representation instead of bytecode. The output file is not executable, but human-readable for debug purposes.")]
+    public bool CompileToPlainText { get; init; }
+    
+    [CompilerFlag(Name = "execute-only", ShortName = "exe", Description = "Do not create an output file, only compile and execute in memory instead.")]
+    public bool ExecuteOnly { get; init; }
+    
+    public static CompilerOptions FromConsoleArgs(string[] args) {
+        CompilerOptions options = new();
+
+        PropertyInfo[] properties = typeof(CompilerOptions).GetProperties();
+        Dictionary<string, PropertyInfo> flags = [];
+
+        foreach (PropertyInfo property in properties) {
+            CompilerFlagAttribute? attribute = property.GetCustomAttribute<CompilerFlagAttribute>();
+            if (attribute is null) continue;
+
+            flags.TryAdd($"{PREFIX_LONG}{attribute.Name}", property);
+            flags.TryAdd($"{PREFIX_SHORT}{attribute.ShortName}", property);
+        }
+
+        foreach (string arg in args) {
+            flags.TryGetValue(arg, out PropertyInfo? property);
+            property?.SetValue(options, true);
+        }
+
+        return options;
     }
-    
-    public static CompilerOptions? CreateFromArgs(string[] args, List<Warning> warnings) {
-        return null;
+
+    [AttributeUsage(AttributeTargets.Property)]
+    private sealed class CompilerFlagAttribute: Attribute {
+        public required string Name { get; init; }
+        public required string ShortName { get; init; }
+        public required string Description { get; init; }
     }
 }

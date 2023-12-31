@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Structs;
 
-internal struct TypeDefinition {
+/*internal struct TypeDefinition {
 	public int Modifiers;
 	
 
-}
+}*/

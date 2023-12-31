@@ -1,6 +1,6 @@
 namespace Compiler.Analysis;
 
-internal sealed class Warning(WarningType type, Position start, Position finish, string? message = null) {
+internal sealed class Warning(WarningType type, Position start = new(), Position finish = new(), string? message = null) {
 	public WarningType Type { get; } = type;
 	public Position Start { get; } = start;
 	public Position Finish { get; } = finish;

@@ -13,6 +13,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     </ItemGroup>
     
     <ItemGroup>
@@ -22,7 +23,6 @@
       <Content Include="Grammar\SraLiterals.g4" />
       <Content Include="Grammar\SraSeparators.g4" />
       <Content Include="Grammar\SraOperators.g4" />
-      <Content Include="Options\CompilerOptions.g4" />
     </ItemGroup>
     
     <ItemGroup>

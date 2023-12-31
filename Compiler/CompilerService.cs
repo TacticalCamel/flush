@@ -5,57 +5,35 @@ namespace Compiler;
 using Grammar;
 using Visitor;
 using Antlr4.Runtime;
+using Microsoft.Extensions.Logging;
 
-public sealed class CompilerService(TextWriter? outputStream = null) {
-	private TextWriter Out { get; } = outputStream ?? Console.Out;
+public sealed class CompilerService(ILogger logger) {
+    private ILogger Logger { get; } = logger;
 
-	public void Compile(string code) {
-		//CompilerSettings settings = ProcessCompilerOptions(args ?? Array.Empty<string>());
-		
-		ProcessSourceCode(code);
-	}
+    public void Build(string code, CompilerOptions options) {
+        ScriptBuilder scriptBuilder = new();
 
-	/*private CompilerSettings ProcessCompilerOptions(string[] options) {
-		const string SHORT_NAME_PREFIX = "-";
-		const string LONG_NAME_PREFIX = "--";
-		
-		CompilerSettings results = new() {
-			IsStatic = false,
-			TreatWarningsAsErrors = false,
-			IgnoredWarningIds = [],
-			IncludeMetaData = true,
-			CompileToPlainText = false,
-			OutputDirectory = "",
-			SourceCode = ""
-		};
-		
-		return results;
-	}*/
+        AntlrInputStream inputStream = new(code);
+        ScrantonLexer lexer = new(inputStream);
+        lexer.AddErrorListener(scriptBuilder);
 
-	private void ProcessSourceCode(string code) {
-		ScriptBuilder scriptBuilder = new();
-		
-		AntlrInputStream inputStream = new(code);
-		ScrantonLexer lexer = new(inputStream);
-		lexer.AddErrorListener(scriptBuilder);
+        CommonTokenStream tokenStream = new(lexer);
+        ScrantonParser parser = new(tokenStream);
+        parser.AddErrorListener(scriptBuilder);
 
-		CommonTokenStream tokenStream = new(lexer);
-		ScrantonParser parser = new(tokenStream);
-		parser.AddErrorListener(scriptBuilder);
-
-		ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
-
-		try {
-			visitor.TraverseAst();
-			Out.WriteLine("Successful compilation");
-		}
-		catch (OperationCanceledException) {
-			Out.WriteLine("Compilation cancelled after error");
-		}
-		catch (Exception e) {
-			Out.WriteLine($"Unexpected compilation error: {e}");
-		}
-		
-		Out.WriteLine(scriptBuilder);
-	}
+        ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
+        
+        try {
+            visitor.TraverseAst();
+            Logger.BuildSuccessful();
+        }
+        catch (OperationCanceledException) {
+            Logger.BuildFailed();
+        }
+        catch (Exception e) {
+            Logger.UnexpectedBuildError(e);
+        }
+        
+        Logger.Debug(scriptBuilder);
+    }
 }

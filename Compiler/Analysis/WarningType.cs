@@ -7,8 +7,9 @@ internal sealed class WarningType(WarningLevel level, uint id, string message){
 
     #region Compiler options
 
-    public static WarningType UnknownCompilerOption{ get; } = new(WarningLevel.Warning, 1, "");
-    public static WarningType CompilerInputMissing{ get; } = new(WarningLevel.Warning, 2, "");
+    public static WarningType UnknownCompilerFlag{ get; } = new(WarningLevel.Warning, 1, "");
+    public static WarningType NoCompilerInput{ get; } = new(WarningLevel.Warning, 2, "");
+    public static WarningType CompilerInputNotFound{ get; } = new(WarningLevel.Warning, 3, "");
 
     #endregion
     

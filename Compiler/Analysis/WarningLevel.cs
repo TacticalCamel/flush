@@ -4,5 +4,5 @@ internal enum WarningLevel {
     Hint,
     Warning,
     Error,
-    Fatal
+    Critical
 }
