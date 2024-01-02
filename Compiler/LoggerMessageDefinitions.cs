@@ -2,7 +2,7 @@
 
 using Microsoft.Extensions.Logging;
 
-public static partial class LoggerMessageDefinitions {
+internal static partial class LoggerMessageDefinitions {
     [LoggerMessage(Level = LogLevel.Information, Message = "Successful build")]
     public static partial void BuildSuccessful(this ILogger logger);
     
