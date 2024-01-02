@@ -48,7 +48,11 @@ internal sealed class ScriptBuilder: IAntlrErrorListener<IToken>, IAntlrErrorLis
     public bool HasWarningsWithLevel(WarningLevel level) {
         return Warnings.Any(x => x.Type.Level >= level);
     }
-    
+
+    public IEnumerable<Warning> GetWarnings() {
+        return Warnings;
+    }
+
     #endregion
 
     #region Variables

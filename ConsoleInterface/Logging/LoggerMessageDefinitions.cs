@@ -22,7 +22,7 @@ internal static partial class LoggerMessageDefinitions {
     [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Unknown flag \"{flag}\"")]
     public static partial void UnknownFlag(this ILogger logger, string flag);
     
-    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Value [{values}] for flag \"{flag}\" is invalid.")]
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Value {values} for flag \"{flag}\" is invalid.")]
     public static partial void InvalidFlagValue(this ILogger logger, string flag, string[] values);
 
     #endregion

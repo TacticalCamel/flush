@@ -80,10 +80,11 @@ internal sealed class OptionsParser {
 
             if (value is null) {
                 Logger.InvalidFlagValue(key, Options[key]);
-                continue;
+            }
+            else {
+                property.SetValue(result, value);
             }
 
-            property.SetValue(result, value);
             Options.Remove(key);
         }
 

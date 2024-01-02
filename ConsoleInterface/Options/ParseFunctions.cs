@@ -33,11 +33,11 @@ internal static class ParseFunctions {
         return int.TryParse(values[0], out int x) ? x : null;
     }
     
-    public static int[]? ParseIntegerArray(string[] values) {
-        int[] results = new int[values.Length];
+    public static uint[]? ParseUnsignedArray(string[] values) {
+        uint[] results = new uint[values.Length];
 
         for (int i = 0; i < values.Length; i++) {
-            bool success = int.TryParse(values[i], out int x);
+            bool success = uint.TryParse(values[i], out uint x);
             if (!success) return null;
             results[i] = x;
         }

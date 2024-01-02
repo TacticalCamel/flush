@@ -22,7 +22,7 @@ internal sealed class WarningType(WarningLevel level, uint id, string message){
 
     #region Assembler
 
-    public static WarningType FeatureNotImplemented{ get; } = new(WarningLevel.Error, 201, "Feature is not implemented");
+    public static WarningType FeatureNotImplemented{ get; } = new(WarningLevel.Warning, 201, "Feature is not implemented");
     public static WarningType AutoImportAlreadyEnabled{ get; } = new(WarningLevel.Warning, 202, "Auto import is already enabled");
     public static WarningType ModuleAlreadyImported{ get; } = new(WarningLevel.Warning, 203, "Module is already imported");
     public static WarningType DuplicateModifier{ get; } = new(WarningLevel.Warning, 204, "Duplicate modifier");
