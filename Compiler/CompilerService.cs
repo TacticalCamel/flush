@@ -9,61 +9,54 @@ using Analysis;
 using Antlr4.Runtime;
 using Microsoft.Extensions.Logging;
 
-public sealed class CompilerService(ILogger logger) {
+public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     private ILogger Logger { get; } = logger;
+    private CompilerOptions Options { get; } = options;
 
-    public void Build(string code, CompilerOptions options) {
-        ScriptBuilder scriptBuilder = new();
-
+    public void Compile(string code, out byte[]? results) {
+        ScriptBuilder scriptBuilder = new(Options);
+        
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
-        lexer.AddErrorListener(scriptBuilder);
+        scriptBuilder.BindToLexerErrorListener(lexer);
 
         CommonTokenStream tokenStream = new(lexer);
         ScrantonParser parser = new(tokenStream);
-        parser.AddErrorListener(scriptBuilder);
-
-        ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
+        scriptBuilder.BindToParserErrorListener(parser);
         
         try {
+            ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
             visitor.TraverseAst();
-            LogBuildResults(scriptBuilder, options, true);
+            
+            LogBuildResults(scriptBuilder, true);
         }
         catch (OperationCanceledException) {
-            LogBuildResults(scriptBuilder, options, false);
+            LogBuildResults(scriptBuilder, false);
         }
         catch (Exception e) {
             Logger.UnexpectedBuildError(e);
         }
         
         Logger.Debug(scriptBuilder);
+        
+        results = "This is a test output."u8.ToArray();
     }
 
-    private void LogBuildResults(ScriptBuilder scriptBuilder, CompilerOptions options, bool success) {
-        int warningCount = 0, errorCount = 0;
-
-        foreach (Warning warning in scriptBuilder.GetWarnings()) {
-            switch (warning.Type.Level) {
-                case WarningLevel.Hint:
-                    Logger.BuildHint(warning);
-                    break;
-                case WarningLevel.Warning:
-                    if (options.IgnoredWarningIds.Contains(warning.Type.Id)) continue;
-                    Logger.BuildWarning(warning);
-                    warningCount++;
-                    break;
-                case >= WarningLevel.Error:
-                    Logger.BuildError(warning);
-                    errorCount++;
-                    break;
-            }
-        }
-
+    private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
+        string[] hints = scriptBuilder.GetWarningsWithLevel(WarningLevel.Hint);
+        if(hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
+        
+        string[] warnings = scriptBuilder.GetWarningsWithLevel(WarningLevel.Warning);
+        if(warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
+        
+        string[] errors = scriptBuilder.GetWarningsWithLevel(WarningLevel.Error);
+        if(errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
+        
         if (success) {
-            Logger.BuildResultSuccess(errorCount, warningCount);
+            Logger.BuildResultSuccess(errors.Length, warnings.Length);
         }
         else {
-            Logger.BuildResultFail(errorCount, warningCount);
+            Logger.BuildResultFail(errors.Length, warnings.Length);
         }
     }
 }

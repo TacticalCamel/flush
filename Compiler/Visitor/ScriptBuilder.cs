@@ -4,77 +4,83 @@ using System.Text;
 using Antlr4.Runtime;
 using Analysis;
 
-internal sealed class ScriptBuilder: IAntlrErrorListener<IToken>, IAntlrErrorListener<int> {
-    #region Imports
-    
+internal sealed class ScriptBuilder {
+    public ScriptBuilder(CompilerOptions options) {
+        Options = options;
+        ErrorListener = new AntlrErrorListener(this);
+        Warnings = [];
+        ModuleImports = [];
+        Module = null;
+        AutoImportEnabled = false;
+    }
+
+    private CompilerOptions Options { get; }
+    private AntlrErrorListener ErrorListener { get; }
+    private List<Warning> Warnings { get; }
+    private HashSet<string> ModuleImports { get; }
     private string? Module { get; set; }
-    private bool AutoImportEnabled{ get; set; }
-    private HashSet<string> ModuleImports { get; } = [];
-    
-    public void SetModule(string module){
+    private bool AutoImportEnabled { get; set; }
+
+    public void SetModule(string module) {
         Module = module;
     }
 
-    public bool AddImport(string module){
+    public bool AddImport(string module) {
         return ModuleImports.Add(module);
     }
 
-    public bool EnableAutoImports(){
+    public bool EnableAutoImports() {
         bool alreadyEnabled = AutoImportEnabled;
         AutoImportEnabled = true;
         return !alreadyEnabled;
     }
-    
-    #endregion
-    
-    #region Warnings
-    
-    private List<Warning> Warnings { get; } = [];
-    
-    public void AddWarning(WarningType type, ParserRuleContext rule, string? message = null){
-        Warnings.Add(new Warning(type, new Position(rule.start.Line, rule.start.Column), new Position(rule.stop.Line, rule.stop.Column), message));
-    }
-    
-    public void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e) {
-        Warning warning = new(WarningType.ParserInputMismatch, new Position(line, charPositionInLine), new Position(line, charPositionInLine), msg);
-        Warnings.Add(warning);
+
+    public void BindToLexerErrorListener(Lexer lexer) {
+        lexer.AddErrorListener(ErrorListener);
     }
 
-    public void SyntaxError(IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e) {
-        Warning warning = new(WarningType.LexerTokenInvalid, new Position(line, charPositionInLine), new Position(line, charPositionInLine), msg);
-        Warnings.Add(warning);
+    public void BindToParserErrorListener(Parser parser) {
+        parser.AddErrorListener(ErrorListener);
     }
 
-    public bool HasWarningsWithLevel(WarningLevel level) {
-        return Warnings.Any(x => x.Type.Level >= level);
+    public void AddWarning(WarningType type, ParserRuleContext rule, string? message = null) {
+        AddWarning(type, new Position(rule.start.Line, rule.start.Column), message);
     }
 
-    public IEnumerable<Warning> GetWarnings() {
-        return Warnings;
-    }
-
-    #endregion
-
-    #region Variables
-
-    private ScopeTracker ScopeTracker{ get; } = new();
-    private VariableTracker VariableTracker { get; } = new();
-    
-    
-
-    #endregion
-    
-    public override string ToString(){
-        StringBuilder sb = new();
+    public void AddWarning(WarningType type, Position position, string? message = null) {
+        if (type.Level <= WarningLevel.Warning && Options.IgnoredWarningIds.Contains(type.Id)) {
+            return;
+        }
         
+        Warning warning = new(type, position, message);
+        Warnings.Add(warning);
+    }
+
+    public bool HasErrors() {
+        WarningLevel errorLevel = Options.TreatWarningsAsErrors ? WarningLevel.Warning : WarningLevel.Error;
+        return Warnings.Any(x => x.Type.Level >= errorLevel);
+    }
+
+    public string[] GetWarningsWithLevel(WarningLevel level) {
+        WarningLevel minLevel = level;
+
+        if (Options.TreatWarningsAsErrors && level == WarningLevel.Warning) minLevel = WarningLevel.Error;
+        if (Options.TreatWarningsAsErrors && level == WarningLevel.Error) minLevel = WarningLevel.Warning;
+        
+        return Warnings.Where(x => x.Type.Level >= minLevel && x.Type.Level <= level).Select(x => x.ToString(level)).ToArray();
+    }
+    
+    public override string ToString() {
+        StringBuilder sb = new();
+
         sb.AppendLine("Warnings: {");
         foreach (Warning warning in Warnings) sb.AppendLine($"    {warning}");
         sb.AppendLine("}");
-        
+
         sb.AppendLine("Module: {");
         sb.AppendLine($"    {Module}");
         sb.AppendLine("}");
-        
+
         sb.AppendLine($"Imports: (auto = {(AutoImportEnabled ? "true" : "false")}) {{");
         foreach (string module in ModuleImports) sb.AppendLine($"    {module}");
         sb.AppendLine("}");

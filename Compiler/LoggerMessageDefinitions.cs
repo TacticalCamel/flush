@@ -1,17 +1,16 @@
 ﻿namespace Compiler;
 
-using Analysis;
 using Microsoft.Extensions.Logging;
 
 internal static partial class LoggerMessageDefinitions {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "{warning}")]
-    public static partial void BuildHint(this ILogger logger, Warning warning);
+    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "{message}")]
+    public static partial void BuildHint(this ILogger logger, string message);
     
-    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "{warning}")]
-    public static partial void BuildWarning(this ILogger logger, Warning warning);
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "{message}")]
+    public static partial void BuildWarning(this ILogger logger, string message);
     
-    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "{warning}")]
-    public static partial void BuildError(this ILogger logger, Warning warning);
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "{message}")]
+    public static partial void BuildError(this ILogger logger, string message);
     
     [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Build succeeded. Errors: {errorCount}.  Warnings: {warningCount}.")]
     public static partial void BuildResultSuccess(this ILogger logger, int errorCount, int warningCount);

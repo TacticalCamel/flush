@@ -7,15 +7,13 @@ using static Grammar.ScrantonParser;
 
 internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuilder scriptBuilder) : ScrantonBaseVisitor<object?> {
     public void TraverseAst() {
-        CheckForErrors();
+        CancelIfHasErrors();
         VisitProgram(programContext);
-        CheckForErrors();
+        CancelIfHasErrors();
     }
 
-    private void CheckForErrors() {
-        const WarningLevel minimumWarningLevel = WarningLevel.Error;
-
-        if (scriptBuilder.HasWarningsWithLevel(minimumWarningLevel)) {
+    private void CancelIfHasErrors() {
+        if (scriptBuilder.HasErrors()) {
             throw new OperationCanceledException();
         }
     }

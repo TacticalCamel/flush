@@ -1,31 +1,30 @@
 namespace Compiler.Analysis;
 
-internal sealed class WarningType(WarningLevel level, uint id, string message){
-    public uint Id{ get; } = id;
-    public WarningLevel Level{ get; } = level;
-    public string Message{ get; } = message;
+internal sealed class WarningType {
+    public uint Id { get; }
+    public WarningLevel Level { get; }
+    public string Message { get; }
 
-    #region Compiler options
+    private WarningType(uint id, WarningLevel level, string message) {
+        Id = id;
+        Level = level;
+        Message = message;
+    }
 
-    public static WarningType UnknownCompilerFlag{ get; } = new(WarningLevel.Warning, 1, "");
-    public static WarningType NoCompilerInput{ get; } = new(WarningLevel.Warning, 2, "");
-    public static WarningType CompilerInputNotFound{ get; } = new(WarningLevel.Warning, 3, "");
-
-    #endregion
-    
     #region Parser and lexer
 
-    public static WarningType LexerTokenInvalid{ get; } = new(WarningLevel.Error, 101, "Failed to match token in lexer");
-    public static WarningType ParserInputMismatch{ get; } = new(WarningLevel.Error, 102, "Mismatched input in parser");
+    public static WarningType LexerTokenInvalid { get; } = new(101, WarningLevel.Error, "Failed to match token in lexer");
+    public static WarningType ParserInputMismatch { get; } = new(102, WarningLevel.Error, "Mismatched input in parser");
 
     #endregion
 
+    
     #region Assembler
 
-    public static WarningType FeatureNotImplemented{ get; } = new(WarningLevel.Warning, 201, "Feature is not implemented");
-    public static WarningType AutoImportAlreadyEnabled{ get; } = new(WarningLevel.Warning, 202, "Auto import is already enabled");
-    public static WarningType ModuleAlreadyImported{ get; } = new(WarningLevel.Warning, 203, "Module is already imported");
-    public static WarningType DuplicateModifier{ get; } = new(WarningLevel.Warning, 204, "Duplicate modifier");
-    
+    public static WarningType FeatureNotImplemented { get; } = new(201, WarningLevel.Warning, "Feature is not implemented");
+    public static WarningType AutoImportAlreadyEnabled { get; } = new(202, WarningLevel.Warning, "Auto import is already enabled");
+    public static WarningType ModuleAlreadyImported { get; } = new(203, WarningLevel.Warning, "Module is already imported");
+    public static WarningType DuplicateModifier { get; } = new(204, WarningLevel.Warning, "Duplicate modifier");
+
     #endregion
 }

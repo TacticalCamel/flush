@@ -12,9 +12,9 @@ public sealed class CompilerOptions {
     [Display(Name = "no-meta", ShortName = "nm", Description = "Do not include metadata in the compiled program.")]
     public bool ExcludeMetaData { get; init; } = false;
 
-    [Display(Name = "plain-text", ShortName = "pt", Description = "Compile to a plain text representation instead of bytecode.")]
+    [Display(Name = "plain-text", ShortName = "pt", Description = "Compile to a plain text format instead of bytecode.")]
     public bool CompileToPlainText { get; init; } = false;
 
-    [Display(Name = "no-warn", ShortName = "nw", Description = "Provide a list of warning IDs to ignore.")]
+    [Display(Name = "no-warn", ShortName = "nw", Description = "Suppress one or more compiler warnings.")]
     public uint[] IgnoredWarningIds { get; init; } = [];
 }

@@ -1,6 +1,5 @@
 ﻿namespace ConsoleInterface.Options;
 
-using Logging;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
