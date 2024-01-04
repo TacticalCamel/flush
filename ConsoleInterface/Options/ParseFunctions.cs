@@ -1,12 +1,10 @@
 ﻿namespace ConsoleInterface.Options;
 
-using Microsoft.Extensions.Logging;
-
 internal static class ParseFunctions {
     public static bool? ParseBool(string[] values) {
         return true;
     }
-    
+
     public static LogLevel? ParseLogLevel(string[] values) {
         if (values.Length != 1) return null;
 
@@ -26,13 +24,13 @@ internal static class ParseFunctions {
             _ => null
         };
     }
-    
+
     public static int? ParseInteger(string[] values) {
         if (values.Length != 1) return null;
-        
+
         return int.TryParse(values[0], out int x) ? x : null;
     }
-    
+
     public static uint[]? ParseUnsignedArray(string[] values) {
         uint[] results = new uint[values.Length];
 
@@ -44,12 +42,12 @@ internal static class ParseFunctions {
 
         return results;
     }
-    
+
     public static string? ParseString(string[] values) {
         return values.Length == 1 ? values[0] : null;
     }
-    
-    public static string[]? ParseStringArray(string[] values) {
+
+    public static string[] ParseStringArray(string[] values) {
         return values;
     }
 }

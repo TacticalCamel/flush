@@ -1,9 +1,5 @@
 ﻿namespace ConsoleInterface.Options;
 
-using Microsoft.Extensions.Logging;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection;
-
 internal sealed class OptionsParser {
     private const string PREFIX_SHORT = "-";
     private const string PREFIX_LONG = "--";
@@ -100,7 +96,7 @@ internal sealed class OptionsParser {
         if (success) {
             Options.Remove(key);
         }
-        
+
         return value;
     }
 }

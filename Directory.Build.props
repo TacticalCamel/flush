@@ -1,0 +1,13 @@
+<Project>
+    <PropertyGroup>
+        <!-- intermediate output directory -->
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <IntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</IntermediateOutputPath>
+        <BaseIntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+        
+        <!-- build output directory -->
+        <OutputPath>$(SolutionDir).out\bin\$(AssemblyName)\</OutputPath>
+        <OutDir>$(OutputPath)</OutDir>
+    </PropertyGroup>
+</Project>

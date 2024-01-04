@@ -17,17 +17,6 @@
     </ItemGroup>
     
     <ItemGroup>
-      <Content Include="Grammar\Scranton.g4" />
-      <Content Include="Grammar\SraCommon.g4" />
-      <Content Include="Grammar\SraKeywords.g4" />
-      <Content Include="Grammar\SraLiterals.g4" />
-      <Content Include="Grammar\SraSeparators.g4" />
-      <Content Include="Grammar\SraOperators.g4" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\Core\Core.csproj" />
-      <ProjectReference Include="..\Runtime\Runtime.csproj" />
-      <ProjectReference Include="..\Web\Web.csproj" />
+      <Content Include="Grammar\*" />
     </ItemGroup>
 </Project>

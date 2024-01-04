@@ -1,19 +1,20 @@
 ﻿namespace ConsoleInterface;
 
-using Microsoft.Extensions.Logging;
-
 internal static partial class LoggerMessageDefinitions {
     #region General
 
     [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = "Started application with arguments: [{args}]")]
     public static partial void ApplicationStart(this ILogger logger, string[] args);
-    
+
     [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "{message}")]
     public static partial void FileError(this ILogger logger, string message);
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Result was output to \"{path}\"")]
     public static partial void OutputToPath(this ILogger logger, string path);
-    
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "{name} is not implemented")]
+    public static partial void FeatureNotImplemented(this ILogger logger, string name);
+
     #endregion
 
 
@@ -27,7 +28,7 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 102, Level = LogLevel.Warning, Message = "Unknown flag \"{flag}\"")]
     public static partial void UnknownFlag(this ILogger logger, string flag);
-    
+
     [LoggerMessage(EventId = 103, Level = LogLevel.Warning, Message = "Value {values} for flag \"{flag}\" is invalid")]
     public static partial void InvalidFlagValue(this ILogger logger, string flag, string[] values);
 
@@ -44,12 +45,12 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 202, Level = LogLevel.Error, Message = "No target was specified")]
     public static partial void NoTarget(this ILogger logger);
-    
+
     [LoggerMessage(EventId = 203, Level = LogLevel.Error, Message = "The extension of the target file must be {extension}")]
     public static partial void TargetExtensionInvalid(this ILogger logger, string extension);
-    
+
     [LoggerMessage(EventId = 204, Level = LogLevel.Error, Message = "Target path must point to a file, but \"{path}\" is a directory")]
     public static partial void TargetMustBeFile(this ILogger logger, string path);
-    
+
     #endregion
 }

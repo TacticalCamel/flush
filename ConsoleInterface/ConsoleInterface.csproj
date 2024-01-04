@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
@@ -13,22 +12,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="CodeSamples\purge_directory.sra">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="CodeSamples\debug.sra">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="CodeSamples\definitions.sra">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="CodeSamples\expressions.sra">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Using Include="Microsoft.Extensions.Logging"/>
+        <Using Include="System.ComponentModel.DataAnnotations"/>
+        <Using Include="System.Reflection"/>
     </ItemGroup>
 </Project>

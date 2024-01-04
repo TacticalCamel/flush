@@ -37,8 +37,6 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
             Logger.UnexpectedBuildError(e);
         }
         
-        Logger.Debug(scriptBuilder);
-        
         results = "This is a test output."u8.ToArray();
     }
 
