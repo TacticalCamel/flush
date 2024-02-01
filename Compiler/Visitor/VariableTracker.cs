@@ -1,6 +1,6 @@
 namespace Compiler.Visitor;
 
-internal sealed class VariableTracker{
+/*internal sealed class VariableTracker{
     private sealed class Variable{
         public int ScopeId{ get; }
         public TypeInfo Type{ get; }
@@ -13,4 +13,4 @@ internal sealed class VariableTracker{
     public void EnterScope(){
         
     }
-}
+}*/

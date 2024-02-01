@@ -1,6 +1,9 @@
 ﻿namespace ConsoleInterface;
 
+using System.Diagnostics.CodeAnalysis;
 using Compiler;
+using Interpreter;
+using Interpreter.Serialization;
 using Options;
 
 internal static class Program {
@@ -9,7 +12,7 @@ internal static class Program {
 
     private static void Main(string[] args) {
         // parse the arguments of the program
-        ParseArguments(args, out string[] inputPaths, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions);
+        ParseArguments(args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions);
 
         // create a pair of loggers
         CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger);
@@ -24,7 +27,7 @@ internal static class Program {
         }
 
         // try to get the input source code
-        GetInputCode(interfaceLogger, inputPaths, out string? inputPath, out string? code);
+        GetSourceCode(interfaceLogger, targets, out string? inputPath, out string? code);
 
         // no valid source file, exit application
         if (inputPath is null || code is null) return;
@@ -33,22 +36,23 @@ internal static class Program {
         CompilerService compilerService = new(compilerLogger, compilerOptions);
 
         // attempt to compile the program
-        compilerService.Compile(code, out byte[]? results);
+        compilerService.Compile(code, out Script? script);
 
         // failed compilation, exit application
-        if (results is null) return;
+        if (script is null) return;
 
         if (interfaceOptions.ExecuteOnly) {
-            // TODO not yet implemented
-            interfaceLogger.FeatureNotImplemented("Script execution");
+            // run program
+            interfaceLogger.RunScript();
+            ScriptExecutor.Run(script);
         }
         else {
             // attempt to write the results to a file
-            WriteResults(interfaceLogger, interfaceOptions, results, inputPath);
+            WriteResults(interfaceLogger, interfaceOptions, script, inputPath);
         }
     }
 
-    private static void ParseArguments(string[] args, out string[] inputPaths, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions) {
+    private static void ParseArguments(string[] args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions) {
         // create a factory for a temporary logger
         using ILoggerFactory factory = LoggerFactory.Create(builder => builder
             .SetMinimumLevel(LogLevel.Debug)
@@ -66,7 +70,7 @@ internal static class Program {
         OptionsParser optionsParser = new(logger, args, targetKey);
 
         // get target file paths
-        inputPaths = optionsParser.GetAndRemoveOption(targetKey) ?? Array.Empty<string>();
+        targets = optionsParser.GetAndRemoveOption(targetKey) ?? Array.Empty<string>();
 
         // get option values for 2 different option class
         interfaceOptions = optionsParser.ParseFor<InterfaceOptions>();
@@ -105,7 +109,7 @@ internal static class Program {
 
         return;
 
-        Dictionary<string, string> GetHelpOptionsFor<T>() {
+        Dictionary<string, string> GetHelpOptionsFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
             return typeof(T)
                 .GetProperties()
                 .Select(x => x.GetCustomAttribute<DisplayAttribute>())
@@ -124,7 +128,7 @@ internal static class Program {
         }
     }
 
-    private static void GetInputCode(ILogger logger, string[] targets, out string? inputPath, out string? code) {
+    private static void GetSourceCode(ILogger logger, string[] targets, out string? inputPath, out string? code) {
         // null for default values
         inputPath = null;
         code = null;
@@ -142,7 +146,7 @@ internal static class Program {
         }
 
         // exactly 1 target
-        // try block to catch any IO exception, since the input string is from the user and not to be trusted in any way
+        // try block to catch any IO exception
         try {
             FileInfo file = new(targets[0]);
 
@@ -170,13 +174,14 @@ internal static class Program {
         }
     }
 
-    private static void WriteResults(ILogger logger, InterfaceOptions options, byte[] results, string inputPath) {
+    private static void WriteResults(ILogger logger, InterfaceOptions options, Script script, string inputPath) {
         // if no custom output path is provided, put the file to the same directory as the input
         string outputPath = options.OutputPath ?? Path.ChangeExtension(inputPath, FILE_OUTPUT_EXTENSION);
 
-        // attempt to write into the file
+        // attempt to write to output file
         try {
-            File.WriteAllBytes(outputPath, results);
+            byte[] bytes = System.Text.Encoding.ASCII.GetBytes($"Using type {script}");
+            File.WriteAllBytes(outputPath, bytes);
             logger.OutputToPath(outputPath);
         }
         // catch any IO error

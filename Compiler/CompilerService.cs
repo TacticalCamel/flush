@@ -1,5 +1,4 @@
-﻿
-[assembly: CLSCompliant(false)]
+﻿[assembly: CLSCompliant(false)]
 
 namespace Compiler;
 
@@ -7,13 +6,14 @@ using Grammar;
 using Visitor;
 using Analysis;
 using Antlr4.Runtime;
+using Interpreter.Serialization;
 using Microsoft.Extensions.Logging;
 
 public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     private ILogger Logger { get; } = logger;
     private CompilerOptions Options { get; } = options;
 
-    public void Compile(string code, out byte[]? results) {
+    public void Compile(string code, out Script? results) {
         ScriptBuilder scriptBuilder = new(Options);
         
         AntlrInputStream inputStream = new(code);
@@ -36,8 +36,13 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
         catch (Exception e) {
             Logger.UnexpectedBuildError(e);
         }
-        
-        results = "This is a test output."u8.ToArray();
+
+        results = new Script {
+            MetaSector = new MetaSector {
+                CompilationTime = DateTime.Now,
+                TargetVersion = typeof(CompilerService).Assembly.GetName().Version ?? new Version()
+            }
+        };
     }
 
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {

@@ -1,5 +1,7 @@
 ﻿namespace ConsoleInterface.Options;
 
+using System.Diagnostics.CodeAnalysis;
+
 internal sealed class OptionsParser {
     private const string PREFIX_SHORT = "-";
     private const string PREFIX_LONG = "--";
@@ -40,7 +42,7 @@ internal sealed class OptionsParser {
         }
     }
 
-    public T ParseFor<T>() where T : new() {
+    public T ParseFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : new() {
         T result = new();
 
         PropertyInfo[] properties = typeof(T).GetProperties();

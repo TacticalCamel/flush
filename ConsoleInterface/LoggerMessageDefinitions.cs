@@ -6,15 +6,18 @@ internal static partial class LoggerMessageDefinitions {
     [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = "Started application with arguments: [{args}]")]
     public static partial void ApplicationStart(this ILogger logger, string[] args);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "{message}")]
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "I/O error: {message}")]
     public static partial void FileError(this ILogger logger, string message);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Result was output to \"{path}\"")]
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Result was written to path \"{path}\"")]
     public static partial void OutputToPath(this ILogger logger, string path);
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "{name} is not implemented")]
-    public static partial void FeatureNotImplemented(this ILogger logger, string name);
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Running compiled script")]
+    public static partial void RunScript(this ILogger logger);
 
+    [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "{name} is not implemented")]
+    public static partial void FeatureNotImplemented(this ILogger logger, string name);
+    
     #endregion
 
 
@@ -31,7 +34,7 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 103, Level = LogLevel.Warning, Message = "Value {values} for flag \"{flag}\" is invalid")]
     public static partial void InvalidFlagValue(this ILogger logger, string flag, string[] values);
-
+    
     #endregion
 
 

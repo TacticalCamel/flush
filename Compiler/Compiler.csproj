@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
-        <Version>1.0.0</Version>
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
     
     <ItemGroup>
@@ -18,5 +18,9 @@
     
     <ItemGroup>
       <Content Include="Grammar\*" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Interpreter\Interpreter.csproj" />
     </ItemGroup>
 </Project>
