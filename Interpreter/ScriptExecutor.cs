@@ -1,11 +1,15 @@
 ﻿namespace Interpreter;
 
-using Bytecode;
+using Serialization;
 
-public static class ScriptExecutor {
+public sealed class ScriptExecutor(Script script) {
     public static Version BytecodeVersion => typeof(ScriptExecutor).Assembly.GetName().Version ?? new Version();
 
-    public static void Run(Script script) {
-        
+    private Script Script { get; } = script;
+    
+    public void Run() {
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine(Script);
+        Console.ForegroundColor = ConsoleColor.Gray;
     }
 }

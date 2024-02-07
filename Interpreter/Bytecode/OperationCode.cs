@@ -1,6 +1,6 @@
 ﻿namespace Interpreter.Bytecode;
 
-public enum OperationCode {
+public enum OperationCode: byte {
     Exit,
     Return,
     Call,

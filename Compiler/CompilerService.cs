@@ -6,6 +6,7 @@ using Grammar;
 using Visitor;
 using Analysis;
 using Antlr4.Runtime;
+using Interpreter.Serialization;
 using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
@@ -31,8 +32,8 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
             LogBuildResults(scriptBuilder, true);
 
             // TODO temporary test data
-            byte[] data = [1, 2, 3, 4, 5, 6, 7, 8];
-            Instruction[] instructions = [new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction()];
+            byte[] data = Enumerable.Range(0, 64).Select(x => (byte)(x * 2)).ToArray();
+            Instruction[] instructions = Enumerable.Repeat(new Instruction(), 4).ToArray();
             
             return new Script(data, instructions);
         }

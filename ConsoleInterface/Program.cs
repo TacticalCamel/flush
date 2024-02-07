@@ -4,14 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Bytecode;
+using Interpreter.Serialization;
 using Options;
 
 internal static class Program {
-    private const string FILE_SOURCE_EXTENSION = ".sra";
-    private const string FILE_BINARY_EXTENSION = ".bin";
-    private const string FILE_TEXT_EXTENSION = ".txt";
-
     private static void Main(string[] args) {
         // parse the arguments of the program
         ParseArguments(args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions);
@@ -23,7 +19,7 @@ internal static class Program {
         }
 
         // create console loggers
-        CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger);
+        CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger);
 
         // log application start
         interfaceLogger.ApplicationStart(args);
@@ -36,7 +32,7 @@ internal static class Program {
         
         // switch based on the extension of the source file
         switch (sourceFile.Extension) {
-            case FILE_SOURCE_EXTENSION:
+            case SourceFile.FILE_SOURCE_EXTENSION:
                 // convert from bytes to string
                 string code = Encoding.UTF8.GetString(sourceFile.Contents);
                 
@@ -52,7 +48,8 @@ internal static class Program {
                 if (interfaceOptions.ExecuteOnly) {
                     // run program
                     interfaceLogger.RunScript();
-                    ScriptExecutor.Run(script);
+                    ScriptExecutor scriptExecutor = new(script);
+                    scriptExecutor.Run();
                 }
                 else {
                     // attempt to write the results to a file
@@ -61,18 +58,22 @@ internal static class Program {
                 
                 break;
             
-            case FILE_BINARY_EXTENSION:
-                script = Script.CreateFromBytes(sourceFile.Contents, interfaceLogger);
+            case SourceFile.FILE_BINARY_EXTENSION:
+                // read from bytes
+                script = BinarySerializer.BytesToScript(sourceFile.Contents, interpreterLogger);
 
+                // run program
                 if (script is not null) {
-                    ScriptExecutor.Run(script);
+                    interfaceLogger.RunScript();
+                    ScriptExecutor scriptExecutor = new(script);
+                    scriptExecutor.Run();
                 }
                 
                 break;
             
             default:
                 // invalid extension, log error message and exit
-                interfaceLogger.TargetExtensionInvalid(FILE_SOURCE_EXTENSION, FILE_BINARY_EXTENSION);
+                interfaceLogger.TargetExtensionInvalid(SourceFile.FILE_SOURCE_EXTENSION, SourceFile.FILE_BINARY_EXTENSION);
                 break;
         }
     }
@@ -141,16 +142,17 @@ internal static class Program {
         }
     }
     
-    private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger) {
+    private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger) {
         // create a factory with the provided minimum log level
         using ILoggerFactory factory = LoggerFactory.Create(builder => builder
             .SetMinimumLevel(options.MinimumLogLevel)
             .AddConsole()
         );
 
-        // create 2 loggers for use by this console interface and the compiler itself
+        // create a logger for every module
         interfaceLogger = factory.CreateLogger("Interface");
         compilerLogger = factory.CreateLogger("Compiler");
+        interpreterLogger = factory.CreateLogger("Interpreter");
     }
 
     private static void ReadSourceFile(ILogger logger, string[] targets, out SourceFile? sourceFile) {
@@ -196,7 +198,7 @@ internal static class Program {
 
     private static void WriteResults(ILogger logger, InterfaceOptions interfaceOptions, CompilerOptions compilerOptions, Script script, SourceFile sourceFile) {
         // if no custom output path is provided, put the file to the same directory as the input
-        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, compilerOptions.CompileToPlainText ? FILE_TEXT_EXTENSION : FILE_BINARY_EXTENSION);
+        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, compilerOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION);
 
         // attempt to write to output file
         try {
@@ -205,7 +207,7 @@ internal static class Program {
                 File.WriteAllText(outputPath, text);
             }
             else {
-                byte[] bytes = script.ToBytes();
+                byte[] bytes = BinarySerializer.ScriptToBytes(script);
                 File.WriteAllBytes(outputPath, bytes);
             }
             logger.OutputToPath(outputPath);

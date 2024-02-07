@@ -5,7 +5,7 @@ internal sealed class InterfaceOptions {
     public bool DisplayHelp { get; init; }
 
     [Display(Name = "verbose", ShortName = "v", Description = "Set verbosity level. Allowed values are d(ebug), i(nformation), w(arning), e(rror), c(ritical), n(one).")]
-    public LogLevel MinimumLogLevel { get; init; } = LogLevel.Warning;
+    public LogLevel MinimumLogLevel { get; init; } = LogLevel.Information;
 
     [Display(Name = "output", ShortName = "o", Description = "Set output path.")]
     public string? OutputPath { get; init; }
