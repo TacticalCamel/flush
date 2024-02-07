@@ -12,7 +12,7 @@ internal static partial class LoggerMessageDefinitions {
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Result was written to path \"{path}\"")]
     public static partial void OutputToPath(this ILogger logger, string path);
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Running compiled script")]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Running script")]
     public static partial void RunScript(this ILogger logger);
 
     [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "{name} is not implemented")]
@@ -49,8 +49,8 @@ internal static partial class LoggerMessageDefinitions {
     [LoggerMessage(EventId = 202, Level = LogLevel.Error, Message = "No target was specified")]
     public static partial void NoTarget(this ILogger logger);
 
-    [LoggerMessage(EventId = 203, Level = LogLevel.Error, Message = "The extension of the target file must be {extension}")]
-    public static partial void TargetExtensionInvalid(this ILogger logger, string extension);
+    [LoggerMessage(EventId = 203, Level = LogLevel.Error, Message = "The extension of the target file must be {sourceExtension} or {binaryExtension}")]
+    public static partial void TargetExtensionInvalid(this ILogger logger, string sourceExtension, string binaryExtension);
 
     [LoggerMessage(EventId = 204, Level = LogLevel.Error, Message = "Target path must point to a file, but \"{path}\" is a directory")]
     public static partial void TargetMustBeFile(this ILogger logger, string path);

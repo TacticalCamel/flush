@@ -6,14 +6,14 @@ using Grammar;
 using Visitor;
 using Analysis;
 using Antlr4.Runtime;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
 public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     private ILogger Logger { get; } = logger;
     private CompilerOptions Options { get; } = options;
 
-    public void Compile(string code, out Script? results) {
+    public Script? Compile(string code) {
         ScriptBuilder scriptBuilder = new(Options);
         
         AntlrInputStream inputStream = new(code);
@@ -23,26 +23,27 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
         CommonTokenStream tokenStream = new(lexer);
         ScrantonParser parser = new(tokenStream);
         scriptBuilder.BindToParserErrorListener(parser);
-        
+
         try {
             ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
             visitor.TraverseAst();
-            
+
             LogBuildResults(scriptBuilder, true);
+
+            // TODO temporary test data
+            byte[] data = [1, 2, 3, 4, 5, 6, 7, 8];
+            Instruction[] instructions = [new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction(), new Instruction()];
+            
+            return new Script(data, instructions);
         }
         catch (OperationCanceledException) {
             LogBuildResults(scriptBuilder, false);
+            return null;
         }
         catch (Exception e) {
             Logger.UnexpectedBuildError(e);
+            return null;
         }
-
-        results = new Script {
-            MetaSector = new MetaSector {
-                CompilationTime = DateTime.Now,
-                TargetVersion = typeof(CompilerService).Assembly.GetName().Version ?? new Version()
-            }
-        };
     }
 
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {

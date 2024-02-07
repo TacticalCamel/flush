@@ -9,9 +9,6 @@ public sealed class CompilerOptions {
     [Display(Name = "warnings-as-errors", ShortName = "wae", Description = "Treat warnings as if they were errors.")]
     public bool TreatWarningsAsErrors { get; init; }
 
-    [Display(Name = "no-meta", ShortName = "nm", Description = "Do not include metadata in the compiled program.")]
-    public bool ExcludeMetaData { get; init; }
-
     [Display(Name = "plain-text", ShortName = "pt", Description = "Compile to a plain text format instead of bytecode.")]
     public bool CompileToPlainText { get; init; }
 

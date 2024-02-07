@@ -1,24 +1,20 @@
 ﻿namespace ConsoleInterface;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Options;
 
 internal static class Program {
-    private const string FILE_INPUT_EXTENSION = ".sra";
-    private const string FILE_OUTPUT_EXTENSION = ".bin";
+    private const string FILE_SOURCE_EXTENSION = ".sra";
+    private const string FILE_BINARY_EXTENSION = ".bin";
+    private const string FILE_TEXT_EXTENSION = ".txt";
 
     private static void Main(string[] args) {
         // parse the arguments of the program
         ParseArguments(args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions);
-
-        // create a pair of loggers
-        CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger);
-
-        // log application start
-        interfaceLogger.ApplicationStart(args);
 
         // if requested, display help and exit
         if (interfaceOptions.DisplayHelp) {
@@ -26,29 +22,58 @@ internal static class Program {
             return;
         }
 
-        // try to get the input source code
-        GetSourceCode(interfaceLogger, targets, out string? inputPath, out string? code);
+        // create console loggers
+        CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger);
 
+        // log application start
+        interfaceLogger.ApplicationStart(args);
+        
+        // try to read the source file
+        ReadSourceFile(interfaceLogger, targets, out SourceFile? sourceFile);
+        
         // no valid source file, exit application
-        if (inputPath is null || code is null) return;
+        if (sourceFile is null) return;
+        
+        // switch based on the extension of the source file
+        switch (sourceFile.Extension) {
+            case FILE_SOURCE_EXTENSION:
+                // convert from bytes to string
+                string code = Encoding.UTF8.GetString(sourceFile.Contents);
+                
+                // new CompilerService to compile code
+                CompilerService compilerService = new(compilerLogger, compilerOptions);
+                
+                // attempt to compile the program
+                Script? script = compilerService.Compile(code);
+                
+                // compilation failed, exit
+                if (script is null) break;
+                
+                if (interfaceOptions.ExecuteOnly) {
+                    // run program
+                    interfaceLogger.RunScript();
+                    ScriptExecutor.Run(script);
+                }
+                else {
+                    // attempt to write the results to a file
+                    WriteResults(interfaceLogger, interfaceOptions, compilerOptions, script, sourceFile);
+                }
+                
+                break;
+            
+            case FILE_BINARY_EXTENSION:
+                script = Script.CreateFromBytes(sourceFile.Contents, interfaceLogger);
 
-        // new CompilerService to compile code
-        CompilerService compilerService = new(compilerLogger, compilerOptions);
-
-        // attempt to compile the program
-        compilerService.Compile(code, out Script? script);
-
-        // failed compilation, exit application
-        if (script is null) return;
-
-        if (interfaceOptions.ExecuteOnly) {
-            // run program
-            interfaceLogger.RunScript();
-            ScriptExecutor.Run(script);
-        }
-        else {
-            // attempt to write the results to a file
-            WriteResults(interfaceLogger, interfaceOptions, script, inputPath);
+                if (script is not null) {
+                    ScriptExecutor.Run(script);
+                }
+                
+                break;
+            
+            default:
+                // invalid extension, log error message and exit
+                interfaceLogger.TargetExtensionInvalid(FILE_SOURCE_EXTENSION, FILE_BINARY_EXTENSION);
+                break;
         }
     }
 
@@ -82,18 +107,6 @@ internal static class Program {
         }
     }
 
-    private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger) {
-        // create a factory with the provided minimum log level
-        using ILoggerFactory factory = LoggerFactory.Create(builder => builder
-            .SetMinimumLevel(options.MinimumLogLevel)
-            .AddConsole()
-        );
-
-        // create 2 loggers for use by this console interface and the compiler itself
-        interfaceLogger = factory.CreateLogger("Interface");
-        compilerLogger = factory.CreateLogger("Compiler");
-    }
-
     private static void DisplayHelp() {
         // get name and description pairs for the interface and the compiler
         Dictionary<string, string> interfaceHelpOptions = GetHelpOptionsFor<InterfaceOptions>();
@@ -114,7 +127,7 @@ internal static class Program {
                 .GetProperties()
                 .Select(x => x.GetCustomAttribute<DisplayAttribute>())
                 .Where(x => x != null)
-                .ToDictionary(x => $"{(x!.Name is null ? string.Empty : $"--{x.Name}")}{(x.ShortName is null ? string.Empty : $", -{x.ShortName}")}", x => x!.Description ?? string.Empty);
+                .ToDictionary(x => $"{(x!.Name is null ? string.Empty : $"{OptionsParser.PREFIX_LONG}{x.Name}")}{(x.ShortName is null ? string.Empty : $", {OptionsParser.PREFIX_SHORT}{x.ShortName}")}", x => x!.Description ?? string.Empty);
         }
 
         void DisplayOptions(Dictionary<string, string> helpOptions, int padLength, string categoryName) {
@@ -127,11 +140,22 @@ internal static class Program {
             Console.WriteLine();
         }
     }
+    
+    private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger) {
+        // create a factory with the provided minimum log level
+        using ILoggerFactory factory = LoggerFactory.Create(builder => builder
+            .SetMinimumLevel(options.MinimumLogLevel)
+            .AddConsole()
+        );
 
-    private static void GetSourceCode(ILogger logger, string[] targets, out string? inputPath, out string? code) {
-        // null for default values
-        inputPath = null;
-        code = null;
+        // create 2 loggers for use by this console interface and the compiler itself
+        interfaceLogger = factory.CreateLogger("Interface");
+        compilerLogger = factory.CreateLogger("Compiler");
+    }
+
+    private static void ReadSourceFile(ILogger logger, string[] targets, out SourceFile? sourceFile) {
+        // null as default value
+        sourceFile = null;
 
         // not providing a target is not accepted
         if (targets.Length == 0) {
@@ -152,36 +176,38 @@ internal static class Program {
 
             // file does not exists
             if (!file.Exists) {
-                logger.TargetDoesNotExist(targets[0]);
+                logger.TargetDoesNotExist(file.FullName);
             }
             // path is not a file, but a directory
             else if ((file.Attributes & FileAttributes.Directory) != 0) {
-                logger.TargetMustBeFile(targets[0]);
+                logger.TargetMustBeFile(file.FullName);
             }
-            // file extension is not valid
-            else if (!file.Extension.Equals(FILE_INPUT_EXTENSION, StringComparison.CurrentCultureIgnoreCase)) {
-                logger.TargetExtensionInvalid(FILE_INPUT_EXTENSION);
-            }
-            // no basic errors, try to read file contents
+            // no basic errors, read source file
             else {
-                code = File.ReadAllText(targets[0]);
-                inputPath = Path.GetFullPath(targets[0]);
+                byte[] contents = File.ReadAllBytes(file.FullName);
+                sourceFile = new SourceFile(file, contents);
             }
         }
-        // catch any other error, like lack of permission to read the file
+        // catch any other error
         catch (Exception e) {
             logger.FileError(e.Message);
         }
     }
 
-    private static void WriteResults(ILogger logger, InterfaceOptions options, Script script, string inputPath) {
+    private static void WriteResults(ILogger logger, InterfaceOptions interfaceOptions, CompilerOptions compilerOptions, Script script, SourceFile sourceFile) {
         // if no custom output path is provided, put the file to the same directory as the input
-        string outputPath = options.OutputPath ?? Path.ChangeExtension(inputPath, FILE_OUTPUT_EXTENSION);
+        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, compilerOptions.CompileToPlainText ? FILE_TEXT_EXTENSION : FILE_BINARY_EXTENSION);
 
         // attempt to write to output file
         try {
-            byte[] bytes = System.Text.Encoding.ASCII.GetBytes($"Using type {script}");
-            File.WriteAllBytes(outputPath, bytes);
+            if (compilerOptions.CompileToPlainText) {
+                string text = script.ToString();
+                File.WriteAllText(outputPath, text);
+            }
+            else {
+                byte[] bytes = script.ToBytes();
+                File.WriteAllBytes(outputPath, bytes);
+            }
             logger.OutputToPath(outputPath);
         }
         // catch any IO error

@@ -3,8 +3,8 @@
 using System.Diagnostics.CodeAnalysis;
 
 internal sealed class OptionsParser {
-    private const string PREFIX_SHORT = "-";
-    private const string PREFIX_LONG = "--";
+    public const string PREFIX_SHORT = "-";
+    public const string PREFIX_LONG = "--";
 
     private ILogger Logger { get; }
     private Dictionary<string, string[]> Options { get; }
