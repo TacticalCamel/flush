@@ -2,7 +2,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-internal sealed class OptionsParser {
+internal sealed class OptionParser {
     public const string PREFIX_SHORT = "-";
     public const string PREFIX_LONG = "--";
 
@@ -10,7 +10,7 @@ internal sealed class OptionsParser {
     private Dictionary<string, string[]> Options { get; }
     private Dictionary<Type, MethodInfo> ParseFunctions { get; }
 
-    public OptionsParser(ILogger logger, string[] args, string targetKey) {
+    public OptionParser(ILogger logger, string[] args, string targetKey) {
         Logger = logger;
         Options = [];
         ParseFunctions = [];
@@ -43,13 +43,13 @@ internal sealed class OptionsParser {
     }
 
     public T ParseFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : new() {
-        T result = new();
-
         PropertyInfo[] properties = typeof(T).GetProperties();
         Dictionary<string, PropertyInfo> flags = [];
+        T result = new();
 
         foreach (PropertyInfo property in properties) {
             DisplayAttribute? attribute = property.GetCustomAttribute<DisplayAttribute>();
+            
             if (attribute is null) continue;
 
             if (attribute.Name is not null) {
@@ -63,6 +63,7 @@ internal sealed class OptionsParser {
 
         foreach (string key in Options.Keys) {
             flags.TryGetValue(key, out PropertyInfo? property);
+            
             if (property is null) continue;
 
             ParseFunctions.TryGetValue(property.PropertyType, out MethodInfo? parseFunction);

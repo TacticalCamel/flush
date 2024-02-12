@@ -15,11 +15,10 @@ public sealed class Script {
     }
     
     public Script(byte[] data, Instruction[] instructions) {
+        int size = Marshal.SizeOf<MetaData>();
+        
         Data = new ReadOnlyMemory<byte>(data);
         Instructions = new ReadOnlyMemory<Instruction>(instructions);
-
-        int size = Marshal.SizeOf<MetaData>();
-
         Meta = new MetaData {
             Version = BinarySerializer.VersionToU64(ScriptExecutor.BytecodeVersion),
             CompilationTime = DateTime.Now,
@@ -38,7 +37,9 @@ public sealed class Script {
         sb.AppendLine($"    data-offset      0x{Meta.DataOffset:X8}");
         sb.AppendLine($"    code-offset      0x{Meta.CodeOffset:X8}");
 
-        sb.AppendLine("\n.data");
+        sb.AppendLine();
+        
+        sb.AppendLine(".data");
         for (int i = 0; i < Data.Length; i += 16) {
             int end = Math.Min(i + 16, Data.Length);
 
@@ -54,9 +55,11 @@ public sealed class Script {
             sb.AppendLine();
         }
 
+        sb.AppendLine();
+
         int instructionSize = Marshal.SizeOf<Instruction>();
         
-        sb.AppendLine("\n.code");
+        sb.AppendLine(".code");
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.OperationCode) ?? instruction.OperationCode.ToString("X");

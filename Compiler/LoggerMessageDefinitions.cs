@@ -20,7 +20,4 @@ internal static partial class LoggerMessageDefinitions {
     
     [LoggerMessage(EventId = 5, Level = LogLevel.Critical, Message = "Unexpected build error")]
     public static partial void UnexpectedBuildError(this ILogger logger, Exception e);
-    
-    [LoggerMessage(EventId = 100, Level = LogLevel.Debug, Message = "{obj}")]
-    public static partial void Debug(this ILogger logger, object obj);
 }

@@ -22,59 +22,72 @@ internal static class Program {
         CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger);
 
         // log application start
-        interfaceLogger.ApplicationStart(args);
-        
+        interfaceLogger.ApplicationStarted(args);
+
         // try to read the source file
-        ReadSourceFile(interfaceLogger, targets, out SourceFile? sourceFile);
-        
+        TryReadSource(interfaceLogger, targets, out SourceFile? sourceFile);
+
         // no valid source file, exit application
         if (sourceFile is null) return;
-        
+
         // switch based on the extension of the source file
         switch (sourceFile.Extension) {
-            case SourceFile.FILE_SOURCE_EXTENSION:
+            case SourceFile.FILE_SOURCE_EXTENSION: {
                 // convert from bytes to string
                 string code = Encoding.UTF8.GetString(sourceFile.Contents);
-                
+
                 // new CompilerService to compile code
                 CompilerService compilerService = new(compilerLogger, compilerOptions);
-                
+
                 // attempt to compile the program
                 Script? script = compilerService.Compile(code);
-                
+
                 // compilation failed, exit
                 if (script is null) break;
-                
-                if (interfaceOptions.ExecuteOnly) {
-                    // run program
-                    interfaceLogger.RunScript();
-                    ScriptExecutor scriptExecutor = new(script);
-                    scriptExecutor.Run();
+
+                // display results
+                if (interfaceOptions.DisplayResults) {
+                    Console.WriteLine(script);
                 }
-                else {
-                    // attempt to write the results to a file
-                    WriteResults(interfaceLogger, interfaceOptions, compilerOptions, script, sourceFile);
-                }
-                
-                break;
-            
-            case SourceFile.FILE_BINARY_EXTENSION:
-                // read from bytes
-                script = BinarySerializer.BytesToScript(sourceFile.Contents, interpreterLogger);
 
                 // run program
-                if (script is not null) {
-                    interfaceLogger.RunScript();
-                    ScriptExecutor scriptExecutor = new(script);
+                else if (interfaceOptions.ExecuteOnly) {
+                    ScriptExecutor scriptExecutor = new(script, interpreterLogger);
                     scriptExecutor.Run();
                 }
-                
+                // attempt to write the results to a file
+                else {
+                    TryWriteResult(interfaceLogger, interfaceOptions, script, sourceFile);
+                }
+
                 break;
-            
-            default:
+            }
+
+            case SourceFile.FILE_BINARY_EXTENSION: {
+                // read from bytes
+                Script? script = BinarySerializer.BytesToScript(sourceFile.Contents, interpreterLogger);
+
+                // deserialization failed, exit
+                if (script is null) break;
+
+                // -x and -pt flags have no effect
+                // still support -d to display deserialized binary files
+                if (interfaceOptions.DisplayResults) {
+                    Console.WriteLine(script);
+                }
+
+                // run program
+                ScriptExecutor scriptExecutor = new(script, interpreterLogger);
+                scriptExecutor.Run();
+
+                break;
+            }
+
+            default: {
                 // invalid extension, log error message and exit
                 interfaceLogger.TargetExtensionInvalid(SourceFile.FILE_SOURCE_EXTENSION, SourceFile.FILE_BINARY_EXTENSION);
                 break;
+            }
         }
     }
 
@@ -93,17 +106,17 @@ internal static class Program {
         string targetKey = string.Empty;
 
         // helper class to parse arguments
-        OptionsParser optionsParser = new(logger, args, targetKey);
+        OptionParser optionParser = new(logger, args, targetKey);
 
         // get target file paths
-        targets = optionsParser.GetAndRemoveOption(targetKey) ?? Array.Empty<string>();
+        targets = optionParser.GetAndRemoveOption(targetKey) ?? Array.Empty<string>();
 
         // get option values for 2 different option class
-        interfaceOptions = optionsParser.ParseFor<InterfaceOptions>();
-        compilerOptions = optionsParser.ParseFor<CompilerOptions>();
+        interfaceOptions = optionParser.ParseFor<InterfaceOptions>();
+        compilerOptions = optionParser.ParseFor<CompilerOptions>();
 
         // the remaining options were not recognized
-        foreach (string option in optionsParser.GetRemainingOptionNames()) {
+        foreach (string option in optionParser.GetRemainingOptionNames()) {
             logger.UnknownFlag(option);
         }
     }
@@ -115,11 +128,11 @@ internal static class Program {
 
         // calculate the maximum length of the options
         // will need this pad the names with spaces, so the descriptions are aligned
-        int length = Math.Max(interfaceHelpOptions.Max(x => x.Key.Length), compilerHelpOptions.Max(x => x.Key.Length)) + 4;
+        int padLength = Math.Max(interfaceHelpOptions.Max(x => x.Key.Length), compilerHelpOptions.Max(x => x.Key.Length)) + 4;
 
         // display the gathered information
-        DisplayOptions(interfaceHelpOptions, length, "Interface options");
-        DisplayOptions(compilerHelpOptions, length, "Compiler options");
+        DisplayOptions(interfaceHelpOptions, "Interface options");
+        DisplayOptions(compilerHelpOptions, "Compiler options");
 
         return;
 
@@ -128,10 +141,10 @@ internal static class Program {
                 .GetProperties()
                 .Select(x => x.GetCustomAttribute<DisplayAttribute>())
                 .Where(x => x != null)
-                .ToDictionary(x => $"{(x!.Name is null ? string.Empty : $"{OptionsParser.PREFIX_LONG}{x.Name}")}{(x.ShortName is null ? string.Empty : $", {OptionsParser.PREFIX_SHORT}{x.ShortName}")}", x => x!.Description ?? string.Empty);
+                .ToDictionary(x => $"{(x!.Name is null ? string.Empty : $"{OptionParser.PREFIX_LONG}{x.Name}")}{(x.ShortName is null ? string.Empty : $", {OptionParser.PREFIX_SHORT}{x.ShortName}")}", x => x!.Description ?? string.Empty);
         }
 
-        void DisplayOptions(Dictionary<string, string> helpOptions, int padLength, string categoryName) {
+        void DisplayOptions(Dictionary<string, string> helpOptions, string categoryName) {
             Console.WriteLine($"{categoryName}:");
 
             foreach (KeyValuePair<string, string> option in helpOptions) {
@@ -141,7 +154,7 @@ internal static class Program {
             Console.WriteLine();
         }
     }
-    
+
     private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger) {
         // create a factory with the provided minimum log level
         using ILoggerFactory factory = LoggerFactory.Create(builder => builder
@@ -155,7 +168,7 @@ internal static class Program {
         interpreterLogger = factory.CreateLogger("Interpreter");
     }
 
-    private static void ReadSourceFile(ILogger logger, string[] targets, out SourceFile? sourceFile) {
+    private static void TryReadSource(ILogger logger, string[] targets, out SourceFile? sourceFile) {
         // null as default value
         sourceFile = null;
 
@@ -182,7 +195,7 @@ internal static class Program {
             }
             // path is not a file, but a directory
             else if ((file.Attributes & FileAttributes.Directory) != 0) {
-                logger.TargetMustBeFile(file.FullName);
+                logger.TargetCannotBeDirectory(file.FullName);
             }
             // no basic errors, read source file
             else {
@@ -192,17 +205,17 @@ internal static class Program {
         }
         // catch any other error
         catch (Exception e) {
-            logger.FileError(e.Message);
+            logger.FileWriteFailed(e.Message);
         }
     }
 
-    private static void WriteResults(ILogger logger, InterfaceOptions interfaceOptions, CompilerOptions compilerOptions, Script script, SourceFile sourceFile) {
+    private static void TryWriteResult(ILogger logger, InterfaceOptions interfaceOptions, Script script, SourceFile sourceFile) {
         // if no custom output path is provided, put the file to the same directory as the input
-        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, compilerOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION);
+        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, interfaceOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION);
 
         // attempt to write to output file
         try {
-            if (compilerOptions.CompileToPlainText) {
+            if (interfaceOptions.CompileToPlainText) {
                 string text = script.ToString();
                 File.WriteAllText(outputPath, text);
             }
@@ -210,11 +223,12 @@ internal static class Program {
                 byte[] bytes = BinarySerializer.ScriptToBytes(script);
                 File.WriteAllBytes(outputPath, bytes);
             }
-            logger.OutputToPath(outputPath);
+
+            logger.FileWriteSuccess(outputPath);
         }
         // catch any IO error
         catch (Exception e) {
-            logger.FileError(e.Message);
+            logger.FileWriteFailed(e.Message);
         }
     }
 }
