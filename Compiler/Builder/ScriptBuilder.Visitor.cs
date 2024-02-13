@@ -1,52 +1,40 @@
-namespace Compiler.Visitor;
+﻿namespace Compiler.Builder;
 
 using Analysis;
+using Data;
 using Grammar;
-using Structs;
 using static Grammar.ScrantonParser;
 
-internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuilder scriptBuilder) : ScrantonBaseVisitor<object?> {
-    public void TraverseAst() {
-        CancelIfHasErrors();
-        VisitProgram(programContext);
-        CancelIfHasErrors();
-    }
-
-    private void CancelIfHasErrors() {
-        if (scriptBuilder.HasErrors()) {
-            throw new OperationCanceledException();
-        }
-    }
-
+internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
     #region program head
 
     public override object? VisitModuleStatement(ModuleStatementContext context){
-        scriptBuilder.SetModule(context.Name.Start.Text);
+        SetModule(context.Name.Start.Text);
         return null;
     }
     
     public override object? VisitManualImport(ManualImportContext context){
-        bool success = scriptBuilder.AddImport(context.Name.Start.Text);
+        bool success = AddImport(context.Name.Start.Text);
 
         if (!success){
-            scriptBuilder.AddWarning(WarningType.ModuleAlreadyImported, context);
+            AddWarning(WarningType.ModuleAlreadyImported, context);
         }
 
         return null;
     }
     
     public override object? VisitAutoImport(AutoImportContext context){
-        bool success = scriptBuilder.EnableAutoImports();
+        bool success = EnableAutoImports();
         
         if (!success){
-            scriptBuilder.AddWarning(WarningType.AutoImportAlreadyEnabled, context);
+            AddWarning(WarningType.AutoImportAlreadyEnabled, context);
         }
 
         return null;
     }
 
     public override object? VisitInParameters(InParametersContext context){
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context);
+        AddWarning(WarningType.FeatureNotImplemented, context);
         
         VarWithTypeContext[]? parameters = context.ParameterList?.varWithType();
         if (parameters is null) return null;
@@ -59,7 +47,7 @@ internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuild
     }
     
     public override object? VisitOutParameters(OutParametersContext context){
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context);
+        AddWarning(WarningType.FeatureNotImplemented, context);
         
         VarWithTypeContext[]? parameters = context.ParameterList?.varWithType();
         if (parameters is null) return null;
@@ -76,12 +64,12 @@ internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuild
     #region Definitions
 
     public override object? VisitFunctionDefinition(FunctionDefinitionContext context) {
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context, "FunctionDefinition");
+        AddWarning(WarningType.FeatureNotImplemented, context, "FunctionDefinition");
         return null;
     }
 
     public override object? VisitShortTypeDefinition(ShortTypeDefinitionContext context) {
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context, "ShortTypeDefinition");
+        AddWarning(WarningType.FeatureNotImplemented, context, "ShortTypeDefinition");
 
         Modifier modifiers = (Modifier)VisitModifierList(context.Header.Modifiers)!;
         
@@ -103,7 +91,7 @@ internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuild
             };
 
             if ((modifiers & modifier) > 0) {
-                scriptBuilder.AddWarning(WarningType.DuplicateModifier, modifierContext);
+                AddWarning(WarningType.DuplicateModifier, modifierContext);
             }
             else {
                 modifiers |= modifier;
@@ -112,11 +100,9 @@ internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuild
 
         return modifiers;
     }
-    
-    
 
     public override object? VisitLongTypeDefinition(LongTypeDefinitionContext context) {
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context, "LongTypeDefinition");
+        AddWarning(WarningType.FeatureNotImplemented, context, "LongTypeDefinition");
         return null;
     }
 
@@ -125,7 +111,7 @@ internal sealed class ScrantonVisitor(ProgramContext programContext, ScriptBuild
     #region Statements
 
     public override object? VisitStatement(StatementContext context) {
-        scriptBuilder.AddWarning(WarningType.FeatureNotImplemented, context, "Statement");
+        AddWarning(WarningType.FeatureNotImplemented, context, "Statement");
         return null;
     }
 

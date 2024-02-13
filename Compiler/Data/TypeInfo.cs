@@ -1,4 +1,4 @@
-namespace Compiler.Visitor;
+namespace Compiler.Data;
 
 internal sealed class TypeInfo(string typeName, TypeInfo[] containedTypes){
     public string TypeName{ get; } = typeName;

@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Analysis;
 
 using Antlr4.Runtime;
-using Visitor;
+using Builder;
 
 internal sealed class AntlrErrorListener(ScriptBuilder scriptBuilder): IAntlrErrorListener<IToken>, IAntlrErrorListener<int> {
     private ScriptBuilder ScriptBuilder { get; } = scriptBuilder;

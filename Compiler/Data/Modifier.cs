@@ -1,4 +1,4 @@
-﻿namespace Compiler.Structs;
+﻿namespace Compiler.Data;
 
 [Flags]
 internal enum Modifier {

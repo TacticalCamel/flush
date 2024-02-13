@@ -3,11 +3,10 @@
 namespace Compiler;
 
 using Grammar;
-using Visitor;
+using Builder;
 using Analysis;
 using Antlr4.Runtime;
 using Interpreter.Serialization;
-using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
 public sealed class CompilerService(ILogger logger, CompilerOptions options) {
@@ -15,48 +14,58 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     private CompilerOptions Options { get; } = options;
 
     public Script? Compile(string code) {
+        // create a new builder
         ScriptBuilder scriptBuilder = new(Options);
         
+        // create lexer and listen to errors
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
         scriptBuilder.BindToLexerErrorListener(lexer);
 
+        // create parser and listen to errors
         CommonTokenStream tokenStream = new(lexer);
         ScrantonParser parser = new(tokenStream);
         scriptBuilder.BindToParserErrorListener(parser);
 
         try {
-            ScrantonVisitor visitor = new(parser.program(), scriptBuilder);
-            visitor.TraverseAst();
+            // build program
+            scriptBuilder.Build(parser.program());
 
-            LogBuildResults(scriptBuilder, true);
-
-            // TODO temporary test data
-            byte[] data = Enumerable.Range(0, 64).Select(x => (byte)(x * 2)).ToArray();
-            Instruction[] instructions = Enumerable.Repeat(new Instruction(), 4).ToArray();
+            // retrieve result
+            Script script = scriptBuilder.GetResult();
             
-            return new Script(data, instructions);
+            // log results
+            LogBuildResults(scriptBuilder, true);
+            return script;
         }
         catch (OperationCanceledException) {
+            // log results
+            // this exception is thrown when 1 or more errors are encountered
             LogBuildResults(scriptBuilder, false);
             return null;
         }
         catch (Exception e) {
+            // no other types of exceptions should be thrown
+            // this is a failsafe to catch programmer errors
             Logger.UnexpectedBuildError(e);
             return null;
         }
     }
 
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
+        // get and log hints
         string[] hints = scriptBuilder.GetWarningsWithLevel(WarningLevel.Hint);
         if(hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
         
+        // get and log warnings
         string[] warnings = scriptBuilder.GetWarningsWithLevel(WarningLevel.Warning);
         if(warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
         
+        // get and log errors
         string[] errors = scriptBuilder.GetWarningsWithLevel(WarningLevel.Error);
         if(errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
         
+        // log summary
         if (success) {
             Logger.BuildResultSuccess(errors.Length, warnings.Length);
         }
