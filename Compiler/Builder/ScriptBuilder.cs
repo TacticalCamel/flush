@@ -2,22 +2,23 @@ namespace Compiler.Builder;
 
 using static Grammar.ScrantonParser;
 using Analysis;
+using Data;
 using Interpreter.Serialization;
 using Interpreter.Bytecode;
 
 internal sealed partial class ScriptBuilder {
     private CompilerOptions Options { get; }
-    private HashSet<string> ModuleImports { get; }
-    private string? Module { get; set; }
-    private bool AutoImportEnabled { get; set; }
+    private AntlrErrorListener ErrorListener { get; }
+    
+    private List<Warning> Warnings { get; }
+    private ImportHandler ImportHandler { get; }
 
     public ScriptBuilder(CompilerOptions options) {
         Options = options;
         ErrorListener = new AntlrErrorListener(this);
+
         Warnings = [];
-        ModuleImports = [];
-        Module = null;
-        AutoImportEnabled = false;
+        ImportHandler = new ImportHandler();
     }
 
     public void Build(ProgramContext programContext) {
@@ -39,19 +40,5 @@ internal sealed partial class ScriptBuilder {
         Script script = new(data, instructions);
 
         return script;
-    }
-    
-    private void SetModule(string module) {
-        Module = module;
-    }
-
-    private bool AddImport(string module) {
-        return ModuleImports.Add(module);
-    }
-
-    private bool EnableAutoImports() {
-        bool alreadyEnabled = AutoImportEnabled;
-        AutoImportEnabled = true;
-        return !alreadyEnabled;
     }
 }

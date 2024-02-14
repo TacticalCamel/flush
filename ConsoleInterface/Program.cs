@@ -26,7 +26,7 @@ internal static class Program {
 
         // try to read the source file
         TryReadSource(interfaceLogger, targets, out SourceFile? sourceFile);
-
+        
         // no valid source file, exit application
         if (sourceFile is null) return;
 
@@ -70,8 +70,7 @@ internal static class Program {
                 // deserialization failed, exit
                 if (script is null) break;
 
-                // -x and -pt flags have no effect
-                // still support -d to display deserialized binary files
+                // display deserialized binary file
                 if (interfaceOptions.DisplayResults) {
                     Console.WriteLine(script);
                 }
@@ -116,7 +115,7 @@ internal static class Program {
         compilerOptions = optionParser.ParseFor<CompilerOptions>();
 
         // the remaining options were not recognized
-        foreach (string option in optionParser.GetRemainingOptionNames()) {
+        foreach (string option in optionParser.RemainingKeys) {
             logger.UnknownFlag(option);
         }
     }

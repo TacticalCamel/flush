@@ -9,6 +9,8 @@ internal static class ParseFunctions {
         if (values.Length != 1) return null;
 
         return values[0] switch {
+            "t" => LogLevel.Trace,
+            "trace" => LogLevel.Trace,
             "d" => LogLevel.Debug,
             "debug" => LogLevel.Debug,
             "i" => LogLevel.Information,

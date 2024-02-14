@@ -4,9 +4,6 @@ using Antlr4.Runtime;
 using Analysis;
 
 internal partial class ScriptBuilder {
-    private AntlrErrorListener ErrorListener { get; }
-    private List<Warning> Warnings { get; }
-    
     public void BindToLexerErrorListener(Lexer lexer) {
         lexer.AddErrorListener(ErrorListener);
     }

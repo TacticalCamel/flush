@@ -9,12 +9,12 @@ internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
     #region program head
 
     public override object? VisitModuleStatement(ModuleStatementContext context){
-        SetModule(context.Name.Start.Text);
+        ImportHandler.Module = context.Name.Start.Text;
         return null;
     }
     
     public override object? VisitManualImport(ManualImportContext context){
-        bool success = AddImport(context.Name.Start.Text);
+        bool success = ImportHandler.Imports.Add(context.Name.Start.Text);
 
         if (!success){
             AddWarning(WarningType.ModuleAlreadyImported, context);
@@ -24,10 +24,11 @@ internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
     }
     
     public override object? VisitAutoImport(AutoImportContext context){
-        bool success = EnableAutoImports();
-        
-        if (!success){
+        if (ImportHandler.AutoImportEnabled){
             AddWarning(WarningType.AutoImportAlreadyEnabled, context);
+        }
+        else {
+            ImportHandler.AutoImportEnabled = true;
         }
 
         return null;
