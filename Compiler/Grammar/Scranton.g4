@@ -50,7 +50,6 @@ importStatement
 // 1.3 Paraméter szegmens
 parameterSegment
 	: InParameters=inParameters? OutParameters=outParameters?
-	| OutParameters=outParameters? InParameters=inParameters?
 	;
 
 scriptParameterList
@@ -79,15 +78,6 @@ functionDefinition
 
 // 2.2 Típus definíció
 typeDefinition
-	: shortTypeDefinition
-	| longTypeDefinition
-	;
-
-shortTypeDefinition
-	: Header=classHeader INDEX_START Body=parameterList INDEX_END
-	;
-	
-longTypeDefinition
 	: Header=classHeader BLOCK_START Body=classBody BLOCK_END
 	;
 
@@ -198,15 +188,15 @@ expression
 	;
 
 constant
-	: FLOAT_LIT
-	| DEC_LIT
-	| HEX_LIT
-	| BIN_LIT
-	| STRING_LIT
-	| CHAR_LIT
-	| KW_NULL
-	| KW_TRUE
-	| KW_FALSE
+	: FLOAT_LIT #FloatLiteral
+	| DEC_LIT #DecimalLiteral
+	| HEX_LIT #HexadecimalLiteral
+	| BIN_LIT #BinaryLiteral
+	| STRING_LIT #StringLiteral
+	| CHAR_LIT #CharLiteral
+	| KW_NULL #NullKeyword
+	| KW_TRUE #TrueKeyword
+	| KW_FALSE #FalseKeyword
 	;
 
 functionCall

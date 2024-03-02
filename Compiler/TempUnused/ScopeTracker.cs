@@ -1,4 +1,4 @@
-namespace Compiler.Data;
+namespace Compiler.TempUnused;
 
 internal sealed class ScopeTracker{
     private readonly struct Scope(int parentIndex){

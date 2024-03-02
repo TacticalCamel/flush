@@ -7,6 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Core\" />
+        <Using Include="Runtime.Internal"/>
     </ItemGroup>
 </Project>

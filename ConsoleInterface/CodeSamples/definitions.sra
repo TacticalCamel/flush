@@ -1,8 +1,5 @@
 module examples
 
-public class vec2 [f32 x, f32 y]
-public private class vec2 [f32 x, f32 y]
-
 class vec3 {
 	f32 x;
 	f32 y;

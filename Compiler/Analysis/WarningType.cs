@@ -25,6 +25,8 @@ internal sealed class WarningType {
     public static WarningType AutoImportAlreadyEnabled { get; } = new(202, WarningLevel.Warning, "Auto import is already enabled");
     public static WarningType ModuleAlreadyImported { get; } = new(203, WarningLevel.Warning, "Module is already imported");
     public static WarningType DuplicateModifier { get; } = new(204, WarningLevel.Warning, "Duplicate modifier");
+    public static WarningType IncorrectNumberFormat { get; } = new(205, WarningLevel.Error, "Incorrect number format");
+    public static WarningType IncorrectCharFormat { get; } = new(206, WarningLevel.Error, "Incorrect character format");
 
     #endregion
 }

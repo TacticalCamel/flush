@@ -2,7 +2,7 @@
 
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct MetaData() {
-    private const ulong FILE_HEADER = 0x67FF67FF00617273;
+    private const ulong FILE_HEADER = 0x42FF54FF00617273;
 
     public ulong Header { get; } = FILE_HEADER;
     public required ulong Version { get; init; }

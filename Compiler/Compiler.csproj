@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
         <DebugType>embedded</DebugType>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     </PropertyGroup>
     
     <ItemGroup>

@@ -1,11 +1,11 @@
 namespace Compiler.Data;
 
-internal sealed class TypeInfo(string typeName, TypeInfo[] containedTypes){
+internal sealed class TypeInfo(string typeName, TypeInfo[] genericTypes){
     public string TypeName{ get; } = typeName;
-    public TypeInfo[] ContainedTypes{ get; } = containedTypes;
-    public bool IsGeneric => ContainedTypes.Length > 0;
+    public TypeInfo[] GenericTypes{ get; } = genericTypes;
+    public bool IsGeneric => GenericTypes.Length > 0;
 
     public override string ToString(){
-        return IsGeneric ? $"{TypeName}<{string.Join(',', (IEnumerable<TypeInfo>)ContainedTypes)}>" : TypeName;
+        return IsGeneric ? $"{TypeName}<{string.Join(',', (IEnumerable<TypeInfo>)GenericTypes)}>" : TypeName;
     }
 }
