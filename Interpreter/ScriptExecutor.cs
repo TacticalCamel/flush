@@ -15,22 +15,11 @@ public sealed class ScriptExecutor(Script script, ILogger logger) {
         Logger.ExecutingScript(Script);
 
         while (InstructionPointer < Script.Instructions.Length) {
-            Instruction instruction = Script.Instructions.Span[InstructionPointer];
+            Instruction i = Script.Instructions.Span[InstructionPointer];
             
-            switch (instruction.OperationCode) {
-                case OperationCode.Exit:
-                    break;
-                case OperationCode.Return:
-                    break;
-                case OperationCode.Call:
-                    break;
-                case OperationCode.Push:
-                    break;
-                case OperationCode.Pop:
-                    break;
-                case OperationCode.Jump:
-                    break;
-                case OperationCode.ConditionalJump:
+            switch (i.OperationCode) {
+                case OperationCode.PushData:
+                    Console.WriteLine($"pushd 0x{i.Address:x8}");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

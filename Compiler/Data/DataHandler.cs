@@ -5,24 +5,27 @@ using Runtime.Core;
 
 internal sealed unsafe class DataHandler {
     private int DataLength { get; set; }
-    private List<Hole> Holes { get; } = [];
+    private List<Hole> Holes { get; }
 
-    public PrimitiveCollection<I8> I8 { get; }
-    public PrimitiveCollection<I16> I16 { get; }
-    public PrimitiveCollection<I32> I32 { get; }
-    public PrimitiveCollection<I64> I64 { get; }
-    public PrimitiveCollection<U8> U8 { get; }
-    public PrimitiveCollection<U16> U16 { get; }
-    public PrimitiveCollection<U32> U32 { get; }
-    public PrimitiveCollection<U64> U64 { get; }
-    public PrimitiveCollection<F16> F16 { get; }
-    public PrimitiveCollection<F32> F32 { get; }
-    public PrimitiveCollection<F64> F64 { get; }
-    public PrimitiveCollection<Bool> Bool { get; }
-    public PrimitiveCollection<Char> Char { get; }
-    public StringCollection Str { get; }
+    public IObjectCollection<I8> I8 { get; }
+    public IObjectCollection<I16> I16 { get; }
+    public IObjectCollection<I32> I32 { get; }
+    public IObjectCollection<I64> I64 { get; }
+    public IObjectCollection<U8> U8 { get; }
+    public IObjectCollection<U16> U16 { get; }
+    public IObjectCollection<U32> U32 { get; }
+    public IObjectCollection<U64> U64 { get; }
+    public IObjectCollection<F16> F16 { get; }
+    public IObjectCollection<F32> F32 { get; }
+    public IObjectCollection<F64> F64 { get; }
+    public IObjectCollection<Bool> Bool { get; }
+    public IObjectCollection<Char> Char { get; }
+    public IObjectCollection<string> Str { get; }
 
     public DataHandler() {
+        DataLength = 0;
+        Holes = [];
+        
         I8 = new PrimitiveCollection<I8>(this);
         I16 = new PrimitiveCollection<I16>(this);
         I32 = new PrimitiveCollection<I32>(this);
@@ -37,10 +40,6 @@ internal sealed unsafe class DataHandler {
         Bool = new PrimitiveCollection<Bool>(this);
         Char = new PrimitiveCollection<Char>(this);
         Str = new StringCollection(this);
-    }
-
-    private static int RoundUp(int value, int factor) {
-        return (value + factor - 1) / factor * factor;
     }
 
     private int AddObject(int size) {
@@ -93,25 +92,36 @@ internal sealed unsafe class DataHandler {
         int length = RoundUp(DataLength, 16);
         byte[] bytes = new byte[length];
 
-        I8.DumpTo(bytes);
-        I16.DumpTo(bytes);
-        I32.DumpTo(bytes);
-        I64.DumpTo(bytes);
-        U8.DumpTo(bytes);
-        U16.DumpTo(bytes);
-        U32.DumpTo(bytes);
-        U64.DumpTo(bytes);
-        F16.DumpTo(bytes);
-        F32.DumpTo(bytes);
-        F64.DumpTo(bytes);
-        Bool.DumpTo(bytes);
-        Char.DumpTo(bytes);
-        Str.DumpTo(bytes);
+        I8.WriteContents(bytes);
+        I16.WriteContents(bytes);
+        I32.WriteContents(bytes);
+        I64.WriteContents(bytes);
+        U8.WriteContents(bytes);
+        U16.WriteContents(bytes);
+        U32.WriteContents(bytes);
+        U64.WriteContents(bytes);
+        F16.WriteContents(bytes);
+        F32.WriteContents(bytes);
+        F64.WriteContents(bytes);
+        Bool.WriteContents(bytes);
+        Char.WriteContents(bytes);
+        Str.WriteContents(bytes);
         
         return bytes;
     }
+    
+    private static int RoundUp(int value, int factor) {
+        return (value + factor - 1) / factor * factor;
+    }
 
-    public sealed class PrimitiveCollection<T>(DataHandler dataHandler) where T : unmanaged {
+    #region Types
+    
+    public interface IObjectCollection<in T> {
+        public int Add(T value);
+        public void WriteContents(byte[] bytes);
+    }
+    
+    private sealed class PrimitiveCollection<T>(DataHandler dataHandler): IObjectCollection<T> where T : unmanaged {
         private DataHandler DataHandler { get; } = dataHandler;
         private Dictionary<T, int> Objects { get; } = [];
         private int ObjectSize { get; } = sizeof(T);
@@ -130,7 +140,7 @@ internal sealed unsafe class DataHandler {
             return address;
         }
 
-        public void DumpTo(byte[] bytes) {
+        public void WriteContents(byte[] bytes) {
             foreach (KeyValuePair<T, int> pair in Objects) {
                 Span<byte> destination = bytes.AsSpan(pair.Value);
                 MemoryMarshal.Write(destination, pair.Key);
@@ -138,7 +148,7 @@ internal sealed unsafe class DataHandler {
         }
     }
 
-    public sealed class StringCollection(DataHandler dataHandler) {
+    private sealed class StringCollection(DataHandler dataHandler): IObjectCollection<string> {
         private DataHandler DataHandler { get; } = dataHandler;
         private Dictionary<string, int> Objects { get; } = [];
 
@@ -156,7 +166,7 @@ internal sealed unsafe class DataHandler {
             return address;
         }
         
-        public void DumpTo(byte[] bytes) {
+        public void WriteContents(byte[] bytes) {
             foreach (KeyValuePair<string, int> pair in Objects) {
                 Span<byte> destination = bytes.AsSpan(pair.Value);
                 
@@ -173,4 +183,6 @@ internal sealed unsafe class DataHandler {
         public readonly int Address = address;
         public readonly int Size = size;
     }
+    
+    #endregion
 }

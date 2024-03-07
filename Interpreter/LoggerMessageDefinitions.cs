@@ -12,7 +12,4 @@ internal static partial class LoggerMessageDefinitions {
     
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Running script:\r\n{script}")]
     public static partial void ExecutingScript(this ILogger logger, Script script);
-    
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Loaded {count} types in {time}")]
-    public static partial void ClassesLoaded(this ILogger logger, int count, TimeSpan time);
 }

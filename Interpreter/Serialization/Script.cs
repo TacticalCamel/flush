@@ -66,7 +66,7 @@ public sealed class Script {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.OperationCode) ?? instruction.OperationCode.ToString("X");
 
-            sb.AppendLine($"    0x{instructionSize * i:X8}       {name} {instruction.FirstOperand:X2} {instruction.SecondOperand:X2} {instruction.TargetOperand:X2}");
+            sb.AppendLine($"    0x{instructionSize * i:X8}       {name} {instruction.Address:X2}");
         }
 
         return sb.ToString();

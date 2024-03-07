@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface.Options;
+﻿namespace CLI.Options;
 
 using System.Diagnostics.CodeAnalysis;
 

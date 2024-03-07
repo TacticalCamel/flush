@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface.Options;
+﻿namespace CLI.Options;
 
 internal static class ParseFunctions {
     public static bool? ParseBool(string[] values) {

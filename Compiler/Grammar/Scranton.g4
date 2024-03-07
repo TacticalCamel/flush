@@ -122,7 +122,7 @@ regularStatement
 
 // 2.3.1.1 Változó deklaráció
 variableDeclaration
-	: varWithType (OP_ASSIGN expression)?
+	: varWithType (OP_ASSIGN Expression=expression)?
 	;
 
 // 2.3.2 Vezérlési utasítás

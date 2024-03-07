@@ -11,4 +11,9 @@ public struct I32 {
     public static implicit operator I32(int value) {
         return new I32(value);
     }
+
+    public static I32 operator +(I32 x, I32 y) => x.Value + y.Value;
+    public static I32 operator -(I32 x, I32 y) => x.Value - y.Value;
+    public static I32 operator *(I32 x, I32 y) => x.Value * y.Value;
+    public static I32 operator /(I32 x, I32 y) => x.Value / y.Value;
 }

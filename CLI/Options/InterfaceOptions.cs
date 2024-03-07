@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface.Options;
+﻿namespace CLI.Options;
 
 internal sealed class InterfaceOptions {
     [Display(Name = "help", ShortName = "h", Description = "Show help and exit.")]

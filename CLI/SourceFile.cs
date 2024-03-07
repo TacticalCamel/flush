@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface;
+﻿namespace CLI;
 
 internal sealed class SourceFile(FileInfo fileInfo, byte[] contents) {
     public const string FILE_SOURCE_EXTENSION = ".sra";

@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface;
+﻿namespace CLI;
 
 internal static partial class LoggerMessageDefinitions {
     #region General

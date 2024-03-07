@@ -6,22 +6,25 @@ using Data;
 using Grammar;
 using Interpreter.Serialization;
 using Interpreter.Bytecode;
+using Interpreter.Types;
 
 internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
     private CompilerOptions Options { get; }
-    private AntlrErrorListener ErrorListener { get; }
-    
     private List<Warning> Warnings { get; }
+    private AntlrErrorListener ErrorListener { get; }
     private ImportHandler ImportHandler { get; }
     private DataHandler DataHandler { get; }
+    private List<Instruction> Instructions { get; }
+    private ClassLoader ClassLoader { get; }
 
     public ScriptBuilder(CompilerOptions options) {
         Options = options;
-        ErrorListener = new AntlrErrorListener(this);
-
         Warnings = [];
+        ErrorListener = new AntlrErrorListener(Warnings);
         ImportHandler = new ImportHandler();
         DataHandler = new DataHandler();
+        Instructions = [];
+        ClassLoader = new ClassLoader();
     }
 
     public void Build(ProgramContext programContext) {
@@ -36,12 +39,9 @@ internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
         // error while assembling program
         CancelIfHasErrors();
         
-        // TODO temporary test data
         byte[] data = DataHandler.ToBytes();
-        Instruction[] instructions = Enumerable.Repeat(new Instruction(), 4).ToArray();
+        Instruction[] instructions = Instructions.ToArray();
         
-        Script script = new(data, instructions);
-
-        return script;
+        return new Script(data, instructions);
     }
 }

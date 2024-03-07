@@ -6,6 +6,7 @@
         <LangVersion>12</LangVersion>
         <DebugType>embedded</DebugType>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <EnforceExtendedAnalyzerRules>True</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
     
     <ItemGroup>

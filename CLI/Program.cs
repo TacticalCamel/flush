@@ -1,4 +1,4 @@
-﻿namespace ConsoleInterface;
+﻿namespace CLI;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
