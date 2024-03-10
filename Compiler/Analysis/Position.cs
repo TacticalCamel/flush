@@ -5,7 +5,7 @@ internal readonly struct Position(int line, int column): IComparable<Position> {
     public int Column { get; } = column;
 
     public override string ToString() {
-        return $"{Line}:{Column}";
+        return $"({Line},{Column})";
     }
     
     public int CompareTo(Position other) {

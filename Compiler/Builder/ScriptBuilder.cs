@@ -7,25 +7,18 @@ using Grammar;
 using Interpreter.Serialization;
 using Interpreter.Bytecode;
 using Interpreter.Types;
+using Microsoft.Extensions.Logging;
 
-internal sealed partial class ScriptBuilder: ScrantonBaseVisitor<object?> {
-    private CompilerOptions Options { get; }
-    private List<Warning> Warnings { get; }
-    private AntlrErrorListener ErrorListener { get; }
-    private ImportHandler ImportHandler { get; }
-    private DataHandler DataHandler { get; }
-    private List<Instruction> Instructions { get; }
-    private ClassLoader ClassLoader { get; }
-
-    public ScriptBuilder(CompilerOptions options) {
-        Options = options;
-        Warnings = [];
-        ErrorListener = new AntlrErrorListener(Warnings);
-        ImportHandler = new ImportHandler();
-        DataHandler = new DataHandler();
-        Instructions = [];
-        ClassLoader = new ClassLoader();
-    }
+internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger logger) : ScrantonBaseVisitor<object?> {
+    private CompilerOptions Options { get; } = options;
+    private ILogger Logger { get; } = logger;
+    
+    private WarningHandler WarningHandler { get; } = [];
+    private ImportHandler ImportHandler { get; } = new();
+    private DataHandler DataHandler { get; } = new();
+    
+    private List<Instruction> Instructions { get; } = [];
+    private ClassLoader ClassLoader { get; } = new();
 
     public void Build(ProgramContext programContext) {
         // lexer or parser error before traversing tree

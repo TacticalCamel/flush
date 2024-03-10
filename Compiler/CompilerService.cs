@@ -15,7 +15,7 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
 
     public Script? Compile(string code) {
         // create a new builder
-        ScriptBuilder scriptBuilder = new(Options);
+        ScriptBuilder scriptBuilder = new(Options, Logger);
         
         // create lexer and listen to errors
         AntlrInputStream inputStream = new(code);

@@ -16,20 +16,21 @@ public class ClassLoader {
                 continue;
             }
             
+            string @namespace = type.Namespace?[(type.Namespace.IndexOf('.') + 1)..]?.ToLower() ?? string.Empty;
+            
             if (DefaultInclude.Any(x => type.Namespace?.StartsWith(x) ?? false)) {
-                LoadType(type);
+                LoadType(type, @namespace);
                 continue;
             }
             
             if (!auto) {
-                string @namespace = type.Namespace?[type.Namespace.IndexOf('.')..] ?? string.Empty;
 
                 if (!modules.Contains(@namespace)) {
                     continue;
                 }
             }
             
-            LoadType(type);
+            LoadType(type, @namespace);
         }
     }
 
@@ -37,12 +38,14 @@ public class ClassLoader {
         return Types.FirstOrDefault(x => x.Name == name);
     }
 
-    private void LoadType(Type type) {
+    private void LoadType(Type type, string module) {
         TypeInfo typeInfo = new() {
+            Module = module,
             Name = type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name,
             Type = type
         };
         
+        //Console.WriteLine($"{typeInfo.Module}.{typeInfo.Name}");
         //Console.WriteLine(string.Join('\n', type.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).Select(x => $"{(x.Attributes & MethodAttributes.SpecialName) != 0} {x})")));
         
         Types.Add(typeInfo);

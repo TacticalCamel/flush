@@ -23,7 +23,7 @@ internal sealed class Warning {
     }
     
     public string ToString(WarningLevel overrideLevel) {
-        return $"({Position.Line},{Position.Column}): {overrideLevel} SRA{Id:D3}: {Message}";
+        return $"{Position}: {overrideLevel} SRA{Id:D3}: {Message}";
     }
 
     #endregion
@@ -59,17 +59,11 @@ internal sealed class Warning {
         Level = WarningLevel.Warning,
         Message = $"Module {name} is already imported"
     };
-
-    public static Warning DuplicateModifier(ParserRuleContext context, string modifier) => new(context) {
+    
+    public static Warning IntegerOutOfRange(ParserRuleContext context, string value, string type) => new(context) {
         Id = 204,
-        Level = WarningLevel.Warning,
-        Message = $"Duplicate modifier {modifier}"
-    };
-
-    public static Warning IncorrectNumberFormat(ParserRuleContext context) => new(context) {
-        Id = 205,
         Level = WarningLevel.Error,
-        Message = "Incorrect number format"
+        Message = $"Value {value} is out of range for type {type}"
     };
 
     public static Warning IncorrectCharFormat(ParserRuleContext context) => new(context) {

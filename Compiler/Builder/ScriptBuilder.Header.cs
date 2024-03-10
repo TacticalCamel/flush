@@ -29,13 +29,13 @@ internal sealed partial class ScriptBuilder {
             }
         }
 
-        Warnings.Add(Warning.ModuleAlreadyImported(context, name));
+        WarningHandler.Add(Warning.ModuleAlreadyImported(context, name));
         return null;
     }
     
     public override object? VisitAutoImport(AutoImportContext context){
         if (ImportHandler.AutoImportEnabled){
-            Warnings.Add(Warning.AutoImportAlreadyEnabled(context));
+            WarningHandler.Add(Warning.AutoImportAlreadyEnabled(context));
         }
         else {
             ImportHandler.AutoImportEnabled = true;
@@ -46,14 +46,14 @@ internal sealed partial class ScriptBuilder {
 
     public override object? VisitInParameters(InParametersContext context){
         // TODO not implemented 
-        Warnings.Add(Warning.FeatureNotImplemented(context, "in parameters"));
+        WarningHandler.Add(Warning.FeatureNotImplemented(context, "in parameters"));
         
         return null;
     }
     
     public override object? VisitOutParameters(OutParametersContext context){
         // TODO not implemented 
-        Warnings.Add(Warning.FeatureNotImplemented(context, "out parameters"));
+        WarningHandler.Add(Warning.FeatureNotImplemented(context, "out parameters"));
         
         return null;
     }
