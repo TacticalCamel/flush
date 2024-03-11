@@ -1,5 +1,7 @@
 ﻿namespace Interpreter.Bytecode;
 
 public enum OperationCode: byte {
-    PushData
+    Empty,
+    PushData,
+    Call
 }

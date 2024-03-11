@@ -42,7 +42,7 @@ public class ClassLoader {
         TypeInfo typeInfo = new() {
             Module = module,
             Name = type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name,
-            Type = type
+            Members = []
         };
         
         //Console.WriteLine($"{typeInfo.Module}.{typeInfo.Name}");

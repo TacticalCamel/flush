@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Analysis;
+using Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using static Grammar.ScrantonParser;
@@ -16,9 +17,11 @@ internal sealed partial class ScriptBuilder {
     public override object? VisitConstantExpression(ConstantExpressionContext context) {
         // forward expected type
         context.Constant.ExpectedType = context.ExpectedType;
-        
+
         object? address = Visit(context.Constant);
-        
+
+        Console.WriteLine($"push {address:x8}");
+
         return address;
     }
 
@@ -35,7 +38,7 @@ internal sealed partial class ScriptBuilder {
 
     public override object? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
         string text = context.start.Text[2..];
-        
+
         return AddInteger(context, text, NumberStyles.HexNumber);
     }
 
@@ -51,7 +54,7 @@ internal sealed partial class ScriptBuilder {
         return AddFloat(context, text);
     }
 
-    private int? AddInteger(ConstantContext context, string text, NumberStyles format) {
+    private MemoryAddress? AddInteger(ConstantContext context, string text, NumberStyles format) {
         string? type = context.ExpectedType?.Name;
 
         switch (type) {
@@ -59,8 +62,7 @@ internal sealed partial class ScriptBuilder {
                 bool success = sbyte.TryParse(text, format, CultureInfo.InvariantCulture, out sbyte value);
 
                 if (success) {
-                    int address = DataHandler.I8.Add(value);
-                    return address;
+                    return DataHandler.I8.Add(value);
                 }
 
                 break;
@@ -69,30 +71,27 @@ internal sealed partial class ScriptBuilder {
                 bool success = short.TryParse(text, format, CultureInfo.InvariantCulture, out short value);
 
                 if (success) {
-                    int address = DataHandler.I16.Add(value);
-                    return address;
+                    return DataHandler.I16.Add(value);
                 }
-                
+
                 break;
             }
             case "i32": {
                 bool success = int.TryParse(text, format, CultureInfo.InvariantCulture, out int value);
 
                 if (success) {
-                    int address = DataHandler.I32.Add(value);
-                    return address;
+                    return DataHandler.I32.Add(value);
                 }
-                
+
                 break;
             }
             case "i64": {
                 bool success = long.TryParse(text, format, CultureInfo.InvariantCulture, out long value);
 
                 if (success) {
-                    int address = DataHandler.I64.Add(value);
-                    return address;
+                    return DataHandler.I64.Add(value);
                 }
-                
+
                 break;
             }
             case null: {
@@ -100,14 +99,14 @@ internal sealed partial class ScriptBuilder {
                 return AddInteger(context, text, format);
             }
         }
-        
+
         WarningHandler.Add(Warning.IntegerOutOfRange(context, text, type));
         return null;
     }
 
-    private int? AddFloat(ConstantContext context, string text) {
+    private MemoryAddress? AddFloat(ConstantContext context, string text) {
         const NumberStyles FORMAT = NumberStyles.Float;
-        
+
         string? type = context.ExpectedType?.Name;
 
         switch (type) {
@@ -115,30 +114,27 @@ internal sealed partial class ScriptBuilder {
                 bool success = Half.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out Half value);
 
                 if (success) {
-                    int address = DataHandler.F16.Add(value);
-                    return address;
+                    return DataHandler.F16.Add(value);
                 }
-                
+
                 break;
             }
             case "f32": {
                 bool success = float.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out float value);
 
                 if (success) {
-                    int address = DataHandler.F32.Add(value);
-                    return address;
+                    return DataHandler.F32.Add(value);
                 }
-                
+
                 break;
             }
             case "f64": {
                 bool success = double.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out double value);
 
                 if (success) {
-                    int address = DataHandler.F64.Add(value);
-                    return address;
+                    return DataHandler.F64.Add(value);
                 }
-                
+
                 break;
             }
             case null: {
@@ -146,7 +142,7 @@ internal sealed partial class ScriptBuilder {
                 return AddInteger(context, text, FORMAT);
             }
         }
-        
+
         WarningHandler.Add(Warning.IntegerOutOfRange(context, text, type));
         return null;
     }
@@ -157,8 +153,7 @@ internal sealed partial class ScriptBuilder {
         bool success = char.TryParse(text, out char value);
 
         if (success) {
-            int address = DataHandler.Char.Add(value);
-            return address;
+            return DataHandler.Char.Add(value);
         }
 
         WarningHandler.Add(Warning.IncorrectCharFormat(context));
@@ -166,15 +161,13 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override object VisitStringLiteral(StringLiteralContext context) {
-        string value = Regex.Unescape(context.start.Text[1..^1]);
+        string text = Regex.Unescape(context.start.Text[1..^1]);
 
-        int address = DataHandler.Str.Add(value);
-
-        return address;
+        return DataHandler.Str.Add(text);
     }
 
-    public override object? VisitNullKeyword(NullKeywordContext context) {
-        return null;
+    public override object VisitNullKeyword(NullKeywordContext context) {
+        return MemoryAddress.NULL;
     }
 
     public override object VisitTrueKeyword(TrueKeywordContext context) {
@@ -188,22 +181,27 @@ internal sealed partial class ScriptBuilder {
     #endregion
 
     public override object? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
-        // TODO
-        // get actual operator type
-        object? methodName = Visit(context.AdditiveOperator);
-        
+        // get operator name
+        object? op = Visit(context.AdditiveOperator);
+
+        // should never happen, but emit an error if it does
+        if (op is not string methodName) {
+            return null;
+        }
+
         // TODO
         // find matching method and forward parameter types
         // currently keeping excepted type, fine for most primitive operations
         context.Left.ExpectedType = context.ExpectedType;
         context.Right.ExpectedType = context.ExpectedType;
-        
+
         object? left = Visit(context.Left);
         object? right = Visit(context.Right);
-        
+
         // TODO
         // call operation for operands
         // probably working with instructions already
+        Console.WriteLine($"call {methodName}<{2}>");
 
         return null;
     }
@@ -212,11 +210,12 @@ internal sealed partial class ScriptBuilder {
         if (context.OP_PLUS() != null) {
             return "op_Addition";
         }
-        
+
         if (context.OP_MINUS() != null) {
             return "op_Subtraction";
         }
-        
+
+        WarningHandler.Add(Warning.UnrecognizedOperator(context, context.start.Text));
         return null;
     }
 }

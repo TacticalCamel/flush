@@ -78,5 +78,12 @@ internal sealed class Warning {
         Message = $"Unknown variable type {name}"
     };
     
+    public static Warning UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
+        Id = 208,
+        Level = WarningLevel.Error,
+        Message = $"Unknown operator name {name}"
+    };
+    
+    
     #endregion
 }

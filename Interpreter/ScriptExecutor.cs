@@ -17,7 +17,7 @@ public sealed class ScriptExecutor(Script script, ILogger logger) {
         while (InstructionPointer < Script.Instructions.Length) {
             Instruction i = Script.Instructions.Span[InstructionPointer];
             
-            switch (i.OperationCode) {
+            switch (i.Code) {
                 case OperationCode.PushData:
                     Console.WriteLine($"pushd 0x{i.Address:x8}");
                     break;

@@ -14,10 +14,10 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     private ILogger Logger { get; } = logger;
     
     private WarningHandler WarningHandler { get; } = [];
+    private InstructionHandler Instructions { get; } = [];
+    
     private ImportHandler ImportHandler { get; } = new();
     private DataHandler DataHandler { get; } = new();
-    
-    private List<Instruction> Instructions { get; } = [];
     private ClassLoader ClassLoader { get; } = new();
 
     public void Build(ProgramContext programContext) {
