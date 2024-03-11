@@ -6,24 +6,23 @@
         <LangVersion>12</LangVersion>
         <OutputType>Exe</OutputType>
         <ApplicationIcon>icon.ico</ApplicationIcon>
-        <DebugType>embedded</DebugType>
         <AssemblyName>Scranton</AssemblyName>
-        
+
         <!-- publish options -->
         <PublishAot>true</PublishAot>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Compiler\Compiler.csproj" />
-        <ProjectReference Include="..\Interpreter\Interpreter.csproj" />
+        <ProjectReference Include="..\Compiler\Compiler.csproj"/>
+        <ProjectReference Include="..\Interpreter\Interpreter.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
     </ItemGroup>
-    
+
     <ItemGroup>
         <Using Include="Microsoft.Extensions.Logging"/>
         <Using Include="System.ComponentModel.DataAnnotations"/>
@@ -31,9 +30,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="icon.ico" />
-      <None Update="CodeSamples\*">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <None Remove="icon.ico"/>
+        <None Update="CodeSamples\*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 // dec, hex, bin literal
 
+i8 e = 1;
 i32 y = 4 + 556 - 7;
 
 /*

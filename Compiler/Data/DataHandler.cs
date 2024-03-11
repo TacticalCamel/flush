@@ -95,17 +95,17 @@ internal sealed unsafe class DataHandler {
     /// <param name="size">The size of the object in bytes</param>
     /// <returns>The assigned address of the object</returns>
     private int AddObject(int size) {
+        // the block size for aligning objects
+        const int ROUNDING_FACTOR = 4;
+        
         int address;
 
-        // set the rounding factor to the native architecture size
-        int roundingFactor = IntPtr.Size;
-
         // more complicated size: object size is not divisible by the rounding factor
-        if (size % roundingFactor != 0) {
+        if (size % ROUNDING_FACTOR != 0) {
             // check if the object fits in any existing holes
             // the hole size is always smaller than the rounding factor,
             // so check only if the object is small enough
-            if (size < roundingFactor) {
+            if (size < ROUNDING_FACTOR) {
                 for (int i = 0; i < Holes.Count; i++) {
                     // object too big
                     if (Holes[i].Size < size) continue;
@@ -134,7 +134,7 @@ internal sealed unsafe class DataHandler {
             address = DataLength;
 
             // round up object size
-            int roundedSize = RoundUp(size, roundingFactor);
+            int roundedSize = RoundUp(size, ROUNDING_FACTOR);
 
             // create a hole that is directly after the object
             Holes.Add(new Hole(address + size, roundedSize - size));

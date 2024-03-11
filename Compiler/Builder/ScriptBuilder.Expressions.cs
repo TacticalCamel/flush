@@ -15,14 +15,7 @@ internal sealed partial class ScriptBuilder {
     #region Constants
 
     public override object? VisitConstantExpression(ConstantExpressionContext context) {
-        // forward expected type
-        context.Constant.ExpectedType = context.ExpectedType;
-
-        object? address = Visit(context.Constant);
-
-        Console.WriteLine($"push {address:x8}");
-
-        return address;
+        return Visit(context.Constant);
     }
 
     public override object? VisitConstant(ConstantContext context) {
@@ -31,119 +24,88 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override object? VisitDecimalLiteral(DecimalLiteralContext context) {
-        string text = context.start.Text;
-
-        return AddInteger(context, text, NumberStyles.Integer);
+        return AddInteger(context, context.start.Text, NumberStyles.Integer);
     }
 
     public override object? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
-        string text = context.start.Text[2..];
-
-        return AddInteger(context, text, NumberStyles.HexNumber);
+        return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.HexNumber);
     }
 
     public override object? VisitBinaryLiteral(BinaryLiteralContext context) {
-        string text = context.start.Text[2..];
-
-        return AddInteger(context, text, NumberStyles.BinaryNumber);
+        return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.BinaryNumber);
     }
+    
+    private MemoryAddress? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles) {
+        bool isValid = long.TryParse(number, styles, CultureInfo.InvariantCulture, out long value);
 
-    public override object? VisitFloatLiteral(FloatLiteralContext context) {
-        string text = context.start.Text;
-
-        return AddFloat(context, text);
-    }
-
-    private MemoryAddress? AddInteger(ConstantContext context, string text, NumberStyles format) {
-        string? type = context.ExpectedType?.Name;
-
-        switch (type) {
-            case "i8": {
-                bool success = sbyte.TryParse(text, format, CultureInfo.InvariantCulture, out sbyte value);
-
-                if (success) {
-                    return DataHandler.I8.Add(value);
-                }
-
-                break;
-            }
-            case "i16": {
-                bool success = short.TryParse(text, format, CultureInfo.InvariantCulture, out short value);
-
-                if (success) {
-                    return DataHandler.I16.Add(value);
-                }
-
-                break;
-            }
-            case "i32": {
-                bool success = int.TryParse(text, format, CultureInfo.InvariantCulture, out int value);
-
-                if (success) {
-                    return DataHandler.I32.Add(value);
-                }
-
-                break;
-            }
-            case "i64": {
-                bool success = long.TryParse(text, format, CultureInfo.InvariantCulture, out long value);
-
-                if (success) {
-                    return DataHandler.I64.Add(value);
-                }
-
-                break;
-            }
-            case null: {
-                context.ExpectedType = ClassLoader.GetTypeByName("i32");
-                return AddInteger(context, text, format);
-            }
+        if (!isValid) {
+            WarningHandler.Add(Warning.IntegerTooLarge(context));
+            return null;
         }
 
-        WarningHandler.Add(Warning.IntegerOutOfRange(context, text, type));
+        if (value is >= sbyte.MinValue and <= sbyte.MaxValue) {
+            return DataHandler.I8.Add((sbyte)value);
+        }
+        
+        if (value is >= short.MinValue and <= short.MaxValue) {
+            return DataHandler.I16.Add((short)value);
+        }
+        
+        if (value is >= int.MinValue and <= int.MaxValue) {
+            return DataHandler.I32.Add((int)value);
+        }
+
+        return DataHandler.I64.Add(value);
+    }
+
+    public override object? VisitDoubleFloat(DoubleFloatContext context) {
+        ReadOnlySpan<char> text = context.start.Text.AsSpan();
+
+        if (char.IsAsciiLetter(text[^1])) {
+            text = text[..^1];
+        }
+        
+        bool success = double.TryParse(text, out double value);
+
+        if (success) {
+            return DataHandler.F64.Add(value);
+        }
+
+        WarningHandler.Add(Warning.InvalidFloatFormat(context));
         return null;
     }
 
-    private MemoryAddress? AddFloat(ConstantContext context, string text) {
-        const NumberStyles FORMAT = NumberStyles.Float;
+    public override object? VisitSingleFloat(SingleFloatContext context) {
+        ReadOnlySpan<char> text = context.start.Text.AsSpan();
 
-        string? type = context.ExpectedType?.Name;
+        if (char.IsAsciiLetter(text[^1])) {
+            text = text[..^1];
+        }
+        
+        bool success = float.TryParse(text, out float value);
 
-        switch (type) {
-            case "f16": {
-                bool success = Half.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out Half value);
-
-                if (success) {
-                    return DataHandler.F16.Add(value);
-                }
-
-                break;
-            }
-            case "f32": {
-                bool success = float.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out float value);
-
-                if (success) {
-                    return DataHandler.F32.Add(value);
-                }
-
-                break;
-            }
-            case "f64": {
-                bool success = double.TryParse(text, FORMAT, CultureInfo.InvariantCulture, out double value);
-
-                if (success) {
-                    return DataHandler.F64.Add(value);
-                }
-
-                break;
-            }
-            case null: {
-                context.ExpectedType = ClassLoader.GetTypeByName("f32");
-                return AddInteger(context, text, FORMAT);
-            }
+        if (success) {
+            return DataHandler.F32.Add(value);
         }
 
-        WarningHandler.Add(Warning.IntegerOutOfRange(context, text, type));
+        WarningHandler.Add(Warning.InvalidFloatFormat(context));
+        return null;
+    }
+
+    public override object? VisitHalfFloat(HalfFloatContext context) {
+        ReadOnlySpan<char> text = context.start.Text.AsSpan();
+
+        if (char.IsAsciiLetter(text[^1])) {
+            text = text[..^1];
+        }
+        
+        bool success = Half.TryParse(text, out Half value);
+
+        if (success) {
+            return DataHandler.F16.Add(value);
+        }
+
+        WarningHandler.Add(Warning.InvalidFloatFormat(context));
         return null;
     }
 
@@ -184,23 +146,19 @@ internal sealed partial class ScriptBuilder {
         // get operator name
         object? op = Visit(context.AdditiveOperator);
 
-        // should never happen, but emit an error if it does
+        // should never happen, but throw an error if it does
         if (op is not string methodName) {
             return null;
         }
 
         // TODO
-        // find matching method and forward parameter types
-        // currently keeping excepted type, fine for most primitive operations
-        context.Left.ExpectedType = context.ExpectedType;
-        context.Right.ExpectedType = context.ExpectedType;
+        // find matching method
 
-        object? left = Visit(context.Left);
-        object? right = Visit(context.Right);
-
+        /*object? left =*/ Visit(context.Left);
+        /*object? right =*/ Visit(context.Right);
+        
         // TODO
-        // call operation for operands
-        // probably working with instructions already
+        // method call
         Console.WriteLine($"call {methodName}<{2}>");
 
         return null;

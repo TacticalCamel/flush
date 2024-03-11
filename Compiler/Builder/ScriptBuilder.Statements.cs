@@ -18,8 +18,6 @@ internal sealed partial class ScriptBuilder {
 
         ExpressionContext expression = context.Expression;
 
-        expression.ExpectedType = type;
-        
         VisitExpression(expression);
 
         return null;

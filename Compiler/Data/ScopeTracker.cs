@@ -1,5 +1,6 @@
 namespace Compiler.Data;
 
+// TODO: class incomplete
 internal sealed class ScopeTracker{
     private readonly struct Scope(int parentIndex){
         public int ParentIndex{ get; } = parentIndex;

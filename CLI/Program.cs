@@ -139,8 +139,20 @@ internal static class Program {
             return typeof(T)
                 .GetProperties()
                 .Select(x => x.GetCustomAttribute<DisplayAttribute>())
-                .Where(x => x != null)
-                .ToDictionary(x => $"{(x!.Name is null ? string.Empty : $"{OptionParser.PREFIX_LONG}{x.Name}")}{(x.ShortName is null ? string.Empty : $", {OptionParser.PREFIX_SHORT}{x.ShortName}")}", x => x!.Description ?? string.Empty);
+                .Where(x => x is not null)
+                .ToDictionary(GetKeyString!, GetValueString!);
+
+            string GetKeyString(DisplayAttribute attribute) {
+                string shortName = attribute.ShortName is null ? string.Empty : OptionParser.PREFIX_SHORT + attribute.ShortName;
+                string name = attribute.Name is null ? string.Empty : OptionParser.PREFIX_LONG + attribute.Name;
+                string separator = attribute.ShortName is not null && attribute.Name is not null ? ", " : string.Empty;
+                
+                return $"{name}{separator}{shortName}";
+            }
+
+            string GetValueString(DisplayAttribute attribute) {
+                return attribute.Description ?? string.Empty;
+            }
         }
 
         void DisplayOptions(Dictionary<string, string> helpOptions, string categoryName) {

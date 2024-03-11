@@ -9,5 +9,8 @@
         <!-- build output directory -->
         <OutputPath>$(SolutionDir).out\bin\$(AssemblyName)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
+        
+        <!-- other -->
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
 </Project>

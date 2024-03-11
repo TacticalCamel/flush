@@ -60,10 +60,16 @@ internal sealed class Warning {
         Message = $"Module {name} is already imported"
     };
     
-    public static Warning IntegerOutOfRange(ParserRuleContext context, string value, string type) => new(context) {
+    public static Warning IntegerTooLarge(ParserRuleContext context) => new(context) {
         Id = 204,
         Level = WarningLevel.Error,
-        Message = $"Value {value} is out of range for type {type}"
+        Message = "Integer value is too large"
+    };
+    
+    public static Warning InvalidFloatFormat(ParserRuleContext context) => new(context) {
+        Id = 205,
+        Level = WarningLevel.Error,
+        Message = "Floating-point value is in an invalid format"
     };
 
     public static Warning IncorrectCharFormat(ParserRuleContext context) => new(context) {

@@ -3,6 +3,7 @@
 using System.Collections;
 using Interpreter.Bytecode;
 
+// TODO: class incomplete
 internal sealed class InstructionHandler: IEnumerable<Instruction> {
     private List<Instruction> Instructions { get; } = [];
     

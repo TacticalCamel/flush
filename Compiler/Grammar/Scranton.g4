@@ -188,12 +188,14 @@ expression
 	;
 
 constant
-	: FLOAT_LIT #FloatLiteral
-	| DEC_LIT #DecimalLiteral
-	| HEX_LIT #HexadecimalLiteral
-	| BIN_LIT #BinaryLiteral
-	| STRING_LIT #StringLiteral
-	| CHAR_LIT #CharLiteral
+	: DECIMAL_INTEGER #DecimalLiteral
+	| HEXADECIMAL_INTEGER #HexadecimalLiteral
+	| BINARY_INTEGER #BinaryLiteral
+	| DOUBLE_FLOAT #DoubleFloat
+	| SINGLE_FLOAT #SingleFloat
+	| HALF_FLOAT #HalfFloat
+	| STRING_LITERAL #StringLiteral
+	| CHAR_LITERAL #CharLiteral
 	| KW_NULL #NullKeyword
 	| KW_TRUE #TrueKeyword
 	| KW_FALSE #FalseKeyword
