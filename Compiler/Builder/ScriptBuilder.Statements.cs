@@ -38,4 +38,9 @@ internal sealed partial class ScriptBuilder {
     public override string VisitId(IdContext context) {
         return context.Start.Text;
     }
+    
+    public override object? VisitExpression(ExpressionContext context) {
+        // subtypes must be visited
+        return Visit(context);
+    }
 }

@@ -72,24 +72,41 @@ internal sealed class Warning {
         Message = "Floating-point value is in an invalid format"
     };
 
-    public static Warning IncorrectCharFormat(ParserRuleContext context) => new(context) {
+    public static Warning UnknownEscapeSequence(ParserRuleContext context, char character) => new(context) {
         Id = 206,
         Level = WarningLevel.Error,
-        Message = "Incorrect character format"
+        Message = $"Unknown escape sequence \\{character}"
     };
 
-    public static Warning UnknownVariableType(ParserRuleContext context, string name) => new(context) {
+    public static Warning UnclosedEscapeSequence(ParserRuleContext context) => new(context) {
         Id = 207,
+        Level = WarningLevel.Error,
+        Message = "Unclosed escape sequence"
+    };
+    
+    public static Warning UnknownVariableType(ParserRuleContext context, string name) => new(context) {
+        Id = 208,
         Level = WarningLevel.Error,
         Message = $"Unknown variable type {name}"
     };
     
     public static Warning UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
-        Id = 208,
+        Id = 209,
         Level = WarningLevel.Error,
         Message = $"Unknown operator name {name}"
     };
     
+    public static Warning InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {
+        Id = 210,
+        Level = WarningLevel.Error,
+        Message = $"Unicode character escapes must be {length}-digit long"
+    };
+    
+    public static Warning InvalidCharFormat(ParserRuleContext context) => new(context) {
+        Id = 211,
+        Level = WarningLevel.Error,
+        Message = "Invalid char format"
+    };
     
     #endregion
 }
