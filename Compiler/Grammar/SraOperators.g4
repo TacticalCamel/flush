@@ -84,7 +84,6 @@ OP_XOR
 	: '^'
 	;
 
-//
 OP_ASSIGN
 	: '='
 	;

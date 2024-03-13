@@ -6,28 +6,28 @@ using System.Globalization;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
-    public override object? VisitConstantExpression(ConstantExpressionContext context) {
-        return Visit(context.Constant);
+    public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
+        return VisitConstant(context.Constant);
     }
 
-    public override object? VisitConstant(ConstantContext context) {
+    public override ExpressionResult? VisitConstant(ConstantContext context) {
         // subtypes must be visited
-        return Visit(context);
+        return (ExpressionResult?)Visit(context);
     }
 
-    public override object? VisitDecimalLiteral(DecimalLiteralContext context) {
+    public override ExpressionResult? VisitDecimalLiteral(DecimalLiteralContext context) {
         return AddInteger(context, context.start.Text, NumberStyles.Integer);
     }
 
-    public override object? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
+    public override ExpressionResult? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
         return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.HexNumber);
     }
 
-    public override object? VisitBinaryLiteral(BinaryLiteralContext context) {
+    public override ExpressionResult? VisitBinaryLiteral(BinaryLiteralContext context) {
         return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.BinaryNumber);
     }
 
-    public override object? VisitDoubleFloat(DoubleFloatContext context) {
+    public override ExpressionResult? VisitDoubleFloat(DoubleFloatContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan();
 
         if (char.IsAsciiLetter(text[^1])) {
@@ -37,14 +37,14 @@ internal sealed partial class ScriptBuilder {
         bool success = double.TryParse(text, out double value);
 
         if (success) {
-            return DataHandler.F64.Add(value);
+            return new ExpressionResult(DataHandler.F64.Add(value), TypeHandler.GetFromType<Runtime.Core.F64>());
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
         return null;
     }
 
-    public override object? VisitSingleFloat(SingleFloatContext context) {
+    public override ExpressionResult? VisitSingleFloat(SingleFloatContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan();
 
         if (char.IsAsciiLetter(text[^1])) {
@@ -54,14 +54,14 @@ internal sealed partial class ScriptBuilder {
         bool success = float.TryParse(text, out float value);
 
         if (success) {
-            return DataHandler.F32.Add(value);
+            return new ExpressionResult(DataHandler.F32.Add(value), TypeHandler.GetFromType<Runtime.Core.F32>());
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
         return null;
     }
 
-    public override object? VisitHalfFloat(HalfFloatContext context) {
+    public override ExpressionResult? VisitHalfFloat(HalfFloatContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan();
 
         if (char.IsAsciiLetter(text[^1])) {
@@ -71,14 +71,14 @@ internal sealed partial class ScriptBuilder {
         bool success = Half.TryParse(text, out Half value);
 
         if (success) {
-            return DataHandler.F16.Add(value);
+            return new ExpressionResult(DataHandler.F16.Add(value), TypeHandler.GetFromType<Runtime.Core.F16>());
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
         return null;
     }
 
-    public override object? VisitCharLiteral(CharLiteralContext context) {
+    public override ExpressionResult? VisitCharLiteral(CharLiteralContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
 
         char result = GetFirstCharacter(context, ref text, false);
@@ -88,10 +88,11 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        return result;
+        MemoryAddress address = DataHandler.Char.Add(result);
+        return new ExpressionResult(address, TypeHandler.GetFromType<Runtime.Core.Char>());
     }
 
-    public override object VisitStringLiteral(StringLiteralContext context) {
+    public override ExpressionResult VisitStringLiteral(StringLiteralContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
 
         List<char> characters = [];
@@ -104,22 +105,22 @@ internal sealed partial class ScriptBuilder {
 
         string result = string.Concat(characters);
 
-        return DataHandler.Str.Add(result);
+        return new ExpressionResult(DataHandler.Str.Add(result), TypeHandler.GetFromType<Runtime.Core.Str>());
     }
 
-    public override object VisitNullKeyword(NullKeywordContext context) {
-        return MemoryAddress.NULL;
+    public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
+        return new ExpressionResult(MemoryAddress.NULL, null);
     }
 
-    public override object VisitTrueKeyword(TrueKeywordContext context) {
-        return DataHandler.Bool.Add(true);
+    public override ExpressionResult VisitTrueKeyword(TrueKeywordContext context) {
+        return new ExpressionResult(DataHandler.Bool.Add(true), TypeHandler.GetFromType<Runtime.Core.Bool>());
     }
 
-    public override object VisitFalseKeyword(FalseKeywordContext context) {
-        return DataHandler.Bool.Add(false);
+    public override ExpressionResult VisitFalseKeyword(FalseKeywordContext context) {
+        return new ExpressionResult(DataHandler.Bool.Add(false), TypeHandler.GetFromType<Runtime.Core.Bool>());
     }
 
-    private MemoryAddress? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles) {
+    private ExpressionResult? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles) {
         bool isValid = long.TryParse(number, styles, CultureInfo.InvariantCulture, out long value);
 
         if (!isValid) {
@@ -128,18 +129,18 @@ internal sealed partial class ScriptBuilder {
         }
 
         if (value is >= sbyte.MinValue and <= sbyte.MaxValue) {
-            return DataHandler.I8.Add((sbyte)value);
+            return new ExpressionResult(DataHandler.I8.Add((sbyte)value), TypeHandler.GetFromType<Runtime.Core.I8>());
         }
 
         if (value is >= short.MinValue and <= short.MaxValue) {
-            return DataHandler.I16.Add((short)value);
+            return new ExpressionResult(DataHandler.I16.Add((short)value), TypeHandler.GetFromType<Runtime.Core.I16>());
         }
 
         if (value is >= int.MinValue and <= int.MaxValue) {
-            return DataHandler.I32.Add((int)value);
+            return new ExpressionResult(DataHandler.I32.Add((int)value), TypeHandler.GetFromType<Runtime.Core.I32>());
         }
 
-        return DataHandler.I64.Add(value);
+        return new ExpressionResult(DataHandler.I64.Add(value), TypeHandler.GetFromType<Runtime.Core.I64>());
     }
 
     private char GetFirstCharacter(ConstantContext context, ref ReadOnlySpan<char> characters, bool inString) {

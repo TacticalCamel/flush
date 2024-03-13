@@ -1,7 +1,8 @@
-﻿namespace Compiler.Data;
+﻿namespace Compiler.Handlers;
 
 using System.Runtime.InteropServices;
 using Runtime.Core;
+using Data;
 
 /// <summary>
 /// This class manages the memory space of the program data section at compile time.

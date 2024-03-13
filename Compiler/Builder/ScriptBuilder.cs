@@ -2,11 +2,10 @@ namespace Compiler.Builder;
 
 using static Grammar.ScrantonParser;
 using Analysis;
-using Data;
+using Handlers;
 using Grammar;
 using Interpreter.Serialization;
 using Interpreter.Bytecode;
-using Interpreter.Types;
 using Microsoft.Extensions.Logging;
 
 internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger logger) : ScrantonBaseVisitor<object?> {
@@ -15,10 +14,8 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     
     private WarningHandler WarningHandler { get; } = [];
     private InstructionHandler Instructions { get; } = [];
-    
-    private ImportHandler ImportHandler { get; } = new();
+    private TypeHandler TypeHandler { get; } = new();
     private DataHandler DataHandler { get; } = new();
-    private ClassLoader ClassLoader { get; } = new();
 
     public void Build(ProgramContext programContext) {
         // lexer or parser error before traversing tree

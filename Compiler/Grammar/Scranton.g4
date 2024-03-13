@@ -34,8 +34,12 @@ moduleSegment
 	;
 
 moduleStatement
-    : KW_MODULE Name=id
+    : KW_MODULE Name=namespace
     ;
+
+namespace
+	: (id '.')* id
+	;
 
 // 1.2 Import szegmens
 importSegment
@@ -44,7 +48,7 @@ importSegment
 
 importStatement
 	: KW_IMPORT Name=KW_AUTO #AutoImport
-	| KW_IMPORT Name=id #ManualImport
+	| KW_IMPORT Name=namespace #ManualImport
 	;
 
 // 1.3 Paraméter szegmens
@@ -53,7 +57,7 @@ parameterSegment
 	;
 
 scriptParameterList
-	: (varWithType PARAM_SEP)* varWithType
+	: (variableWithType PARAM_SEP)* variableWithType
 	;
 
 // 1.3.1 Bemeneti paraméterek
@@ -86,7 +90,7 @@ classHeader
 	;
 
 inheritanceList
-	: ((typeName PARAM_SEP)* typeName)?
+	: ((type PARAM_SEP)* type)?
 	;
 
 classBody
@@ -100,7 +104,7 @@ classMember
 	;
 
 propertyDefinition
-	: Modifiers=modifierList Type=typeName Name=id STATEMENT_SEP
+	: Modifiers=modifierList Type=type Name=id STATEMENT_SEP
 	;
 	
 constructorDefinition
@@ -122,7 +126,7 @@ regularStatement
 
 // 2.3.1.1 Változó deklaráció
 variableDeclaration
-	: varWithType (OP_ASSIGN Expression=expression)?
+	: VariableWithType=variableWithType (OP_ASSIGN Expression=expression)?
 	;
 
 // 2.3.2 Vezérlési utasítás
@@ -154,7 +158,7 @@ ifBlock
 // 2.3.3.3 For block
 forBlock
 	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END statement (KW_ELSE statement)?
-	| KW_FOR HEAD_START varWithType KW_IN id HEAD_END statement (KW_ELSE statement)?
+	| KW_FOR HEAD_START variableWithType KW_IN id HEAD_END statement (KW_ELSE statement)?
 	;
 
 // 2.3.3.4 While block
@@ -164,7 +168,7 @@ whileBlock
 
 // 2.3.3.5 Try block
 tryBlock
-	: KW_TRY statement KW_CATCH HEAD_START varWithType HEAD_END statement
+	: KW_TRY statement KW_CATCH HEAD_START variableWithType HEAD_END statement
 	;
 	
 // Kifejezés
@@ -278,22 +282,22 @@ opAssignment
 	;
 
 // Közös szabály
-varWithType
-	: Type=typeName Name=id
+variableWithType
+	: Type=type Name=id
 	;
 
-typeName
+type
 	: Name=id #SimpleType
-	| Name=id OP_LESS (typeName PARAM_SEP)* typeName OP_GREATER #GenericType
+	| Name=id OP_LESS (type PARAM_SEP)* type OP_GREATER #GenericType
 	;
 
 returnType
-	: typeName
+	: type
 	| KW_VOID
 	;
 
 parameterList
-	: ((varWithType PARAM_SEP)* varWithType)?
+	: ((variableWithType PARAM_SEP)* variableWithType)?
 	;
 
 modifierList

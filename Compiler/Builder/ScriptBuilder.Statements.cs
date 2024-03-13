@@ -7,40 +7,77 @@ using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
-        TypeTemplate template = VisitTypeName(context.varWithType().Type);
-
-        TypeInfo? type = ClassLoader.GetTypeByName(template.TypeName);
-
-        if (type is null) {
-            WarningHandler.Add(Warning.UnknownVariableType(context.varWithType().Type, template.TypeName));
+        VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
+        
+        ExpressionResult? result = VisitExpression(context.Expression);
+        
+        if (variable is null) {
             return null;
         }
-
-        ExpressionContext expression = context.Expression;
-
-        VisitExpression(expression);
+        
+        Logger.Debug($"{variable} = {result?.ToString() ?? "null"}");
 
         return null;
     }
-    
-    public override TypeTemplate VisitTypeName(TypeNameContext context) {
-        return (TypeTemplate)Visit(context)!;
+
+    public override VariableIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
+        TypeIdentifier? type = VisitType(context.Type);
+        string name = VisitId(context.Name);
+
+        if (type is null) {
+            return null;
+        }
+        
+        return new VariableIdentifier(type, name);
     }
 
-    public override TypeTemplate VisitSimpleType(SimpleTypeContext context) {
-        return new TypeTemplate(VisitId(context.Name), Array.Empty<TypeTemplate>());
-    }
-
-    public override TypeTemplate VisitGenericType(GenericTypeContext context) {
-        return new TypeTemplate(VisitId(context.Name), context.typeName().Select(VisitTypeName).ToArray());
-    }
-
-    public override string VisitId(IdContext context) {
-        return context.Start.Text;
-    }
-    
-    public override object? VisitExpression(ExpressionContext context) {
+    public override TypeIdentifier? VisitType(TypeContext context) {
         // subtypes must be visited
-        return Visit(context);
+        return (TypeIdentifier?)Visit(context);
+    }
+
+    public override TypeIdentifier? VisitSimpleType(SimpleTypeContext context) {
+        string name = VisitId(context.Name);
+        
+        TypeInfo? type = TypeHandler.TryGetByName(name);
+
+        if (type is null) {
+            WarningHandler.Add(Warning.UnknownVariableType(context, name));
+            return null;
+        }
+        
+        return new TypeIdentifier(type, []);
+    }
+
+    public override TypeIdentifier? VisitGenericType(GenericTypeContext context) {
+        string name = VisitId(context.Name);
+        
+        TypeInfo? type = TypeHandler.TryGetByName(name);
+        
+        if (type is null) {
+            WarningHandler.Add(Warning.UnknownVariableType(context, name));
+            return null;
+        }
+
+        TypeContext[] typeContexts = context.type();
+
+        TypeIdentifier[] genericParameters = new TypeIdentifier[typeContexts.Length];
+
+        for (int i = 0; i < typeContexts.Length; i++) {
+            TypeIdentifier? typeIdentifier = VisitType(typeContexts[i]);
+
+            if (typeIdentifier is null) {
+                return null;
+            }
+
+            genericParameters[i] = typeIdentifier;
+        }
+        
+        return new TypeIdentifier(type, genericParameters);
+    }
+    
+    public override ExpressionResult? VisitExpression(ExpressionContext context) {
+        // subtypes must be visited
+        return (ExpressionResult?)Visit(context);
     }
 }

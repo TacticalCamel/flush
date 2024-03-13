@@ -27,8 +27,8 @@ internal static partial class LoggerMessageDefinitions {
 
     #region Compilation
 
-    [LoggerMessage(EventId = 100, Level = LogLevel.Debug, Message = "")]
-    public static partial void E(this ILogger logger);
+    [LoggerMessage(EventId = 100, Level = LogLevel.Debug, Message = "{message}")]
+    public static partial void Debug(this ILogger logger, string message);
 
     #endregion
     

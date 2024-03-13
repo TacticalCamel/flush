@@ -1,10 +1,7 @@
 ﻿namespace Compiler.Builder;
 
-using Antlr4.Runtime;
 using Analysis;
-using Grammar;
 using Data;
-using System.Globalization;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -12,22 +9,21 @@ internal sealed partial class ScriptBuilder {
         // get operator name
         object? op = Visit(context.AdditiveOperator);
 
-        // should never happen, but throw an error if it does
+        // return if failed to get the method name, should never happen
         if (op is not string methodName) {
             return null;
         }
 
+        ExpressionResult? left = VisitExpression(context.Left);
+        ExpressionResult? right = VisitExpression(context.Right);
+        
+        
         // TODO
         // find matching method
-
-        /*object? left =*/
-        Visit(context.Left);
-        /*object? right =*/
-        Visit(context.Right);
-
+        
         // TODO
         // method call
-        Console.WriteLine($"call {methodName}<{2}>");
+        Logger.Debug($"call {methodName}({left}, {right})");
 
         return null;
     }
