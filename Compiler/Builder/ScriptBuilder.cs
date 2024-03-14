@@ -34,4 +34,12 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         
         return new Script(data, instructions);
     }
+
+    public override object? VisitProgram(ProgramContext context) {
+        return VisitChildren(context);
+    }
+
+    public override object? VisitProgramBody(ProgramBodyContext context) {
+        return VisitChildren(context);
+    }
 }

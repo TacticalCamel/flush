@@ -109,7 +109,7 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
-        return new ExpressionResult(MemoryAddress.NULL, null);
+        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
     }
 
     public override ExpressionResult VisitTrueKeyword(TrueKeywordContext context) {
@@ -188,6 +188,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // other escape sequence
+        // do not allow single quote escapes in strings and double quote escapes in chars
         char? result = second switch {
             'b' => '\b',
             'f' => '\f',

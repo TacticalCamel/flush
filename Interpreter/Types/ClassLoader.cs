@@ -5,7 +5,6 @@ using Runtime.Internal;
 using Runtime.Core;
 
 public static class ClassLoader {
-    private const string RUNTIME_ROOT_NAMESPACE = "runtime.";
     private const string DEFAULT_INCLUDE = "core";
     private const string DEFAULT_EXCLUDE = "internal";
     
@@ -14,24 +13,15 @@ public static class ClassLoader {
         
         // iterate through every public type in the runtime assembly
         foreach (Type type in typeof(ScrantonObject).Assembly.ExportedTypes) {
-            // every type should have a namespace
-            // check anyway to compiler doesn't cry
-            if (type.Namespace is null) {
-                continue;
-            }
+            // get module of the type
+            string? module = GetTypeModule(type);
 
-            // lowercase variant of original namespace
-            string module = type.Namespace.ToLower();
-
-            // trim start if in runtime, skip if not
+            // invalid module
             // every type should be in a folder inside the runtime namespace
-            if (module.StartsWith(RUNTIME_ROOT_NAMESPACE)) {
-                module = module[RUNTIME_ROOT_NAMESPACE.Length..];
-            }
-            else {
+            if (module is null) {
                 continue;
             }
-
+            
             // type excluded by force
             if (DEFAULT_EXCLUDE.Any(excluded => module.StartsWith(excluded))) {
                 continue;
@@ -60,6 +50,19 @@ public static class ClassLoader {
         return types;
     }
 
+    private static string? GetTypeModule(Type type) {
+        const string RUNTIME_ROOT_NAMESPACE = "Runtime.";
+
+        string? name = type.Namespace;
+
+        // invalid namespace
+        if (name is null || !name.StartsWith(RUNTIME_ROOT_NAMESPACE)) {
+            return null;
+        }
+
+        return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
+    }
+    
     public static string GetTypeName(Type type) {
         return type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name;
     }

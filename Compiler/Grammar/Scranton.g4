@@ -179,16 +179,16 @@ expression
 	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
 	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
 	| Identifier=id #IdentifierExpression
-	| HEAD_START expression HEAD_END #NestedExpression
+	| HEAD_START Body=expression HEAD_END #NestedExpression
 	| Left=expression OP_MEMBER_ACCESS Right=expression  #MemberAccessOperatorExpression
-	| LeftUnaryOperator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
-	| Left=expression RightUnaryOperator=opRightUnary #RightUnaryOperatorExpression
-	| Left=expression MultiplicativeOperator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
-	| Left=expression AdditiveOperator=opAdditive Right=expression #AdditiveOperatorExpression
-	| Left=expression ShiftOperator=opShift Right=expression #ShiftOperatorExpression
-	| Left=expression ComparisonOperator=opComparison Right=expression #ComparisonOperatorExpression
-	| Left=expression LogicalOperator=opLogical Right=expression #LogicalOperatorExpression
-	| Left=expression AssigmentOperator=opAssignment Right=expression #AssigmentOperatorExpression
+	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
+	| Left=expression Operator=opRightUnary #RightUnaryOperatorExpression
+	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
+	| Left=expression Operator=opAdditive Right=expression #AdditiveOperatorExpression
+	| Left=expression Operator=opShift Right=expression #ShiftOperatorExpression
+	| Left=expression Operator=opComparison Right=expression #ComparisonOperatorExpression
+	| Left=expression Operator=opLogical Right=expression #LogicalOperatorExpression
+	| Left=expression Operator=opAssignment Right=expression #AssigmentOperatorExpression
 	;
 
 constant
@@ -311,10 +311,10 @@ modifier
 
 id
 	: ID
-	| contextual_keyword
+	| contextualKeyword
 	;
 
-contextual_keyword
+contextualKeyword
 	: KW_MODULE
 	| KW_IMPORT
 	| KW_IN

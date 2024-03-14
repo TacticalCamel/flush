@@ -7,7 +7,7 @@ public struct I16 {
     private I16(short value) {
         Value = value;
     }
-    
+
     public static implicit operator I16(short value) {
         return new I16(value);
     }

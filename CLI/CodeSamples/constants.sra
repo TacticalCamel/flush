@@ -7,8 +7,8 @@ import auto
 import internal
 
 // dec, hex, bin literal
-i8 e = 1;
-i32 y = 4 + 556 - 7;
+i8 e = 1 / 6;
+i32 y = 4 * 556 - 7;
 
 // float literal
 f32 z = 3.1415926;
