@@ -108,7 +108,7 @@ internal static class Program {
         OptionParser optionParser = new(logger, args, targetKey);
 
         // get target file paths
-        targets = optionParser.GetAndRemoveOption(targetKey) ?? Array.Empty<string>();
+        targets = optionParser.GetAndRemoveOption(targetKey) ?? [];
 
         // get option values for 2 different option class
         interfaceOptions = optionParser.ParseFor<InterfaceOptions>();

@@ -25,7 +25,7 @@ program
 
 // 1 Program fejléc
 programHeader
-	: moduleSegment importSegment parameterSegment
+	: moduleSegment importSegment
 	;
 
 // 1.1 Modul szegmens
@@ -49,25 +49,6 @@ importSegment
 importStatement
 	: KW_IMPORT Name=KW_AUTO #AutoImport
 	| KW_IMPORT Name=namespace #ManualImport
-	;
-
-// 1.3 Paraméter szegmens
-parameterSegment
-	: InParameters=inParameters? OutParameters=outParameters?
-	;
-
-scriptParameterList
-	: (variableWithType PARAM_SEP)* variableWithType
-	;
-
-// 1.3.1 Bemeneti paraméterek
-inParameters
-	: KW_IN (KW_VOID | ParameterList=scriptParameterList)
-	;
-
-// 1.3.2 Kimeneti paraméterek
-outParameters
-	: KW_OUT (KW_VOID | ParameterList=scriptParameterList)
 	;
 
 // 2 Program test
@@ -182,7 +163,7 @@ expression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
 	| Left=expression OP_MEMBER_ACCESS Right=expression  #MemberAccessOperatorExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
-	| Left=expression Operator=opRightUnary #RightUnaryOperatorExpression
+	| Expression=expression Operator=opRightUnary #RightUnaryOperatorExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
 	| Left=expression Operator=opAdditive Right=expression #AdditiveOperatorExpression
 	| Left=expression Operator=opShift Right=expression #ShiftOperatorExpression

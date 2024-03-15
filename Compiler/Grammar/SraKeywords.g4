@@ -12,14 +12,6 @@ KW_AUTO
 	: 'auto'
 	;
 
-KW_IN
-	: 'in'
-	;
-
-KW_OUT
-	: 'out'
-	;
-
 KW_TRY
 	: 'try'
 	;

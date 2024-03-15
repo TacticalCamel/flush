@@ -28,36 +28,17 @@ internal sealed partial class ScriptBuilder {
         return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
     }
 
-    private ExpressionResult? ResolveBinaryExpression(ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-        // resolve the expression on both sides
-        ExpressionResult? left = VisitExpression(leftContext);
-        ExpressionResult? right = VisitExpression(rightContext);
-
-        // return if an error occured
-        // the type of the expression result can still be null
-        if (left is null || right is null) {
-            return null;
-        }
-        
-        Console.WriteLine($"{DefaultVocabulary.GetSymbolicName(operatorType)} \t{left} \t{right}");
-        
-        // TODO implement
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
-    }
-
     public override ExpressionResult? VisitLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
-        // TODO implement
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
+        return ResolveUnaryExpression(context.Expression, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitRightUnaryOperatorExpression(RightUnaryOperatorExpressionContext context) {
-        // TODO implement
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
+        return ResolveUnaryExpression(context.Expression, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
         // TODO implement
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
+        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
     }
 
     public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
@@ -71,12 +52,45 @@ internal sealed partial class ScriptBuilder {
         string name = VisitId(context.Identifier);
         
         // TODO implement
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
+        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
     }
 
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
         // nothing to do, nesting the expression was only necessary to change operator precedence
         return VisitExpression(context.Body);
+    }
+    
+    private ExpressionResult? ResolveBinaryExpression(ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
+        // resolve the expression on both sides
+        ExpressionResult? left = VisitExpression(leftContext);
+        ExpressionResult? right = VisitExpression(rightContext);
+
+        // return if an error occured
+        // the type of the expressions can still be null
+        if (left is null || right is null) {
+            return null;
+        }
+
+        //Console.WriteLine($"{DefaultVocabulary.GetSymbolicName(operatorType)} \t{left} \t{right}");
+        
+        // TODO implement
+        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
+    }
+    
+    private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, int operatorType) {
+        // resolve the expression
+        ExpressionResult? result = VisitExpression(context);
+
+        // return if an error occured
+        // the type of the expression can still be null
+        if (result is null) {
+            return null;
+        }
+        
+        Console.WriteLine($"{DefaultVocabulary.GetSymbolicName(operatorType)} \t{result}");
+        
+        // TODO implement
+        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
     }
     
     #region Unused visit methods

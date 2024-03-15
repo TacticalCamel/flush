@@ -23,30 +23,23 @@ internal sealed unsafe class DataHandler {
 
     // primitive types and strings can always be stored
     // keep their values in memory during compile time to avoid allocating memory for the same object twice
+    // unsigned and signed integers have the same binary representation
+    // so using a single collection is enough for a given size
 
-    /// <summary> 8-bit signed integers </summary>
+    /// <summary> 8-bit integers </summary>
     public IObjectCollection<I8> I8 { get; }
 
-    /// <summary> 16-bit signed integers </summary>
+    /// <summary> 16-bit integers and unicode characters </summary>
     public IObjectCollection<I16> I16 { get; }
 
-    /// <summary> 32-bit signed integers </summary>
+    /// <summary> 32-bit integers </summary>
     public IObjectCollection<I32> I32 { get; }
 
-    /// <summary> 64-bit signed integers </summary>
+    /// <summary> 64-bit integers </summary>
     public IObjectCollection<I64> I64 { get; }
-
-    /// <summary> 8-bit unsigned integers </summary>
-    public IObjectCollection<U8> U8 { get; }
-
-    /// <summary> 16-bit unsigned integers </summary>
-    public IObjectCollection<U16> U16 { get; }
-
-    /// <summary> 32-bit unsigned integers </summary>
-    public IObjectCollection<U32> U32 { get; }
-
-    /// <summary> 64-bit unsigned integers </summary>
-    public IObjectCollection<U64> U64 { get; }
+    
+    /// <summary> 128-bit integers </summary>
+    public IObjectCollection<I128> I128 { get; }
 
     /// <summary> 16-bit floating-point numbers </summary>
     public IObjectCollection<F16> F16 { get; }
@@ -59,9 +52,6 @@ internal sealed unsafe class DataHandler {
 
     /// <summary> booleans </summary>
     public IObjectCollection<Bool> Bool { get; }
-
-    /// <summary> 16-bit characters </summary>
-    public IObjectCollection<Char> Char { get; }
 
     /// <summary> strings </summary>
     public IObjectCollection<string> Str { get; }
@@ -77,15 +67,11 @@ internal sealed unsafe class DataHandler {
         I16 = new PrimitiveCollection<I16>(this);
         I32 = new PrimitiveCollection<I32>(this);
         I64 = new PrimitiveCollection<I64>(this);
-        U8 = new PrimitiveCollection<U8>(this);
-        U16 = new PrimitiveCollection<U16>(this);
-        U32 = new PrimitiveCollection<U32>(this);
-        U64 = new PrimitiveCollection<U64>(this);
+        I128 = new PrimitiveCollection<I128>(this);
         F16 = new PrimitiveCollection<F16>(this);
         F32 = new PrimitiveCollection<F32>(this);
         F64 = new PrimitiveCollection<F64>(this);
         Bool = new PrimitiveCollection<Bool>(this);
-        Char = new PrimitiveCollection<Char>(this);
         Str = new StringCollection(this);
     }
 
@@ -168,15 +154,11 @@ internal sealed unsafe class DataHandler {
         I16.WriteContents(bytes);
         I32.WriteContents(bytes);
         I64.WriteContents(bytes);
-        U8.WriteContents(bytes);
-        U16.WriteContents(bytes);
-        U32.WriteContents(bytes);
-        U64.WriteContents(bytes);
+        I128.WriteContents(bytes);
         F16.WriteContents(bytes);
         F32.WriteContents(bytes);
         F64.WriteContents(bytes);
         Bool.WriteContents(bytes);
-        Char.WriteContents(bytes);
         Str.WriteContents(bytes);
 
         return bytes;

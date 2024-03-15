@@ -16,15 +16,30 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override ExpressionResult? VisitDecimalLiteral(DecimalLiteralContext context) {
-        return AddInteger(context, context.start.Text, NumberStyles.Integer);
+        string number = context.start.Text;
+
+        bool hasNegativeSign = number[0] == '-';
+        bool hasPositiveSign = number[0] == '+';
+
+        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 1 : 0), NumberStyles.Integer, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
-        return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.HexNumber);
+        string number = context.start.Text;
+        
+        bool hasNegativeSign = number[0] == '-';
+        bool hasPositiveSign = number[0] == '+';
+        
+        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.HexNumber, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitBinaryLiteral(BinaryLiteralContext context) {
-        return AddInteger(context, context.start.Text.AsSpan(2), NumberStyles.BinaryNumber);
+        string number = context.start.Text;
+        
+        bool hasNegativeSign = number[0] == '-';
+        bool hasPositiveSign = number[0] == '+';
+        
+        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.BinaryNumber, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitDoubleFloat(DoubleFloatContext context) {
@@ -37,7 +52,7 @@ internal sealed partial class ScriptBuilder {
         bool success = double.TryParse(text, out double value);
 
         if (success) {
-            return new ExpressionResult(DataHandler.F64.Add(value), TypeHandler.GetFromType<Runtime.Core.F64>());
+            return new ExpressionResult(DataHandler.F64.Add(value), TypeHandler.CoreTypes.F64);
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
@@ -54,7 +69,7 @@ internal sealed partial class ScriptBuilder {
         bool success = float.TryParse(text, out float value);
 
         if (success) {
-            return new ExpressionResult(DataHandler.F32.Add(value), TypeHandler.GetFromType<Runtime.Core.F32>());
+            return new ExpressionResult(DataHandler.F32.Add(value), TypeHandler.CoreTypes.F32);
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
@@ -71,7 +86,7 @@ internal sealed partial class ScriptBuilder {
         bool success = Half.TryParse(text, out Half value);
 
         if (success) {
-            return new ExpressionResult(DataHandler.F16.Add(value), TypeHandler.GetFromType<Runtime.Core.F16>());
+            return new ExpressionResult(DataHandler.F16.Add(value), TypeHandler.CoreTypes.F16);
         }
 
         WarningHandler.Add(Warning.InvalidFloatFormat(context));
@@ -88,13 +103,13 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        MemoryAddress address = DataHandler.Char.Add(result);
-        return new ExpressionResult(address, TypeHandler.GetFromType<Runtime.Core.Char>());
+        MemoryAddress address = DataHandler.I16.Add((short)result);
+        return new ExpressionResult(address, TypeHandler.CoreTypes.Char);
     }
 
     public override ExpressionResult VisitStringLiteral(StringLiteralContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
-
+        
         List<char> characters = [];
 
         while (text.Length > 0) {
@@ -105,42 +120,93 @@ internal sealed partial class ScriptBuilder {
 
         string result = string.Concat(characters);
 
-        return new ExpressionResult(DataHandler.Str.Add(result), TypeHandler.GetFromType<Runtime.Core.Str>());
+        return new ExpressionResult(DataHandler.Str.Add(result), TypeHandler.CoreTypes.Str);
     }
 
     public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
-        return new ExpressionResult(MemoryAddress.NULL, TypeIdentifier.Null);
+        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
     }
 
     public override ExpressionResult VisitTrueKeyword(TrueKeywordContext context) {
-        return new ExpressionResult(DataHandler.Bool.Add(true), TypeHandler.GetFromType<Runtime.Core.Bool>());
+        return new ExpressionResult(DataHandler.Bool.Add(true), TypeHandler.CoreTypes.Bool);
     }
 
     public override ExpressionResult VisitFalseKeyword(FalseKeywordContext context) {
-        return new ExpressionResult(DataHandler.Bool.Add(false), TypeHandler.GetFromType<Runtime.Core.Bool>());
+        return new ExpressionResult(DataHandler.Bool.Add(false), TypeHandler.CoreTypes.Bool);
     }
 
-    private ExpressionResult? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles) {
-        bool isValid = long.TryParse(number, styles, CultureInfo.InvariantCulture, out long value);
+    private ExpressionResult? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles, bool isNegative) {
+        // convert value and check if too large in absolute value
+        bool isValid = UInt128.TryParse(number, styles, null, out UInt128 value);
 
+        // check if it's a too large negative number 
+        if (isNegative) {
+            isValid &= value <= (UInt128)(-Int128.MinValue);
+        }
+        
+        // return if failed
         if (!isValid) {
             WarningHandler.Add(Warning.IntegerTooLarge(context));
             return null;
         }
+        
+        // determine smallest signed type that can store the value
+        if (isNegative) {
+            Int128 signedValue = -(Int128)value;
+            
+            if (signedValue >= sbyte.MinValue) {
+                return new ExpressionResult(DataHandler.I8.Add((sbyte)signedValue), TypeHandler.CoreTypes.I8);
+            }
+            
+            if (signedValue >= short.MinValue) {
+                return new ExpressionResult(DataHandler.I16.Add((short)signedValue), TypeHandler.CoreTypes.I16);
+            }
+            
+            if (signedValue >= int.MinValue) {
+                return new ExpressionResult(DataHandler.I32.Add((int)signedValue), TypeHandler.CoreTypes.I32);
+            }
+            
+            if (signedValue >= long.MinValue) {
+                return new ExpressionResult(DataHandler.I64.Add((long)signedValue), TypeHandler.CoreTypes.I64);
+            }
 
-        if (value is >= sbyte.MinValue and <= sbyte.MaxValue) {
-            return new ExpressionResult(DataHandler.I8.Add((sbyte)value), TypeHandler.GetFromType<Runtime.Core.I8>());
+            return new ExpressionResult(DataHandler.I128.Add(signedValue), TypeHandler.CoreTypes.I128);
+        }
+        
+        // determine smallest unsigned type that can store the value
+        // also check for the smallest signed type
+        // since later we will need that information
+        // for example: 100 -> u8 or i8, 200 -> u8 or i16
+        
+        if (value <= byte.MaxValue) {
+            TypeIdentifier signedType = value <= (UInt128)sbyte.MaxValue ? TypeHandler.CoreTypes.I8 : TypeHandler.CoreTypes.I16;
+
+            return new ExpressionResult(DataHandler.I8.Add((sbyte)value), TypeHandler.CoreTypes.U8, signedType);
+        }
+        
+        if (value <= ushort.MaxValue) {
+            TypeIdentifier signedType = value <= (UInt128)short.MaxValue ? TypeHandler.CoreTypes.I16 : TypeHandler.CoreTypes.I32;
+
+            return new ExpressionResult(DataHandler.I16.Add((short)value), TypeHandler.CoreTypes.U16, signedType);
+        }
+        
+        if (value <= uint.MaxValue) {
+            TypeIdentifier signedType = value <= (UInt128)int.MaxValue ? TypeHandler.CoreTypes.I32 : TypeHandler.CoreTypes.I64;
+
+            return new ExpressionResult(DataHandler.I32.Add((int)value), TypeHandler.CoreTypes.U32, signedType);
+        }
+        
+        if (value <= ulong.MaxValue) {
+            TypeIdentifier signedType = value <= (UInt128)long.MaxValue ? TypeHandler.CoreTypes.I64 : TypeHandler.CoreTypes.I128;
+
+            return new ExpressionResult(DataHandler.I64.Add((long)value), TypeHandler.CoreTypes.U64, signedType);
         }
 
-        if (value is >= short.MinValue and <= short.MaxValue) {
-            return new ExpressionResult(DataHandler.I16.Add((short)value), TypeHandler.GetFromType<Runtime.Core.I16>());
+        {
+            TypeIdentifier? signedType = value <= (UInt128)Int128.MaxValue ? TypeHandler.CoreTypes.I128 : null;
+            
+            return new ExpressionResult(DataHandler.I128.Add((Int128)value), TypeHandler.CoreTypes.U128, signedType);
         }
-
-        if (value is >= int.MinValue and <= int.MaxValue) {
-            return new ExpressionResult(DataHandler.I32.Add((int)value), TypeHandler.GetFromType<Runtime.Core.I32>());
-        }
-
-        return new ExpressionResult(DataHandler.I64.Add(value), TypeHandler.GetFromType<Runtime.Core.I64>());
     }
 
     private char GetFirstCharacter(ConstantContext context, ref ReadOnlySpan<char> characters, bool inString) {
@@ -152,7 +218,6 @@ internal sealed partial class ScriptBuilder {
         // get first character and modify span
         char first = characters[0];
         characters = characters[1..];
-
 
         // not an escape sequence, simply return the character
         if (first != '\\') {

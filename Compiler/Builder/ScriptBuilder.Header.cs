@@ -66,27 +66,4 @@ internal sealed partial class ScriptBuilder {
     public override string VisitContextualKeyword(ContextualKeywordContext context) {
         return context.start.Text;
     }
-
-    // TODO rework or implement
-    #region Parameter segment
-
-    public override object? VisitParameterSegment(ParameterSegmentContext context) {
-        WarningHandler.Add(Warning.FeatureNotImplemented(context, "parameter segment"));
-        
-        return VisitChildren(context);
-    }
-
-    public override object? VisitInParameters(InParametersContext context) {
-        return null;
-    }
-
-    public override object? VisitOutParameters(OutParametersContext context) {
-        return null;
-    }
-
-    public override object? VisitScriptParameterList(ScriptParameterListContext context) {
-        return null;
-    }
-
-    #endregion
 }
