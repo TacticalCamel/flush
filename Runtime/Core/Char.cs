@@ -8,6 +8,7 @@ public struct Char {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator Char(char value) {
         return new Char(value);
     }

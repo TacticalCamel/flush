@@ -155,13 +155,13 @@ tryBlock
 // Kifejezés
 expression
 	: Constant=constant #ConstantExpression
-	| FunctionCall=functionCall #FunctionCallExpression
-	| Lambda=lambda #LambdaExpression
-	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
-	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
+//	| Lambda=lambda #LambdaExpression
+//	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
+//	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
 	| Identifier=id #IdentifierExpression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
-	| Left=expression OP_MEMBER_ACCESS Right=expression  #MemberAccessOperatorExpression
+	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessOperatorExpression
+	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
 	| Expression=expression Operator=opRightUnary #RightUnaryOperatorExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
@@ -186,14 +186,11 @@ constant
 	| KW_FALSE #FalseKeyword
 	;
 
-functionCall
-	: id HEAD_START expressionList HEAD_END
-	;
-
 expressionList
 	: ((expression PARAM_SEP)* expression)?
 	;
 
+/*
 objectConstructor
 	: id BLOCK_START ((id OP_ASSIGN expression PARAM_SEP)* (id OP_ASSIGN expression))? BLOCK_END
 	;
@@ -205,6 +202,7 @@ collectionConstructor
 lambda
 	: HEAD_START parameterList HEAD_END OP_POINTER (block | expression) 
 	;
+*/
 
 opLeftUnary
 	: OP_PLUS
@@ -244,7 +242,6 @@ opComparison
 
 opLogical
 	: OP_AND
-	| OP_XOR
 	| OP_OR
 	;
 
@@ -258,7 +255,6 @@ opAssignment
 	| OP_SHIFT_LEFT_ASSIGN
 	| OP_SHIFT_RIGHT_ASSIGN
 	| OP_AND_ASSIGN
-	| OP_XOR_ASSIGN
 	| OP_OR_ASSIGN
 	;
 
@@ -299,7 +295,6 @@ contextualKeyword
 	: KW_MODULE
 	| KW_IMPORT
 	| KW_IN
-	| KW_OUT
 	| KW_CLASS
 	| KW_PUBLIC
 	| KW_PRIVATE

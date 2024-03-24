@@ -124,7 +124,7 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
-        return new ExpressionResult(MemoryAddress.NULL, TypeHandler.CoreTypes.Null);
+        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Null);
     }
 
     public override ExpressionResult VisitTrueKeyword(TrueKeywordContext context) {
@@ -173,10 +173,13 @@ internal sealed partial class ScriptBuilder {
             return new ExpressionResult(DataHandler.I128.Add(signedValue), TypeHandler.CoreTypes.I128);
         }
         
-        // determine smallest unsigned type that can store the value
-        // also check for the smallest signed type
-        // since later we will need that information
-        // for example: 100 -> u8 or i8, 200 -> u8 or i16
+        // determine smallest unsigned type that can represent the value
+        // also get the smallest signed type
+        // for example: 100 -> u8 / i8, but 200 -> u8 / i16
+        
+        // later we might need this information
+        // since "-100 + 100" and "-100 + 200" are both i8 + u8
+        // and the common type is i8 for the first one, but i16 for the second one 
         
         if (value <= byte.MaxValue) {
             TypeIdentifier signedType = value <= (UInt128)sbyte.MaxValue ? TypeHandler.CoreTypes.I8 : TypeHandler.CoreTypes.I16;

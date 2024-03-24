@@ -51,8 +51,8 @@ internal static class Program {
                 }
 
                 // run program
-                else if (interfaceOptions.ExecuteOnly) {
-                    ScriptExecutor scriptExecutor = new(script, interpreterLogger);
+                if (interfaceOptions.ExecuteOnly) {
+                    ScriptExecutor scriptExecutor = new(script);
                     scriptExecutor.Run();
                 }
                 // attempt to write the results to a file
@@ -76,7 +76,7 @@ internal static class Program {
                 }
 
                 // run program
-                ScriptExecutor scriptExecutor = new(script, interpreterLogger);
+                ScriptExecutor scriptExecutor = new(script);
                 scriptExecutor.Run();
 
                 break;

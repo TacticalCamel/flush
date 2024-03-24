@@ -8,6 +8,7 @@ public struct Bool {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator Bool(bool value) {
         return new Bool(value);
     }

@@ -8,6 +8,8 @@ public static class ClassLoader {
     private const string DEFAULT_INCLUDE = "core";
     private const string DEFAULT_EXCLUDE = "internal";
     
+    public static Version BytecodeVersion => typeof(ClassLoader).Assembly.GetName().Version ?? new Version();
+    
     public static List<TypeInfo> LoadModules(string[] modules, bool auto) {
         List<TypeInfo> types = [];
         
@@ -43,6 +45,17 @@ public static class ClassLoader {
                 Name = name,
                 Members = []
             };
+            
+            
+            System.Reflection.MemberInfo[] members = type
+                .GetMembers(BindingFlags.Static | BindingFlags.Public)
+                .Where(x => x.Name == "op_Implicit" && x.GetCustomAttribute<InternalAttribute>() is null)
+                .ToArray();
+
+            foreach (System.Reflection.MemberInfo m in members) {
+                Console.WriteLine(m.ToString() ?? "null");
+            }
+            
 
             types.Add(typeInfo);
         }

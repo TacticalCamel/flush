@@ -1,5 +1,6 @@
 ﻿namespace Interpreter.Serialization;
 
+using Types;
 using Bytecode;
 
 public static class BinarySerializer {
@@ -47,7 +48,7 @@ public static class BinarySerializer {
             return null;
         }
 
-        Version currentVersion = ScriptExecutor.BytecodeVersion;
+        Version currentVersion = ClassLoader.BytecodeVersion;
         Version targetVersion = U64ToVersion(meta.Version);
 
         // bytecode version is different

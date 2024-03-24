@@ -4,34 +4,38 @@ using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Sequential)]
 internal readonly struct MemoryAddress {
-    public const byte DATA = 0;
-    public const byte STACK = 1;
-    public const byte HEAP = 2;
-
-    public static readonly MemoryAddress NULL = InHeap(0);
-
-    public readonly byte Location;
-    public readonly ulong Value;
-
-    private MemoryAddress(byte location, ulong value) {
-        Location = location;
-        Value = value;
+    private const ulong VALUE_MASK    = 0b0011111111111111111111111111111111111111111111111111111111111111;
+    private const ulong HEAP_MASK     = 0b0000000000000000000000000000000000000000000000000000000000000000;
+    private const ulong DATA_MASK     = 0b1000000000000000000000000000000000000000000000000000000000000000;
+    private const ulong STACK_MASK    = 0b0100000000000000000000000000000000000000000000000000000000000000;
+    private const ulong LOCATION_MASK = 0b1100000000000000000000000000000000000000000000000000000000000000;
+    public static MemoryAddress Null { get; } = CreateOnHeap(0);
+    
+    private ulong RawValue { get; }
+    private ulong Location => RawValue & LOCATION_MASK;
+    public ulong Value => RawValue & VALUE_MASK;
+    public bool IsInData => Location == DATA_MASK;
+    public bool IsOnStack => Location == STACK_MASK;
+    public bool IsOnHeap => Location == HEAP_MASK;
+    
+    private MemoryAddress(ulong rawValue) {
+        RawValue = rawValue;
     }
     
-    public static MemoryAddress InData(ulong value) {
-        return new MemoryAddress(DATA, value);
+    public static MemoryAddress CreateInData(ulong value) {
+        return new MemoryAddress((value & VALUE_MASK) | DATA_MASK);
     }
     
-    public static MemoryAddress InStack(ulong value) {
-        return new MemoryAddress(STACK, value);
+    public static MemoryAddress CreateOnStack(ulong value) {
+        return new MemoryAddress((value & VALUE_MASK) | STACK_MASK);
     }
     
-    public static MemoryAddress InHeap(ulong value) {
-        return new MemoryAddress(HEAP, value);
+    public static MemoryAddress CreateOnHeap(ulong value) {
+        return new MemoryAddress((value & VALUE_MASK) | HEAP_MASK);
     }
 
     public static bool operator ==(MemoryAddress x, MemoryAddress y) {
-        return x.Value == y.Value && x.Location == y.Location;
+        return x.RawValue == y.RawValue;
     }
     
     public static bool operator !=(MemoryAddress x, MemoryAddress y) {
@@ -47,10 +51,10 @@ internal readonly struct MemoryAddress {
     }
 
     public override int GetHashCode() {
-        return HashCode.Combine(Location, Value);
+        return HashCode.Combine(RawValue);
     }
 
     public override string ToString() {
-        return this == NULL ? "nullptr" : $"{Location switch { DATA => "data", STACK => "stck", HEAP => "heap", _ => "inva" }}:0x{Value:x}";
+        return this == Null ? "nullptr" : $"{Location switch {DATA_MASK => "data", STACK_MASK => "stck", HEAP_MASK => "heap", _ => "err"}}:0x{Value:x}";
     }
 }

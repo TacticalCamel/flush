@@ -8,6 +8,7 @@ public struct U8 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator U8(byte value) {
         return new U8(value);
     }

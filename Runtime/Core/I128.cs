@@ -8,6 +8,7 @@ public struct I128 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator I128(Int128 value) {
         return new I128(value);
     }

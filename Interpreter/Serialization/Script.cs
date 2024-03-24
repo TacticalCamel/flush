@@ -1,5 +1,6 @@
 ﻿namespace Interpreter.Serialization;
 
+using Types;
 using System.Text;
 using Bytecode;
 
@@ -20,7 +21,7 @@ public sealed class Script {
         Data = new ReadOnlyMemory<byte>(data);
         Instructions = new ReadOnlyMemory<Instruction>(instructions);
         Meta = new MetaData {
-            Version = BinarySerializer.VersionToU64(ScriptExecutor.BytecodeVersion),
+            Version = BinarySerializer.VersionToU64(ClassLoader.BytecodeVersion),
             CompilationTime = DateTime.Now,
             DataOffset = size,
             CodeOffset = size + Data.Length
@@ -66,7 +67,7 @@ public sealed class Script {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code) ?? instruction.Code.ToString("X");
 
-            sb.AppendLine($"    0x{instructionSize * i:X8}       {name} {instruction.Address:X2}");
+            sb.AppendLine($"    0x{instructionSize * i:X8}       {name} {instruction.DataAddress:X2}");
         }
 
         return sb.ToString();

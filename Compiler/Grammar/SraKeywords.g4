@@ -16,6 +16,10 @@ KW_TRY
 	: 'try'
 	;
 
+KW_IN
+	: 'in'
+	;
+
 KW_CATCH
 	: 'catch'
 	;

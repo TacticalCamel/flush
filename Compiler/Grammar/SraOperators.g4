@@ -79,11 +79,7 @@ OP_AND
 OP_OR
  	: '|'
  	;
-
-OP_XOR
-	: '^'
-	;
-
+ 
 OP_ASSIGN
 	: '='
 	;
@@ -123,7 +119,3 @@ OP_AND_ASSIGN
 OP_OR_ASSIGN
  	: '|='
  	;
-
-OP_XOR_ASSIGN
-	: '^='
-	;

@@ -12,26 +12,37 @@ internal sealed class TypeHandler {
     /// Backing field for core types so the public property can have a non nullable type
     /// </summary>
     private CoreTypeHelper? CoreTypesBackingField;
-    
+
     /// <summary>
     /// Helper to retrieve type identifiers for core types
     /// </summary>
     /// <exception cref="Exception">Thrown when type helper is accessed before loading types</exception>
     public CoreTypeHelper CoreTypes => CoreTypesBackingField ?? throw new Exception("Core type helper accessed before loading types");
-    
+
+    /// <summary>
+    /// Backing field for conversion helper so the public property can have a non nullable type
+    /// </summary>
+    private PrimitiveConversionHelper? PrimitiveConversionsBackingField;
+
+    /// <summary>
+    /// Helper to 
+    /// </summary>
+    /// <exception cref="Exception">Thrown when conversion helper is accessed before loading types</exception>
+    public PrimitiveConversionHelper PrimitiveConversions => PrimitiveConversionsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
+
     /// <summary>
     /// The module of the current program.
     /// Code within the same module is visible by default.
     /// Can be null, in which case the code can not be imported to other programs
     /// </summary>
     private string? ProgramModule { get; set; }
-    
+
     /// <summary>
     /// Whether all runtime code should be visible by default.
     /// Naming conflicts might occur
     /// </summary>
     private bool AutoImportEnabled { get; set; }
-    
+
     /// <summary>
     /// The imported modules of the program.
     /// Use a hashset to avoid duplicates
@@ -55,7 +66,7 @@ internal sealed class TypeHandler {
         if (ProgramModule is not null && !Imports.Contains(ProgramModule)) {
             results = results.Append(ProgramModule);
         }
-        
+
         return results.ToArray();
     }
 
@@ -86,6 +97,8 @@ internal sealed class TypeHandler {
             Char = GetFromType<Runtime.Core.Char>(),
             Str = GetFromType<Runtime.Core.Str>()
         };
+
+        PrimitiveConversionsBackingField = new PrimitiveConversionHelper(CoreTypesBackingField);
     }
 
     /// <summary>
@@ -105,7 +118,7 @@ internal sealed class TypeHandler {
         bool alreadyEnabled = AutoImportEnabled;
 
         AutoImportEnabled = true;
-        
+
         return !alreadyEnabled;
     }
 
@@ -133,11 +146,11 @@ internal sealed class TypeHandler {
     /// <returns>The type</returns>
     private TypeIdentifier GetFromType<T>() {
         Type type = typeof(T);
-        
+
         if (type.IsGenericType) {
             throw new ArgumentException("Type cannot be generic");
         }
-        
+
         string name = ClassLoader.GetTypeName(type);
 
         TypeInfo typeInfo = Types.First(x => x.Name == name);
@@ -163,5 +176,72 @@ internal sealed class TypeHandler {
         public required TypeIdentifier Bool { get; init; }
         public required TypeIdentifier Char { get; init; }
         public required TypeIdentifier Str { get; init; }
+    }
+
+    public sealed class PrimitiveConversionHelper(CoreTypeHelper coreTypeHelper) {
+        private CoreTypeHelper CoreTypeHelper { get; } = coreTypeHelper;
+        
+        private TypeIdentifier[] PrimitiveTypes { get; } = [
+            coreTypeHelper.I8,
+            coreTypeHelper.I16,
+            coreTypeHelper.I32,
+            coreTypeHelper.I64,
+            coreTypeHelper.I128,
+            coreTypeHelper.U8,
+            coreTypeHelper.U16,
+            coreTypeHelper.U32,
+            coreTypeHelper.U64,
+            coreTypeHelper.U128,
+            coreTypeHelper.F16,
+            coreTypeHelper.F32,
+            coreTypeHelper.F64,
+            coreTypeHelper.Bool,
+            coreTypeHelper.Char
+        ];
+        
+        public bool IsPrimitiveType(TypeIdentifier type) {
+            if (type == CoreTypeHelper.Null) {
+                return true;
+            }
+            
+            foreach (TypeIdentifier t in PrimitiveTypes) {
+                if (type == t) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /*
+        public bool IsPrimitiveConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
+            bool foundSource = false;
+            bool foundDestination = false;
+
+            foreach (TypeIdentifier type in CoreTypes) {
+                if (!foundSource && type == sourceType) {
+                    foundSource = true;
+                }
+
+                if (!foundDestination && type == destinationType) {
+                    foundDestination = true;
+                }
+
+                if (foundSource && foundDestination) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool HasImplicitConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
+            return false;
+        }
+
+        public bool HasExplicitConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
+            return false;
+        }
+        */
     }
 }

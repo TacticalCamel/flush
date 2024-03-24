@@ -8,6 +8,7 @@ public struct I64 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator I64(long value) {
         return new I64(value);
     }

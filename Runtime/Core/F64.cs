@@ -8,6 +8,7 @@ public struct F64 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator F64(double value) {
         return new F64(value);
     }

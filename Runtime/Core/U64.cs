@@ -8,6 +8,7 @@ public struct U64 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator U64(ulong value) {
         return new U64(value);
     }

@@ -1,5 +1,6 @@
 ﻿namespace Compiler.Analysis;
 
+using Data;
 using Antlr4.Runtime;
 
 internal sealed class Warning {
@@ -44,7 +45,7 @@ internal sealed class Warning {
 
     public static Warning FeatureNotImplemented(ParserRuleContext context, string name) => new(context) {
         Id = 201,
-        Level = WarningLevel.Warning,
+        Level = WarningLevel.Error,
         Message = $"Feature {name} is not implemented"
     };
 
@@ -93,7 +94,7 @@ internal sealed class Warning {
     public static Warning UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
         Id = 209,
         Level = WarningLevel.Error,
-        Message = $"Unknown operator name {name}"
+        Message = $"Unknown operator {name}"
     };
     
     public static Warning InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {
@@ -106,6 +107,12 @@ internal sealed class Warning {
         Id = 211,
         Level = WarningLevel.Error,
         Message = "Invalid char format"
+    };
+    
+    public static Warning OperandTypeMismatch(ParserRuleContext context, string op, TypeIdentifier type) => new(context) {
+        Id = 212,
+        Level = WarningLevel.Error,
+        Message = $"Cannot apply operator '{op}' to type '{type}'"
     };
     
     #endregion

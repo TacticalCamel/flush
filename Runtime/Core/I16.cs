@@ -8,6 +8,7 @@ public struct I16 {
         Value = value;
     }
 
+    [Internal]
     public static implicit operator I16(short value) {
         return new I16(value);
     }

@@ -6,6 +6,6 @@ internal sealed class ExpressionResult(MemoryAddress address, TypeIdentifier typ
     public TypeIdentifier? SecondaryType { get; } = secondaryType;
 
     public override string ToString() {
-        return $"{Type} at {Address}";
+        return $"{Type}{(SecondaryType is null ? string.Empty : $" ({SecondaryType})")} at {Address}";
     }
 }

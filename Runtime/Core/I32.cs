@@ -8,6 +8,7 @@ public struct I32 {
         Value = value;
     }
     
+    [Internal]
     public static implicit operator I32(int value) {
         return new I32(value);
     }
