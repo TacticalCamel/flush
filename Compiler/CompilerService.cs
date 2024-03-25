@@ -4,7 +4,7 @@ namespace Compiler;
 
 using Grammar;
 using Builder;
-using Analysis;
+using Data;
 using Antlr4.Runtime;
 using Interpreter.Serialization;
 using Microsoft.Extensions.Logging;
@@ -54,15 +54,15 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
 
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
         // get and log hints
-        string[] hints = scriptBuilder.GetWarningsWithLevel(WarningLevel.Hint);
+        string[] hints = scriptBuilder.GetIssuesWithLevel(Severity.Hint);
         if(hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
         
         // get and log warnings
-        string[] warnings = scriptBuilder.GetWarningsWithLevel(WarningLevel.Warning);
+        string[] warnings = scriptBuilder.GetIssuesWithLevel(Severity.Warning);
         if(warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
         
         // get and log errors
-        string[] errors = scriptBuilder.GetWarningsWithLevel(WarningLevel.Error);
+        string[] errors = scriptBuilder.GetIssuesWithLevel(Severity.Error);
         if(errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
         
         // log summary

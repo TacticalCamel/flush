@@ -1,7 +1,6 @@
 namespace Compiler.Builder;
 
 using static Grammar.ScrantonParser;
-using Analysis;
 using Handlers;
 using Grammar;
 using Interpreter.Serialization;
@@ -12,7 +11,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     private CompilerOptions Options { get; } = options;
     private ILogger Logger { get; } = logger;
     
-    private WarningHandler WarningHandler { get; } = [];
+    private IssueHandler IssueHandler { get; } = [];
     private InstructionHandler Instructions { get; } = [];
     private TypeHandler TypeHandler { get; } = new();
     private DataHandler DataHandler { get; } = new();
@@ -20,15 +19,24 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     public void Build(ProgramContext programContext) {
         // lexer or parser error before traversing tree
         CancelIfHasErrors();
+
+        // create a preprocessor
+        Preprocessor preprocessor = new(Options, Logger);
+
+        // traverse AST: 1st pass
+        preprocessor.VisitProgram(programContext);
         
-        // visit root rule
+        // check for errors in 1st pass
+        CancelIfHasErrors();
+        
+        // traverse AST: 2nd pass
         VisitProgram(programContext);
+        
+        // check for errors in 2nd pass
+        CancelIfHasErrors();
     }
 
     public Script GetResult() {
-        // error while assembling program
-        CancelIfHasErrors();
-        
         byte[] data = DataHandler.ToBytes();
         Instruction[] instructions = Instructions.ToArray();
         

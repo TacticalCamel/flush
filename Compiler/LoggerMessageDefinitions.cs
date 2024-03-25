@@ -31,5 +31,4 @@ internal static partial class LoggerMessageDefinitions {
     public static partial void Debug(this ILogger logger, string message);
 
     #endregion
-    
 }

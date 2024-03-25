@@ -1,6 +1,5 @@
 ﻿namespace Compiler.Builder;
 
-using Analysis;
 using Data;
 using System.Globalization;
 using static Grammar.ScrantonParser;
@@ -55,7 +54,7 @@ internal sealed partial class ScriptBuilder {
             return new ExpressionResult(DataHandler.F64.Add(value), TypeHandler.CoreTypes.F64);
         }
 
-        WarningHandler.Add(Warning.InvalidFloatFormat(context));
+        IssueHandler.Add(Issue.InvalidFloatFormat(context));
         return null;
     }
 
@@ -72,7 +71,7 @@ internal sealed partial class ScriptBuilder {
             return new ExpressionResult(DataHandler.F32.Add(value), TypeHandler.CoreTypes.F32);
         }
 
-        WarningHandler.Add(Warning.InvalidFloatFormat(context));
+        IssueHandler.Add(Issue.InvalidFloatFormat(context));
         return null;
     }
 
@@ -89,7 +88,7 @@ internal sealed partial class ScriptBuilder {
             return new ExpressionResult(DataHandler.F16.Add(value), TypeHandler.CoreTypes.F16);
         }
 
-        WarningHandler.Add(Warning.InvalidFloatFormat(context));
+        IssueHandler.Add(Issue.InvalidFloatFormat(context));
         return null;
     }
 
@@ -99,7 +98,7 @@ internal sealed partial class ScriptBuilder {
         char result = GetFirstCharacter(context, ref text, false);
 
         if (text.Length > 0) {
-            WarningHandler.Add(Warning.InvalidCharFormat(context));
+            IssueHandler.Add(Issue.InvalidCharFormat(context));
             return null;
         }
 
@@ -146,7 +145,7 @@ internal sealed partial class ScriptBuilder {
         
         // return if failed
         if (!isValid) {
-            WarningHandler.Add(Warning.IntegerTooLarge(context));
+            IssueHandler.Add(Issue.IntegerTooLarge(context));
             return null;
         }
         
@@ -229,7 +228,7 @@ internal sealed partial class ScriptBuilder {
 
         // no character is escaped
         if (characters.Length == 0) {
-            WarningHandler.Add(Warning.UnclosedEscapeSequence(context));
+            IssueHandler.Add(Issue.UnclosedEscapeSequence(context));
             return '\0';
         }
 
@@ -240,7 +239,7 @@ internal sealed partial class ScriptBuilder {
         // unicode escape sequence
         if (second is 'u' or 'U') {
             if (characters.Length < 4) {
-                WarningHandler.Add(Warning.InvalidUnicodeEscape(context, 4));
+                IssueHandler.Add(Issue.InvalidUnicodeEscape(context, 4));
                 return '\0';
             }
 
@@ -275,7 +274,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // invalid escape sequence
-        WarningHandler.Add(Warning.UnknownEscapeSequence(context, second));
+        IssueHandler.Add(Issue.UnknownEscapeSequence(context, second));
         return '\0';
     }
 }

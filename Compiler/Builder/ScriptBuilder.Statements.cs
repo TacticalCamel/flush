@@ -1,6 +1,5 @@
 ﻿namespace Compiler.Builder;
 
-using Analysis;
 using Data;
 using Interpreter.Types;
 using static Grammar.ScrantonParser;
@@ -42,7 +41,7 @@ internal sealed partial class ScriptBuilder {
         TypeInfo? type = TypeHandler.TryGetByName(name);
 
         if (type is null) {
-            WarningHandler.Add(Warning.UnknownVariableType(context, name));
+            IssueHandler.Add(Issue.UnknownVariableType(context, name));
             return null;
         }
         
@@ -55,7 +54,7 @@ internal sealed partial class ScriptBuilder {
         TypeInfo? type = TypeHandler.TryGetByName(name);
         
         if (type is null) {
-            WarningHandler.Add(Warning.UnknownVariableType(context, name));
+            IssueHandler.Add(Issue.UnknownVariableType(context, name));
             return null;
         }
 

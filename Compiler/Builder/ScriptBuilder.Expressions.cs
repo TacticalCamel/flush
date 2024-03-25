@@ -1,7 +1,6 @@
 ﻿namespace Compiler.Builder;
 
 using Data;
-using Analysis;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -52,7 +51,7 @@ internal sealed partial class ScriptBuilder {
         string name = VisitId(context.Member);
 
         // TODO implement
-        WarningHandler.Add(Warning.FeatureNotImplemented(context, "member access"));
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
         return null;
     }
 
@@ -67,7 +66,7 @@ internal sealed partial class ScriptBuilder {
         string name = VisitId(context.Identifier);
 
         // TODO: implement
-        WarningHandler.Add(Warning.FeatureNotImplemented(context, "identifier expression"));
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
         return null;
     }
 
@@ -112,7 +111,7 @@ internal sealed partial class ScriptBuilder {
         }
         
         if (left.Type != right.Type) {
-            WarningHandler.Add(Warning.InvalidCast(context, left.Type, right.Type));
+            IssueHandler.Add(Issue.InvalidCast(context, left.Type, right.Type));
             return null;
         }
 
@@ -204,7 +203,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // TODO: implement
-        WarningHandler.Add(Warning.FeatureNotImplemented(context, "function call"));
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
         return null;
     }
 

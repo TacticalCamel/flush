@@ -1,30 +1,30 @@
 ﻿namespace Compiler.Builder;
 
 using Antlr4.Runtime;
-using Analysis;
+using Data;
 
 internal partial class ScriptBuilder {
     public void BindToLexerErrorListener(Lexer lexer) {
-        lexer.AddErrorListener(WarningHandler);
+        lexer.AddErrorListener(IssueHandler);
     }
 
     public void BindToParserErrorListener(Parser parser) {
-        parser.AddErrorListener(WarningHandler);
+        parser.AddErrorListener(IssueHandler);
     }
 
-    public string[] GetWarningsWithLevel(WarningLevel level) {
-        WarningLevel minLevel = level;
+    public string[] GetIssuesWithLevel(Severity level) {
+        Severity minLevel = level;
 
-        if (Options.TreatWarningsAsErrors && level == WarningLevel.Warning) minLevel = WarningLevel.Error;
-        if (Options.TreatWarningsAsErrors && level == WarningLevel.Error) minLevel = WarningLevel.Warning;
+        if (Options.TreatWarningsAsErrors && level == Severity.Warning) minLevel = Severity.Error;
+        if (Options.TreatWarningsAsErrors && level == Severity.Error) minLevel = Severity.Warning;
         
-        return WarningHandler.Where(x => x.Level >= minLevel && x.Level <= level).Select(x => x.ToString(level)).ToArray();
+        return IssueHandler.Where(x => x.Level >= minLevel && x.Level <= level).Select(x => x.ToString(level)).ToArray();
     }
 
     private void CancelIfHasErrors() {
-        WarningLevel errorLevel = Options.TreatWarningsAsErrors ? WarningLevel.Warning : WarningLevel.Error;
+        Severity errorLevel = Options.TreatWarningsAsErrors ? Severity.Warning : Severity.Error;
 
-        if (WarningHandler.Any(x => x.Level >= errorLevel)) {
+        if (IssueHandler.Any(x => x.Level >= errorLevel)) {
             throw new OperationCanceledException();
         }
     }

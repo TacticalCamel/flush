@@ -1,6 +1,6 @@
 ﻿namespace Compiler.Builder;
 
-using Analysis;
+using Data;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -39,7 +39,7 @@ internal sealed partial class ScriptBuilder {
         bool success = TypeHandler.Add(name);
 
         if (!success) {
-            WarningHandler.Add(Warning.ModuleAlreadyImported(context, name));
+            IssueHandler.Add(Issue.ModuleAlreadyImported(context, name));
         }
 
         return null;
@@ -49,7 +49,7 @@ internal sealed partial class ScriptBuilder {
         bool success = TypeHandler.EnableAutoImport();
         
         if (!success) {
-            WarningHandler.Add(Warning.AutoImportAlreadyEnabled(context));
+            IssueHandler.Add(Issue.AutoImportAlreadyEnabled(context));
         }
 
         return null;

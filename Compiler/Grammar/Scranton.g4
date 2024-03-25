@@ -1,36 +1,17 @@
 grammar Scranton;
 
-// ⣀⣠⣤⣤⣤⣤⢤⣤⣄⣀⣀⣀⣀⡀⡀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
-// ⠄⠉⠹⣾⣿⣛⣿⣿⣞⣿⣛⣺⣻⢾⣾⣿⣿⣿⣶⣶⣶⣄⡀⠄⠄⠄
-// ⠄⠄⠠⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⣿⣿⣿⣿⣿⣿⣆⠄⠄
-// ⠄⠄⠘⠛⠛⠛⠛⠋⠿⣷⣿⣿⡿⣿⢿⠟⠟⠟⠻⠻⣿⣿⣿⣿⡀⠄
-// ⠄⢀⠄⠄⠄⠄⠄⠄⠄⠄⢛⣿⣁⠄⠄⠒⠂⠄⠄⣀⣰⣿⣿⣿⣿⡀
-// ⠄⠉⠛⠺⢶⣷⡶⠃⠄⠄⠨⣿⣿⡇⠄⡺⣾⣾⣾⣿⣿⣿⣿⣽⣿⣿
-// ⠄⠄⠄⠄⠄⠛⠁⠄⠄⠄⢀⣿⣿⣧⡀⠄⠹⣿⣿⣿⣿⣿⡿⣿⣻⣿
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠉⠛⠟⠇⢀⢰⣿⣿⣿⣏⠉⢿⣽⢿⡏
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠠⠤⣤⣴⣾⣿⣿⣾⣿⣿⣦⠄⢹⡿⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠒⣳⣶⣤⣤⣄⣀⣀⡈⣀⢁⢁⢁⣈⣄⢐⠃⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⣰⣿⣛⣻⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡯⠄⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⣬⣽⣿⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠄⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⢘⣿⣿⣻⣛⣿⡿⣟⣻⣿⣿⣿⣿⡟⠄⠄⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠛⢛⢿⣿⣿⣿⣿⣿⣿⣷⡿⠁⠄⠄⠄
-// ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠉⠉⠉⠉⠈⠄⠄⠄⠄⠄⠄
-// Nyilván számít a sorrend
 import SraKeywords, SraLiterals, SraSeparators, SraOperators, SraCommon;
 
-// Egy program felépítése
 program
 	: Header=programHeader Body=programBody EOF
 	;
 
-// 1 Program fejléc
 programHeader
-	: moduleSegment importSegment
+	: ModuleSegment=moduleSegment ImportSegment=importSegment
 	;
 
-// 1.1 Modul szegmens
 moduleSegment
-	: moduleStatement?
+	: ModuleStatement=moduleStatement?
 	;
 
 moduleStatement
@@ -41,7 +22,6 @@ namespace
 	: (id '.')* id
 	;
 
-// 1.2 Import szegmens
 importSegment
 	: importStatement*
 	;
@@ -51,17 +31,14 @@ importStatement
 	| KW_IMPORT Name=namespace #ManualImport
 	;
 
-// 2 Program test
 programBody
 	: (functionDefinition | typeDefinition | statement)*
 	;
 
-// 2.1 Függvény definíció
 functionDefinition
 	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
-// 2.2 Típus definíció
 typeDefinition
 	: Header=classHeader BLOCK_START Body=classBody BLOCK_END
 	;
@@ -92,32 +69,27 @@ constructorDefinition
 	: KW_NEW HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
-// 2.3 Utasítás
 statement
 	: regularStatement STATEMENT_SEP
 	| controlStatement STATEMENT_SEP
 	| blockStatement
 	;
 
-// 2.3.1 Általános utasítás
 regularStatement
 	: variableDeclaration
 	| expression
 	;
 
-// 2.3.1.1 Változó deklaráció
 variableDeclaration
 	: VariableWithType=variableWithType (OP_ASSIGN Expression=expression)?
 	;
 
-// 2.3.2 Vezérlési utasítás
 controlStatement
 	: KW_RETURN Value=expression? #ReturnStatement
 	| KW_BREAK #BreakStatement
 	| KW_CONTINUE #ContinueStatement
 	;
 
-// 2.3.3 Blokk utasítás
 blockStatement
 	: block
     | ifBlock
@@ -126,33 +98,27 @@ blockStatement
     | tryBlock
 	;
 
-// 2.3.3.1 Blokk
 block
 	: BLOCK_START statement* BLOCK_END
 	;
 
-// 2.3.3.2 If blokk
 ifBlock
 	: KW_IF HEAD_START expression HEAD_END statement (KW_ELSE KW_IF HEAD_START expression HEAD_END statement)* (KW_ELSE statement)?
 	;
 
-// 2.3.3.3 For block
 forBlock
 	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END statement (KW_ELSE statement)?
 	| KW_FOR HEAD_START variableWithType KW_IN id HEAD_END statement (KW_ELSE statement)?
 	;
 
-// 2.3.3.4 While block
 whileBlock
 	: KW_WHILE HEAD_START expression HEAD_END statement (KW_ELSE statement)?
 	;
 
-// 2.3.3.5 Try block
 tryBlock
 	: KW_TRY statement KW_CATCH HEAD_START variableWithType HEAD_END statement
 	;
 	
-// Kifejezés
 expression
 	: Constant=constant #ConstantExpression
 //	| Lambda=lambda #LambdaExpression
@@ -258,7 +224,6 @@ opAssignment
 	| OP_OR_ASSIGN
 	;
 
-// Közös szabály
 variableWithType
 	: Type=type Name=id
 	;
