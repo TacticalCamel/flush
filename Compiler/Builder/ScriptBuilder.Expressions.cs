@@ -2,7 +2,6 @@
 
 using Data;
 using Analysis;
-using Interpreter.Bytecode;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -12,27 +11,27 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitMultiplicativeOperatorExpression(MultiplicativeOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitShiftOperatorExpression(ShiftOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitComparisonOperatorExpression(ComparisonOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitLogicalOperatorExpression(LogicalOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitAssigmentOperatorExpression(AssigmentOperatorExpressionContext context) {
-        return ResolveBinaryExpression(context.Left, context.Right, context.Operator.start.Type);
+        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     public override ExpressionResult? VisitLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
@@ -72,14 +71,48 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
-    private ExpressionResult? ResolveBinaryExpression(ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-        // resolve the expression on both sides
+    private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
+        // resolve left side
         ExpressionResult? left = VisitExpression(leftContext);
+
+        if (left is null) {
+            return null;
+        }
+        
+        if (left.Address.IsInData) {
+            Instructions.PushFromData(left, left.Type.Size);
+        }
+
+        // resolve right side
         ExpressionResult? right = VisitExpression(rightContext);
 
-        // return if an error occured
-        // the type of the expressions can still be null
-        if (left is null || right is null) {
+        if (right is null) {
+            return null;
+        }
+        
+        // at this point we have the left result on the top of the stack
+        // so we can cast the type if necessary
+        bool canExtendLeft = TypeHandler.PrimitiveConversions.CommonExtendType(left.Type, right.Type);
+
+        if (canExtendLeft) {
+            Instructions.Extend(left.Type.Size, right.Type.Size);
+            left = new ExpressionResult(left.Address, right.Type, right.SecondaryType);
+        }
+        
+        if (right.Address.IsInData) {
+            Instructions.PushFromData(right, right.Type.Size);
+        }
+        
+        // cast right side if necessary
+        bool canExtendRight = !canExtendLeft && TypeHandler.PrimitiveConversions.CommonExtendType(right.Type, left.Type);
+        
+        if (canExtendRight) {
+            Instructions.Extend(right.Type.Size, left.Type.Size);
+            right = new ExpressionResult(right.Address, left.Type, left.SecondaryType);
+        }
+        
+        if (left.Type != right.Type) {
+            WarningHandler.Add(Warning.InvalidCast(context, left.Type, right.Type));
             return null;
         }
 
@@ -178,18 +211,10 @@ internal sealed partial class ScriptBuilder {
     #region Operator methods
 
     private ExpressionResult? PrimitiveAddition(ExpressionResult left, ExpressionResult right) {
-        // if any operands are in the data section, push them to the stack
-        if (left.Address.IsInData) {
-            Instructions.PushFromData(left.Address, 1);
-        }
-
-        if (right.Address.IsInData) {
-            Instructions.PushFromData(right.Address, 1);
-        }
         
-        Instructions.AddInt(1);
+        MemoryAddress address = Instructions.AddInt(left.Type.Size);
         
-        return null;
+        return new ExpressionResult(address, left.Type);
     }
 
     #endregion

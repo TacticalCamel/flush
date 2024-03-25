@@ -4,11 +4,13 @@ public sealed class TypeInfo {
     public static TypeInfo Null { get; } = new() {
         Module = "core",
         Name = "null",
-        Members = []
+        Members = [],
+        Size = 0
     };
 
     public required string Module { get; init; }
     public required string Name { get; init; }
+    public required byte Size { get; init; }
     public required MemberInfo[] Members { get; init; }
     
     public override string ToString() {

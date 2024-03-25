@@ -3,9 +3,10 @@ namespace Compiler.Data;
 using Interpreter.Types;
 
 internal sealed class TypeIdentifier(TypeInfo type, TypeIdentifier[] genericParameters) {
-    public TypeInfo Type { get; } = type;
+    private TypeInfo Type { get; } = type;
+    
     public TypeIdentifier[] GenericParameters { get; } = genericParameters;
-
+    public byte Size => Type.Size;
     public bool IsGeneric => GenericParameters.Length > 0;
 
     public override string ToString() {

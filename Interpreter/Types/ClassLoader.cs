@@ -1,4 +1,6 @@
-﻿namespace Interpreter.Types;
+﻿using System.Runtime.CompilerServices;
+
+namespace Interpreter.Types;
 
 using System.Reflection;
 using Runtime.Internal;
@@ -43,9 +45,9 @@ public static class ClassLoader {
             TypeInfo typeInfo = new() {
                 Module = module,
                 Name = name,
-                Members = []
+                Members = [],
+                Size = (byte)(type.IsClass ? 8 : Marshal.SizeOf(type))
             };
-            
             
             System.Reflection.MemberInfo[] members = type
                 .GetMembers(BindingFlags.Static | BindingFlags.Public)

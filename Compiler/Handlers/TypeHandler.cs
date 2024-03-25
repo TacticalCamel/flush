@@ -178,26 +178,62 @@ internal sealed class TypeHandler {
         public required TypeIdentifier Str { get; init; }
     }
 
-    public sealed class PrimitiveConversionHelper(CoreTypeHelper coreTypeHelper) {
-        private CoreTypeHelper CoreTypeHelper { get; } = coreTypeHelper;
+    public sealed class PrimitiveConversionHelper {
+        private const byte NONE = 0;
+        private const byte EXTEND = 1;
         
-        private TypeIdentifier[] PrimitiveTypes { get; } = [
-            coreTypeHelper.I8,
-            coreTypeHelper.I16,
-            coreTypeHelper.I32,
-            coreTypeHelper.I64,
-            coreTypeHelper.I128,
-            coreTypeHelper.U8,
-            coreTypeHelper.U16,
-            coreTypeHelper.U32,
-            coreTypeHelper.U64,
-            coreTypeHelper.U128,
-            coreTypeHelper.F16,
-            coreTypeHelper.F32,
-            coreTypeHelper.F64,
-            coreTypeHelper.Bool,
-            coreTypeHelper.Char
-        ];
+        
+        private CoreTypeHelper CoreTypeHelper { get; }
+        private TypeIdentifier[] PrimitiveTypes { get; }
+        private byte[,] ConversionTable { get; }
+        
+        public PrimitiveConversionHelper(CoreTypeHelper types) {
+            CoreTypeHelper = types;
+            
+            PrimitiveTypes = [
+                types.I8,
+                types.I16,
+                types.I32,
+                types.I64,
+                types.I128,
+                types.U8,
+                types.U16,
+                types.U32,
+                types.U64,
+                types.U128,
+                types.F16,
+                types.F32,
+                types.F64,
+                types.Bool,
+                types.Char
+            ];
+            
+            ConversionTable = new byte[PrimitiveTypes.Length, PrimitiveTypes.Length];
+            
+            AddConversion(types.I8, [types.I16, types.I32, types.I64, types.I128], EXTEND);
+            AddConversion(types.I16, [types.I32, types.I64, types.I128], EXTEND);
+            AddConversion(types.I32, [types.I64, types.I128], EXTEND);
+            AddConversion(types.I64, [types.I128], EXTEND);
+            
+            AddConversion(types.U8, [types.I16, types.U16, types.I32, types.U32, types.I64, types.U64, types.I128, types.U128], EXTEND);
+            AddConversion(types.U16, [types.I32, types.U32, types.I64, types.U64, types.I128, types.U128], EXTEND);
+            AddConversion(types.U32, [types.I64, types.U64, types.I128, types.U128], EXTEND);
+            AddConversion(types.U64, [types.I128, types.U128], EXTEND);
+        }
+
+        private void AddConversion(TypeIdentifier source, IEnumerable<TypeIdentifier> destination, byte conversionType) {
+            int sourceIndex = Array.IndexOf(PrimitiveTypes, source);
+
+            foreach (TypeIdentifier destinationType in destination) {
+                int destinationIndex = Array.IndexOf(PrimitiveTypes, destinationType);
+
+                ConversionTable[sourceIndex, destinationIndex] = conversionType;
+            }
+        }
+
+        /*private TypeIdentifier FindExtendCast(TypeIdentifier source, TypeIdentifier destination) {
+            
+        }*/
         
         public bool IsPrimitiveType(TypeIdentifier type) {
             if (type == CoreTypeHelper.Null) {
@@ -213,35 +249,15 @@ internal sealed class TypeHandler {
             return false;
         }
 
-        /*
-        public bool IsPrimitiveConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
-            bool foundSource = false;
-            bool foundDestination = false;
+        public bool CommonExtendType(TypeIdentifier source, TypeIdentifier destination) {
+            int sourceIndex = Array.IndexOf(PrimitiveTypes, source);
+            int destinationIndex = Array.IndexOf(PrimitiveTypes, destination);
 
-            foreach (TypeIdentifier type in CoreTypes) {
-                if (!foundSource && type == sourceType) {
-                    foundSource = true;
-                }
-
-                if (!foundDestination && type == destinationType) {
-                    foundDestination = true;
-                }
-
-                if (foundSource && foundDestination) {
-                    return true;
-                }
+            if (sourceIndex < 0 || destinationIndex < 0) {
+                return false;
             }
 
-            return false;
+            return ConversionTable[sourceIndex, destinationIndex] == EXTEND;
         }
-
-        public bool HasImplicitConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
-            return false;
-        }
-
-        public bool HasExplicitConversion(TypeIdentifier sourceType, TypeIdentifier destinationType) {
-            return false;
-        }
-        */
     }
 }

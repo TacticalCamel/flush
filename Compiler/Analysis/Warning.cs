@@ -109,10 +109,10 @@ internal sealed class Warning {
         Message = "Invalid char format"
     };
     
-    public static Warning OperandTypeMismatch(ParserRuleContext context, string op, TypeIdentifier type) => new(context) {
+    public static Warning InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier destination) => new(context) {
         Id = 212,
         Level = WarningLevel.Error,
-        Message = $"Cannot apply operator '{op}' to type '{type}'"
+        Message = $"Cannot cast '{source}' to '{destination}'"
     };
     
     #endregion

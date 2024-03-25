@@ -17,4 +17,7 @@ public unsafe struct Instruction {
 
     [FieldOffset(4)]
     public int Size;
+    
+    [FieldOffset(8)]
+    public int ToSize;
 }

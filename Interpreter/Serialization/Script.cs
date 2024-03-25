@@ -28,7 +28,7 @@ public sealed class Script {
         };
     }
 
-    public override string ToString() {
+    public override unsafe string ToString() {
         StringBuilder sb = new();
 
         // meta section
@@ -65,9 +65,15 @@ public sealed class Script {
         sb.AppendLine(".code");
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
-            string name = Enum.GetName(instruction.Code) ?? instruction.Code.ToString("X");
+            string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
+            
+            sb.Append($"    0x{instructionSize * i:X8}       {name}");
 
-            sb.AppendLine($"    0x{instructionSize * i:X8}       {name} {instruction.DataAddress:X2}");
+            for (int j = 0; j < 16; j++) {
+                sb.Append($"{(j % 2 == 0 ? " " : "")}{instruction.Data[j]:X2}");
+            }
+
+            sb.AppendLine();
         }
 
         return sb.ToString();
