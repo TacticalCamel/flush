@@ -8,7 +8,7 @@ namespace CLI.Options;
 /// Methods must be public, static, have exactly 1 parameter which is string array,
 /// and return the parsed type or its nullable version.
 /// </summary>
-internal static class ParseFunctions {
+internal static class ParseMethods {
     /// <summary>
     /// Parse an array of strings as a bool.
     /// </summary>

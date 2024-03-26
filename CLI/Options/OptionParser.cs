@@ -29,7 +29,7 @@ internal sealed class OptionParser {
     /// <summary>
     /// Dictionary to map types to methods that convert them from strings to their intended type.
     /// </summary>
-    private Dictionary<Type, MethodInfo> ParseFunctions { get; }
+    private Dictionary<Type, MethodInfo> ParseMethods { get; }
     
     /// <summary>
     /// Get all the remaining option keys.
@@ -45,7 +45,7 @@ internal sealed class OptionParser {
     public OptionParser(ILogger logger, string[] args, string defaultKey) {
         Logger = logger;
         Options = [];
-        ParseFunctions = [];
+        ParseMethods = [];
 
         // create an options dictionary from an array
         for (int i = 0; i <= args.Length; i++) {
@@ -70,7 +70,7 @@ internal sealed class OptionParser {
         }
 
         // get parse methods from the dedicated class
-        MethodInfo[] methods = typeof(ParseFunctions).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        MethodInfo[] methods = typeof(ParseMethods).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
 
         // create a dictionary for the parse methods
         foreach (MethodInfo method in methods) {
@@ -87,7 +87,7 @@ internal sealed class OptionParser {
 
             // add the method
             // duplicates should not exist, but avoid exceptions anyway
-            ParseFunctions.TryAdd(returnType, method);
+            ParseMethods.TryAdd(returnType, method);
         }
     }
 
@@ -135,11 +135,11 @@ internal sealed class OptionParser {
             if (property is null) continue;
 
             // search for a method that parses the values to the correct property type
-            ParseFunctions.TryGetValue(property.PropertyType, out MethodInfo? parseFunction);
+            ParseMethods.TryGetValue(property.PropertyType, out MethodInfo? parseMethod);
 
             // no method found, ignore property
             // this should never happen
-            if (parseFunction is null) {
+            if (parseMethod is null) {
                 Logger.PropertyNotParseable(property.PropertyType, typeof(TOptions));
                 continue;
             }
@@ -149,7 +149,7 @@ internal sealed class OptionParser {
             string[] values = TryRemoveOption(key)!;
             
             // convert values to the desired type
-            object? value = parseFunction.Invoke(null, [values]);
+            object? value = parseMethod.Invoke(null, [values]);
 
             // values were not in a valid format, display warning message
             if (value is null) {
