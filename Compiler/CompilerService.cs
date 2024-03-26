@@ -54,15 +54,15 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
 
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
         // get and log hints
-        string[] hints = scriptBuilder.GetIssuesWithLevel(Severity.Hint);
+        string[] hints = scriptBuilder.GetIssuesWithSeverity(Severity.Hint);
         if(hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
         
         // get and log warnings
-        string[] warnings = scriptBuilder.GetIssuesWithLevel(Severity.Warning);
+        string[] warnings = scriptBuilder.GetIssuesWithSeverity(Severity.Warning);
         if(warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
         
         // get and log errors
-        string[] errors = scriptBuilder.GetIssuesWithLevel(Severity.Error);
+        string[] errors = scriptBuilder.GetIssuesWithSeverity(Severity.Error);
         if(errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
         
         // log summary

@@ -12,19 +12,23 @@ internal partial class ScriptBuilder {
         parser.AddErrorListener(IssueHandler);
     }
 
-    public string[] GetIssuesWithLevel(Severity level) {
-        Severity minLevel = level;
+    public string[] GetIssuesWithSeverity(Severity severity) {
+        Severity minimumSeverity = severity;
 
-        if (Options.TreatWarningsAsErrors && level == Severity.Warning) minLevel = Severity.Error;
-        if (Options.TreatWarningsAsErrors && level == Severity.Error) minLevel = Severity.Warning;
+        if (Options.TreatWarningsAsErrors && severity == Severity.Warning) minimumSeverity = Severity.Error;
+        if (Options.TreatWarningsAsErrors && severity == Severity.Error) minimumSeverity = Severity.Warning;
         
-        return IssueHandler.Where(x => x.Level >= minLevel && x.Level <= level).Select(x => x.ToString(level)).ToArray();
+        return IssueHandler
+            .Where(issue => issue.Severity >= minimumSeverity && issue.Severity <= severity)
+            .OrderBy(issue => issue.Position)
+            .Select(x => x.ToString(severity))
+            .ToArray();
     }
 
     private void CancelIfHasErrors() {
         Severity errorLevel = Options.TreatWarningsAsErrors ? Severity.Warning : Severity.Error;
 
-        if (IssueHandler.Any(x => x.Level >= errorLevel)) {
+        if (IssueHandler.Any(x => x.Severity >= errorLevel)) {
             throw new OperationCanceledException();
         }
     }

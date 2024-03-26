@@ -10,7 +10,7 @@ internal sealed class Issue {
     public required uint Id { get; init; }
     
     /// <summary> The severity of the issue </summary>
-    public required Severity Level { get; init; }
+    public required Severity Severity { get; init; }
     
     /// <summary> The message of the issue </summary>
     public required string Message { get; init; }
@@ -48,7 +48,7 @@ internal sealed class Issue {
     }
     
     public override string ToString() {
-        return ToString(Level);
+        return ToString(Severity);
     }
 
     #endregion
@@ -57,85 +57,85 @@ internal sealed class Issue {
     
     public static Issue LexerTokenInvalid(FilePosition position, string message) => new(position) {
         Id = 101,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Failed to match token in lexer: {message}"
     };
 
     public static Issue ParserInputMismatch(FilePosition position, string message) => new(position) {
         Id = 102,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Mismatched input in parser: {message}"
     };
 
     public static Issue FeatureNotImplemented(ParserRuleContext context, string name) => new(context) {
         Id = 201,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Feature {name} is not implemented"
     };
 
     public static Issue AutoImportAlreadyEnabled(ParserRuleContext context) => new(context) {
         Id = 202,
-        Level = Severity.Warning,
+        Severity = Severity.Warning,
         Message = "Auto import is already enabled"
     };
 
     public static Issue ModuleAlreadyImported(ParserRuleContext context, string name) => new(context) {
         Id = 203,
-        Level = Severity.Warning,
+        Severity = Severity.Warning,
         Message = $"Module {name} is already imported"
     };
     
     public static Issue IntegerTooLarge(ParserRuleContext context) => new(context) {
         Id = 204,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = "Integer value is too large"
     };
     
     public static Issue InvalidFloatFormat(ParserRuleContext context) => new(context) {
         Id = 205,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = "Floating-point value is in an invalid format"
     };
 
     public static Issue UnknownEscapeSequence(ParserRuleContext context, char character) => new(context) {
         Id = 206,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Unknown escape sequence \\{character}"
     };
 
     public static Issue UnclosedEscapeSequence(ParserRuleContext context) => new(context) {
         Id = 207,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = "Unclosed escape sequence"
     };
     
     public static Issue UnknownVariableType(ParserRuleContext context, string name) => new(context) {
         Id = 208,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Unknown variable type {name}"
     };
     
     public static Issue UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
         Id = 209,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Unknown operator {name}"
     };
     
     public static Issue InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {
         Id = 210,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Unicode character escapes must be {length}-digit long"
     };
     
     public static Issue InvalidCharFormat(ParserRuleContext context) => new(context) {
         Id = 211,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = "Invalid char format"
     };
     
     public static Issue InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier destination) => new(context) {
         Id = 212,
-        Level = Severity.Error,
+        Severity = Severity.Error,
         Message = $"Cannot cast '{source}' to '{destination}'"
     };
     

@@ -25,7 +25,7 @@ internal sealed class TypeHandler {
     private PrimitiveConversionHelper? PrimitiveConversionsBackingField;
 
     /// <summary>
-    /// Helper to 
+    /// Helper to TODO
     /// </summary>
     /// <exception cref="Exception">Thrown when conversion helper is accessed before loading types</exception>
     public PrimitiveConversionHelper PrimitiveConversions => PrimitiveConversionsBackingField ?? throw new Exception("Conversion helper accessed before loading types");

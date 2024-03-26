@@ -217,6 +217,14 @@ internal sealed partial class ScriptBuilder {
     }
 
     #endregion
+    
+    public override string VisitId(IdContext context) {
+        return context.Start.Text;
+    }
+
+    public override string VisitContextualKeyword(ContextualKeywordContext context) {
+        return context.start.Text;
+    }
 
     #region Unused visit methods
 
