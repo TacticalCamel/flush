@@ -2,15 +2,47 @@
 
 using System.Diagnostics.CodeAnalysis;
 
+/// <summary>
+/// A class that helps in transforming command line arguments to one or more option objects.
+/// </summary>
 internal sealed class OptionParser {
+    /// <summary>
+    /// The prefix that identifier short option names
+    /// </summary>
     public const string PREFIX_SHORT = "-";
+    
+    /// <summary>
+    /// The prefix that identifier long option names
+    /// </summary>
     public const string PREFIX_LONG = "--";
 
+    /// <summary>
+    /// Logger to use for warning messages.
+    /// </summary>
     private ILogger Logger { get; }
+    
+    /// <summary>
+    /// The parsing dictionary to map option names to option values.
+    /// </summary>
     private Dictionary<string, string[]> Options { get; }
+    
+    /// <summary>
+    /// Dictionary to map types to methods that convert them from strings to their intended type.
+    /// </summary>
     private Dictionary<Type, MethodInfo> ParseFunctions { get; }
+    
+    /// <summary>
+    /// Get all the remaining option keys.
+    /// </summary>
+    public IEnumerable<string> RemainingKeys => Options.Keys;
 
-    public OptionParser(ILogger logger, string[] args, string targetKey) {
+    /// <summary>
+    /// Creates a new parser and initializes its properties.
+    /// </summary>
+    /// <param name="logger">The logger to use for warning messages.</param>
+    /// <param name="args">The input argument array.</param>
+    /// <param name="defaultKey">The key to use for options that have no key.</param>
+    public OptionParser(ILogger logger, string[] args, string defaultKey) {
         Logger = logger;
         Options = [];
         ParseFunctions = [];
@@ -22,7 +54,7 @@ internal sealed class OptionParser {
             
             // the first string will be the name of the option
             // use the target key for the first option
-            string key = start < 1 ? targetKey : args[start - 1];
+            string key = start < 1 ? defaultKey : args[start - 1];
 
             // traverse array until the end or the next key is reached
             while (i < args.Length && !args[i].StartsWith(PREFIX_SHORT)) i++;
@@ -59,12 +91,17 @@ internal sealed class OptionParser {
         }
     }
 
-    public T ParseFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() where T : new() {
+    /// <summary>
+    /// Creates an option object from the remaining options.
+    /// </summary>
+    /// <typeparam name="TOptions">The option type to use. It must have a default constructor.</typeparam>
+    /// <returns>The option object.</returns>
+    public TOptions ParseFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TOptions>() where TOptions : new() {
         // create the object with its default constructor
-        T result = new();
+        TOptions result = new();
         
         // get the properties of the type
-        PropertyInfo[] properties = typeof(T).GetProperties();
+        PropertyInfo[] properties = typeof(TOptions).GetProperties();
         
         // dictionary to map option names to the properties of the type
         Dictionary<string, PropertyInfo> flags = [];
@@ -103,13 +140,13 @@ internal sealed class OptionParser {
             // no method found, ignore property
             // this should never happen
             if (parseFunction is null) {
-                Logger.PropertyNotParseable(property.PropertyType, typeof(T));
+                Logger.PropertyNotParseable(property.PropertyType, typeof(TOptions));
                 continue;
             }
 
             // get values and remove the key from the dictionary
             // null return value is not possible, because key is always present in the dictionary
-            string[] values = GetAndRemoveOption(key)!;
+            string[] values = TryRemoveOption(key)!;
             
             // convert values to the desired type
             object? value = parseFunction.Invoke(null, [values]);
@@ -126,18 +163,21 @@ internal sealed class OptionParser {
 
         return result;
     }
-
-    public IEnumerable<string> RemainingKeys => Options.Keys;
-
-    public string[]? GetAndRemoveOption(string key) {
+    
+    /// <summary>
+    /// Tries to remove an option and return the associated values.
+    /// </summary>
+    /// <param name="key">The name of the option to remove.</param>
+    /// <returns>An array of values if the key was found, null otherwise.</returns>
+    public string[]? TryRemoveOption(string key) {
         // try to get the requested value
-        bool success = Options.TryGetValue(key, out string[]? value);
+        bool success = Options.TryGetValue(key, out string[]? results);
 
         // if successful, remove from dictionary
         if (success) {
             Options.Remove(key);
         }
 
-        return value;
+        return results;
     }
 }

@@ -1,5 +1,8 @@
 ﻿namespace CLI.Options;
 
+/// <summary>
+/// Represents a configuration of the CLI.
+/// </summary>
 internal sealed class InterfaceOptions {
     [Display(Name = "help", ShortName = "h", Description = "Show help and exit.")]
     public bool DisplayHelp { get; init; }

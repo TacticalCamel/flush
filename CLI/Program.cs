@@ -7,7 +7,15 @@ using Interpreter;
 using Interpreter.Serialization;
 using Options;
 
+/// <summary>
+/// The starting point of the application.
+/// Manages file operations and interacts with the public interfaces of the compiler and the interpreter.
+/// </summary>
 internal static class Program {
+    /// <summary>
+    /// The entry point of the application.
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
     private static void Main(string[] args) {
         // parse the arguments of the program
         ParseArguments(args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions);
@@ -90,6 +98,13 @@ internal static class Program {
         }
     }
 
+    /// <summary>
+    /// Transform the raw command line arguments into option classes.
+    /// </summary>
+    /// <param name="args">The command line arguments.</param>
+    /// <param name="targets">An array of options that do not belong to any option.</param>
+    /// <param name="interfaceOptions">The options of the interface.</param>
+    /// <param name="compilerOptions">The options for the compiler.</param>
     private static void ParseArguments(string[] args, out string[] targets, out InterfaceOptions interfaceOptions, out CompilerOptions compilerOptions) {
         // create a factory for a temporary logger
         using ILoggerFactory factory = LoggerFactory.Create(builder => builder
@@ -108,7 +123,7 @@ internal static class Program {
         OptionParser optionParser = new(logger, args, targetKey);
 
         // get target file paths
-        targets = optionParser.GetAndRemoveOption(targetKey) ?? [];
+        targets = optionParser.TryRemoveOption(targetKey) ?? [];
 
         // get option values for 2 different option class
         interfaceOptions = optionParser.ParseFor<InterfaceOptions>();
@@ -120,6 +135,9 @@ internal static class Program {
         }
     }
 
+    /// <summary>
+    /// Write the help message to the console.
+    /// </summary>
     private static void DisplayHelp() {
         // get name and description pairs for the interface and the compiler
         Dictionary<string, string> interfaceHelpOptions = GetHelpOptionsFor<InterfaceOptions>();
@@ -128,20 +146,23 @@ internal static class Program {
         // calculate the maximum length of the options
         // will need this pad the names with spaces, so the descriptions are aligned
         int padLength = Math.Max(interfaceHelpOptions.Max(x => x.Key.Length), compilerHelpOptions.Max(x => x.Key.Length)) + 4;
-
+        
         // display the gathered information
         DisplayOptions(interfaceHelpOptions, "Interface options");
         DisplayOptions(compilerHelpOptions, "Compiler options");
 
         return;
-
+        
+        // search a type for option properties
         Dictionary<string, string> GetHelpOptionsFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
+            // get a dictionary of name-description pairs for every option in a class
             return typeof(T)
                 .GetProperties()
                 .Select(x => x.GetCustomAttribute<DisplayAttribute>())
                 .Where(x => x is not null)
                 .ToDictionary(GetKeyString!, GetValueString!);
 
+            // get the name of an option from its display attribute
             string GetKeyString(DisplayAttribute attribute) {
                 string shortName = attribute.ShortName is null ? string.Empty : OptionParser.PREFIX_SHORT + attribute.ShortName;
                 string name = attribute.Name is null ? string.Empty : OptionParser.PREFIX_LONG + attribute.Name;
@@ -150,22 +171,34 @@ internal static class Program {
                 return $"{name}{separator}{shortName}";
             }
 
+            // get the description of an option from its display attribute
             string GetValueString(DisplayAttribute attribute) {
                 return attribute.Description ?? string.Empty;
             }
         }
 
+        // display a category of options in the console
         void DisplayOptions(Dictionary<string, string> helpOptions, string categoryName) {
+            // display category name
             Console.WriteLine($"{categoryName}:");
 
+            // display every option with the right padding
             foreach (KeyValuePair<string, string> option in helpOptions) {
                 Console.WriteLine($"    {option.Key.PadRight(padLength)}{option.Value}");
             }
 
+            // display 1 empty line after each category
             Console.WriteLine();
         }
     }
 
+    /// <summary>
+    /// Create multiple console loggers with the right minimum level.
+    /// </summary>
+    /// <param name="options">The options object to use for minimum log level.</param>
+    /// <param name="interfaceLogger">A logger for the CLI module.</param>
+    /// <param name="compilerLogger">A logger for the compiler module.</param>
+    /// <param name="interpreterLogger">A logger for the interpreter module.</param>
     private static void CreateLoggers(InterfaceOptions options, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger) {
         // create a factory with the provided minimum log level
         using ILoggerFactory factory = LoggerFactory.Create(builder => builder
@@ -179,6 +212,12 @@ internal static class Program {
         interpreterLogger = factory.CreateLogger("Interpreter");
     }
 
+    /// <summary>
+    /// Try to read a source file from the given targets.
+    /// </summary>
+    /// <param name="logger">The logger to use for logging messages.</param>
+    /// <param name="targets">The path of the files to read.</param>
+    /// <param name="sourceFile">The source file, if the operation was successful.</param>
     private static void TryReadSource(ILogger logger, string[] targets, out SourceFile? sourceFile) {
         // null as default value
         sourceFile = null;
@@ -220,6 +259,13 @@ internal static class Program {
         }
     }
 
+    /// <summary>
+    /// Try to write the compilation result to a file.
+    /// </summary>
+    /// <param name="logger">The logger to use for logging messages.</param>
+    /// <param name="interfaceOptions">The options object to use.</param>
+    /// <param name="script">The compiled program.</param>
+    /// <param name="sourceFile">The source file that the program was compiled from.</param>
     private static void TryWriteResult(ILogger logger, InterfaceOptions interfaceOptions, Script script, SourceFile sourceFile) {
         // if no custom output path is provided, put the file to the same directory as the input
         string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, interfaceOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION);

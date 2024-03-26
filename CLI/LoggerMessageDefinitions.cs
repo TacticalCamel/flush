@@ -1,5 +1,8 @@
 ﻿namespace CLI;
 
+/// <summary>
+/// Logger message templates to be used by the CLI.
+/// </summary>
 internal static partial class LoggerMessageDefinitions {
     #region General
 
