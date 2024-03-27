@@ -6,13 +6,14 @@ using Bytecode;
 public sealed unsafe class ScriptExecutor {
     private readonly ReadOnlyMemory<byte> Data;
     private readonly ReadOnlyMemory<Instruction> Instructions;
-    private readonly byte[] Stack = new byte[1 << 20];
+    private readonly byte[] Stack;
     private int InstructionPtr;
     private int StackPtr;
 
     public ScriptExecutor(Script script) {
         Data = script.Data;
         Instructions = script.Instructions;
+        Stack = new byte[1 << 20];
     }
 
     public void Run() {
@@ -63,14 +64,48 @@ public sealed unsafe class ScriptExecutor {
                     Console.WriteLine($"{nameof(OperationCode.addi)} {i.Size}\n    {ToString()}\n");
                     break;
 
-                case OperationCode.extd:
-                    byte difference = (byte)(i.ToSize - i.Size);
+                case OperationCode.pshz:
+                    Stack.AsSpan(StackPtr..(StackPtr + i.Size)).Clear();
+                    StackPtr += i.Size;
 
-                    Stack.AsSpan(StackPtr..(StackPtr + difference)).Clear();
-                    StackPtr += difference;
-
-                    Console.WriteLine($"{nameof(OperationCode.extd)} {i.Size}->{i.ToSize}\n    {ToString()}\n");
+                    Console.WriteLine($"{nameof(OperationCode.pshz)} {i.Size}\n    {ToString()}\n");
                     break;
+                
+                case OperationCode.addf:
+                    fixed (byte* bytePtr = &Stack[StackPtr]) {
+                        switch (i.Size) {
+                            case 2: {
+                                Half* ptr = (Half*)bytePtr;
+                                *(ptr - 2) = *(ptr - 1) + *(ptr - 2);
+                                break;
+                            }
+                            case 4: {
+                                float* ptr = (float*)bytePtr;
+                                *(ptr - 2) = *(ptr - 1) + *(ptr - 2);
+                                break;
+                            }
+                            case 8: {
+                                double* ptr = (double*)bytePtr;
+                                *(ptr - 2) = *(ptr - 1) + *(ptr - 2);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    StackPtr -= i.Size;
+
+                    Console.WriteLine($"{nameof(OperationCode.addf)} {i.Size}\n    {ToString()}\n");
+                    break;
+                
+                case OperationCode.pop:
+                    StackPtr -= i.Size;
+
+                    Console.WriteLine($"{nameof(OperationCode.pop)} {i.Size}\n    {ToString()}\n");
+                    break;
+                
+                /*case OperationCode.itof: break;
+                case OperationCode.utof: break;
+                case OperationCode.ftof: break;*/
 
                 default:
                     throw new ArgumentOutOfRangeException();

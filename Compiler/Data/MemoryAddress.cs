@@ -22,8 +22,10 @@ internal readonly struct MemoryAddress {
         RawValue = rawValue;
     }
     
-    public static MemoryAddress CreateInData(ulong value) {
-        return new MemoryAddress((value & VALUE_MASK) | DATA_MASK);
+    public static MemoryAddress CreateInData(int value) {
+        ulong valueAsUlong = (ulong)value;
+        
+        return new MemoryAddress((valueAsUlong & VALUE_MASK) | DATA_MASK);
     }
     
     public static MemoryAddress CreateOnStack(ulong value) {

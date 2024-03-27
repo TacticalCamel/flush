@@ -1,11 +1,14 @@
 ﻿namespace Compiler.Data;
 
-internal sealed class ExpressionResult(MemoryAddress address, TypeIdentifier type, TypeIdentifier? secondaryType = null) {
+using Interpreter.Bytecode;
+
+internal sealed class ExpressionResult(MemoryAddress address, TypeIdentifier type, TypeIdentifier? implicitType = null) {
     public MemoryAddress Address { get; } = address;
     public TypeIdentifier Type { get; } = type;
-    public TypeIdentifier? SecondaryType { get; } = secondaryType;
+    public TypeIdentifier? ImplicitType { get; } = implicitType;
+    public List<Instruction> InstructionsAfter { get; } = [];
 
     public override string ToString() {
-        return $"{Type}{(SecondaryType is null ? string.Empty : $" ({SecondaryType})")} at {Address}";
+        return $"{Type} at {Address}";
     }
 }

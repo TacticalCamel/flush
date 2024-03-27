@@ -1,59 +1,70 @@
-﻿namespace Compiler.Data;
+﻿namespace Compiler.Analysis;
 
 using Antlr4.Runtime;
+using Data;
 
 /// <summary>
-/// Represents a problem in the source code
+/// Represents a problem in the source code.
 /// </summary>
 internal sealed class Issue {
-    /// <summary> The unique identifier of the issue </summary>
+    /// <summary>
+    /// The unique identifier of the issue.
+    /// </summary>
     public required uint Id { get; init; }
     
-    /// <summary> The severity of the issue </summary>
+    ///
+    /// <summary> The severity of the issue.
+    /// </summary>
     public required Severity Severity { get; init; }
     
-    /// <summary> The message of the issue </summary>
+    /// <summary>
+    /// The message of the issue.
+    /// </summary>
     public required string Message { get; init; }
     
-    /// <summary> The location of the issue in the source file </summary>
+    /// <summary>
+    /// The location of the issue in the source file.
+    /// </summary>
     public FilePosition Position { get; }
-
-    #region Constructors and methods
 
     /// <summary>
     /// Create a new issue instance. Not intended for outside use,
-    /// create issues from templates instead
+    /// create issues from templates instead.
     /// </summary>
-    /// <param name="context">The syntax tree node where the issue occured </param>
+    /// <param name="context">The syntax tree node where the issue occured.</param>
     private Issue(ParserRuleContext context) {
         Position = new FilePosition(context.start.Line, context.start.Column);
     }
 
     /// <summary>
     /// Create a new issue instance. Not intended for outside use,
-    /// create issues from templates instead
+    /// create issues from templates instead.
     /// </summary>
-    /// <param name="position">The position of the issue in the source file</param>
+    /// <param name="position">The position of the issue in the source file.</param>
     private Issue(FilePosition position) {
         Position = position;
     }
     
     /// <summary>
-    /// Return a string that represents the current issue
+    /// Return a string that represents the current issue.
     /// </summary>
-    /// <param name="overrideLevel">The severity to use</param>
-    /// <returns>A string that represents the current object</returns>
+    /// <param name="overrideLevel">The severity to use.</param>
+    /// <returns>A string that represents the current object.</returns>
     public string ToString(Severity overrideLevel) {
         return $"{Position}: {overrideLevel} SRA{Id:D3}: {Message}";
     }
     
+    /// <summary>
+    /// Return a string that represents the current issue.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
     public override string ToString() {
         return ToString(Severity);
     }
 
-    #endregion
-
     #region Templates
+    
+    // these templates provide the only way to create issue objects
     
     public static Issue LexerTokenInvalid(FilePosition position, string message) => new(position) {
         Id = 101,
@@ -133,10 +144,10 @@ internal sealed class Issue {
         Message = "Invalid char format"
     };
     
-    public static Issue InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier destination) => new(context) {
+    public static Issue InvalidBinaryOperation(ParserRuleContext context, TypeIdentifier left, TypeIdentifier right, string op) => new(context) {
         Id = 212,
         Severity = Severity.Error,
-        Message = $"Cannot cast '{source}' to '{destination}'"
+        Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };
     
     #endregion

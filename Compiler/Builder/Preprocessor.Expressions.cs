@@ -6,10 +6,17 @@ using Data;
 using Analysis;
 using static Grammar.ScrantonParser;
 
-internal sealed partial class ScriptBuilder {
+internal sealed partial class Preprocessor {
+    public override ExpressionResult? VisitExpression(ExpressionContext context) {
+        // visit subtype
+        return (ExpressionResult?)Visit(context);
+    }
+
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
         // nothing to do, nesting the expression was only necessary to change operator precedence
-        return VisitExpression(context.Body);
+        context.Result = VisitExpression(context.Body);
+
+        return context.Result;
     }
 
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
@@ -73,41 +80,44 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
+    // TODO: implement
+    public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
+        ExpressionResult? callerExpression = VisitExpression(context.Caller);
+
+        // get parameter expressions
+        ExpressionContext[] expressions = context.ExpressionList.expression();
+
+        // create an array for results
+        ExpressionResult[] results = new ExpressionResult[expressions.Length];
+
+        // resolve parameters and return if any of them was null
+        for (int i = 0; i < expressions.Length; i++) {
+            ExpressionResult? result = VisitExpression(expressions[i]);
+
+            if (result is null) {
+                return null;
+            }
+
+            results[i] = result;
+        }
+
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
+        return null;
+    }
+
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-        // resolve left side
-        ExpressionResult? left = leftContext.Result ?? VisitExpression(leftContext);
+        // resolve both sides
+        ExpressionResult? left = VisitExpression(leftContext);
+        ExpressionResult? right = VisitExpression(rightContext);
 
-        if (left is null) {
+        if (left is null || right is null) {
             return null;
         }
-        
-        if (left.Address.IsInData) {
-            Instructions.PushFromData(left, left.Type.Size);
-        }
 
-        foreach (Instruction i in left.InstructionsAfter) {
-            Instructions.Add(i);
-        }
-        
-        // resolve right side
-        ExpressionResult? right = rightContext.Result ?? VisitExpression(rightContext);
-
-        if (right is null) {
-            return null;
-        }
-        
-        if (right.Address.IsInData) {
-            Instructions.PushFromData(right, right.Type.Size);
-        }
-        
-        foreach (Instruction i in right.InstructionsAfter) {
-            Instructions.Add(i);
-        }
-        
         bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(left.Type);
         bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(right.Type);
 
-        // true if both expression types are primitive types or null
+        // true if both expression types are primitive types
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;
 
@@ -142,6 +152,14 @@ internal sealed partial class ScriptBuilder {
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
+        context.Result = result;
+
+        DebugNode(context);
+
+        if (result is null) {
+            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+        }
+
         return result;
     }
 
@@ -168,90 +186,106 @@ internal sealed partial class ScriptBuilder {
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
+        context.Result = result;
+
+        DebugNode(context);
+
         return result;
-    }
-
-    // TODO: implement
-    public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
-        ExpressionResult? callerExpression = VisitExpression(context.Caller);
-
-        // get parameter expressions
-        ExpressionContext[] expressions = context.ExpressionList.expression();
-
-        // create an array for results
-        ExpressionResult[] results = new ExpressionResult[expressions.Length];
-
-        // resolve parameters and return if any of them was null
-        for (int i = 0; i < expressions.Length; i++) {
-            ExpressionResult? result = VisitExpression(expressions[i]);
-
-            if (result is null) {
-                return null;
-            }
-
-            results[i] = result;
-        }
-
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
-        return null;
     }
 
     #region Operator methods
 
     private ExpressionResult? PrimitiveAddition(ExpressionResult left, ExpressionResult right) {
+        PrimitiveCast cast = GetBestCast(left.Type, right.Type, out TypeIdentifier? resultType);
+
+        bool isImplicit = IsImplicitCast(cast);
+
+        if (resultType is null) {
+            return null;
+        }
+
+        if (!isImplicit) {
+            return null;
+        }
+
+        // cast left
+        if (left.Type != resultType) {
+            Instruction? i = GetCastInstruction(left.Type, resultType);
+
+            if (i is not null) {
+                left.InstructionsAfter.Add(i.Value);
+            }
+        }
         
-        MemoryAddress address = Instructions.AddInt(left.Type.Size);
-        
-        return new ExpressionResult(address, left.Type);
+        // cast right
+        else {
+            Instruction? i = GetCastInstruction(right.Type, resultType);
+
+            if (i is not null) {
+                right.InstructionsAfter.Add(i.Value);
+            }
+        }
+
+
+        Console.WriteLine($"{left.Type} + {right.Type} -> {resultType} ({cast})");
+
+        return new ExpressionResult(MemoryAddress.Null, resultType);
+
+        Instruction? GetCastInstruction(TypeIdentifier source, TypeIdentifier destination) {
+            if (cast == PrimitiveCast.NotRequired) {
+                return null;
+            }
+
+            if (cast == PrimitiveCast.ResizeImplicit) {
+                int difference = destination.Size - source.Size;
+
+                if (difference > 0) {
+                    return new Instruction { Code = OperationCode.pshz, Size = difference };
+                }
+
+                return new Instruction { Code = OperationCode.pop, Size = -difference };
+            }
+
+            return null;
+        }
     }
 
     #endregion
-    
-    public override string VisitId(IdContext context) {
-        return context.Start.Text;
+
+    private PrimitiveCast GetBestCast(TypeIdentifier leftType, TypeIdentifier rightType, out TypeIdentifier? resultType) {
+        // cast left side to right side
+        PrimitiveCast castLeft = TypeHandler.PrimitiveConversions.GetCast(leftType, rightType);
+
+        // cast right side to left side
+        PrimitiveCast castRight = TypeHandler.PrimitiveConversions.GetCast(rightType, leftType);
+
+        // if casting the right side is easier,
+        // the type of the left side will be the result 
+        if (castLeft < castRight) {
+            resultType = leftType;
+            return castRight;
+        }
+
+        // if casting the left side is harder but possible,
+        // the type of the right side will be the result 
+        if (PrimitiveCast.None < castLeft) {
+            resultType = rightType;
+            return castLeft;
+        }
+
+        // casting is not possible
+        resultType = null;
+        return PrimitiveCast.None;
     }
 
-    public override string VisitContextualKeyword(ContextualKeywordContext context) {
-        return context.start.Text;
+    private static bool IsImplicitCast(PrimitiveCast cast) {
+        return cast switch {
+            PrimitiveCast.FloatToFloatImplicit => true,
+            PrimitiveCast.UnsignedToFloatImplicit => true,
+            PrimitiveCast.SignedToFloatImplicit => true,
+            PrimitiveCast.ResizeImplicit => true,
+            PrimitiveCast.NotRequired => true,
+            _ => false
+        };
     }
-
-    #region Unused visit methods
-
-    public override object? VisitOpLeftUnary(OpLeftUnaryContext context) {
-        return null;
-    }
-
-    public override object? VisitOpRightUnary(OpRightUnaryContext context) {
-        return null;
-    }
-
-    public override object? VisitOpMultiplicative(OpMultiplicativeContext context) {
-        return null;
-    }
-
-    public override object? VisitOpAdditive(OpAdditiveContext context) {
-        return null;
-    }
-
-    public override object? VisitOpShift(OpShiftContext context) {
-        return null;
-    }
-
-    public override object? VisitOpComparison(OpComparisonContext context) {
-        return null;
-    }
-
-    public override object? VisitOpLogical(OpLogicalContext context) {
-        return null;
-    }
-
-    public override object? VisitOpAssignment(OpAssignmentContext context) {
-        return null;
-    }
-
-    public override object? VisitExpressionList(ExpressionListContext context) {
-        return null;
-    }
-
-    #endregion
 }

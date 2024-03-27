@@ -21,13 +21,20 @@ internal sealed class InstructionHandler: IEnumerable<Instruction> {
         
         StackSize += size;
         
-        Instructions.Add(new Instruction{Code = OperationCode.pshd, DataAddress = (int)expression.Address.Value, Size = size});
+        Instructions.Add(new Instruction {
+            Code = OperationCode.pshd,
+            DataAddress = (int)expression.Address.Value,
+            Size = size
+        });
 
         return address;
     }
 
     public MemoryAddress AddInt(byte size) {
-        Instructions.Add(new Instruction{Code = OperationCode.addi, Size = size});
+        Instructions.Add(new Instruction {
+            Code = OperationCode.addi,
+            Size = size
+        });
 
         StackSize -=  size;
 
@@ -35,6 +42,14 @@ internal sealed class InstructionHandler: IEnumerable<Instruction> {
     }
 
     public void Extend(byte fromSize, byte toSize) {
-        Instructions.Add(new Instruction{Code = OperationCode.extd, Size = fromSize, ToSize = toSize});
+        Instructions.Add(new Instruction {
+            Code = OperationCode.pshz,
+            Size = fromSize,
+            ToSize = toSize
+        });
+    }
+
+    public void Add(Instruction instruction) {
+        Instructions.Add(instruction);
     }
 }

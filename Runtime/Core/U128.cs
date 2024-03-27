@@ -1,6 +1,6 @@
 ﻿namespace Runtime.Core;
 
-[Alias("i128")]
+[Alias("u128")]
 public struct U128 {
     private readonly UInt128 Value;
 

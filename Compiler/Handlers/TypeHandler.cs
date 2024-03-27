@@ -9,53 +9,52 @@ using Interpreter.Types;
 /// </summary>
 internal sealed class TypeHandler {
     /// <summary>
-    /// Backing field for core types so the public property can have a non nullable type
+    /// Backing field for core types so the public property can have a non nullable type.
     /// </summary>
     private CoreTypeHelper? CoreTypesBackingField;
 
     /// <summary>
-    /// Helper to retrieve type identifiers for core types
+    /// Helper to retrieve type identifiers for core types.
     /// </summary>
-    /// <exception cref="Exception">Thrown when type helper is accessed before loading types</exception>
+    /// <exception cref="Exception">Thrown when type helper is accessed before loading types.</exception>
     public CoreTypeHelper CoreTypes => CoreTypesBackingField ?? throw new Exception("Core type helper accessed before loading types");
 
     /// <summary>
-    /// Backing field for conversion helper so the public property can have a non nullable type
+    /// Backing field for conversion helper so the public property can have a non nullable type.
     /// </summary>
     private PrimitiveConversionHelper? PrimitiveConversionsBackingField;
 
     /// <summary>
-    /// Helper to TODO
+    /// Helper to retrieve conversions between primitive types.
     /// </summary>
-    /// <exception cref="Exception">Thrown when conversion helper is accessed before loading types</exception>
+    /// <exception cref="Exception">Thrown when conversion helper is accessed before loading types.</exception>
     public PrimitiveConversionHelper PrimitiveConversions => PrimitiveConversionsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
 
     /// <summary>
     /// The module of the current program.
     /// Code within the same module is visible by default.
-    /// Can be null, in which case the code can not be imported to other programs
+    /// Can be null, in which case the code can not be imported to other programs.
     /// </summary>
     private string? ProgramModule { get; set; }
 
     /// <summary>
     /// Whether all runtime code should be visible by default.
-    /// Naming conflicts might occur
     /// </summary>
     private bool AutoImportEnabled { get; set; }
 
     /// <summary>
     /// The imported modules of the program.
-    /// Use a hashset to avoid duplicates
+    /// Use a hashset to avoid duplicates.
     /// </summary>
     private HashSet<string> Imports { get; } = [];
 
     /// <summary>
-    /// The list of currently visible types
+    /// The list of currently visible types.
     /// </summary>
     private List<TypeInfo> Types { get; set; } = [];
 
     /// <summary>
-    /// Gets the modules that should be visible from the current program
+    /// Gets the modules that should be visible from the current program.
     /// </summary>
     /// <returns></returns>
     private string[] GetVisibleModules() {
@@ -71,7 +70,7 @@ internal sealed class TypeHandler {
     }
 
     /// <summary>
-    /// Load all visible types
+    /// Load all visible types.
     /// </summary>
     public void LoadTypes() {
         string[] visibleModules = GetVisibleModules();
@@ -79,7 +78,6 @@ internal sealed class TypeHandler {
         Types = ClassLoader.LoadModules(visibleModules, AutoImportEnabled);
 
         CoreTypesBackingField = new CoreTypeHelper {
-            Null = new TypeIdentifier(TypeInfo.Null, []),
             I8 = GetFromType<Runtime.Core.I8>(),
             I16 = GetFromType<Runtime.Core.I16>(),
             I32 = GetFromType<Runtime.Core.I32>(),
@@ -95,55 +93,56 @@ internal sealed class TypeHandler {
             F64 = GetFromType<Runtime.Core.F64>(),
             Bool = GetFromType<Runtime.Core.Bool>(),
             Char = GetFromType<Runtime.Core.Char>(),
-            Str = GetFromType<Runtime.Core.Str>()
+            Str = GetFromType<Runtime.Core.Str>(),
+            Null = new TypeIdentifier(TypeInfo.Null, [])
         };
 
         PrimitiveConversionsBackingField = new PrimitiveConversionHelper(CoreTypesBackingField);
     }
 
     /// <summary>
-    /// Add a new import
+    /// Add a new import.
     /// </summary>
-    /// <param name="name">The module to import</param>
-    /// <returns>Whether the imported module was already present</returns>
+    /// <param name="name">The module to import.</param>
+    /// <returns>True if successful, false if the imported module was already present.</returns>
     public bool Add(string name) {
         return Imports.Add(name);
     }
 
     /// <summary>
-    /// Enable auto import
+    /// Enable auto import.
     /// </summary>
-    /// <returns>Whether auto import was already enabled</returns>
+    /// <returns>True if successful, false if auto import was already enabled.</returns>
     public bool EnableAutoImport() {
-        bool alreadyEnabled = AutoImportEnabled;
+        bool success = !AutoImportEnabled;
 
         AutoImportEnabled = true;
 
-        return !alreadyEnabled;
+        return success;
     }
 
     /// <summary>
-    /// Set the module of the program
+    /// Set the module of the program.
     /// </summary>
-    /// <param name="name">The module to use</param>
+    /// <param name="name">The module to use.</param>
     public void SetModule(string name) {
         ProgramModule = name;
     }
 
     /// <summary>
-    /// Retrieve a type by name
+    /// Retrieve a type by name.
     /// </summary>
-    /// <param name="name">The name of the type</param>
-    /// <returns>The type if it was found, null otherwise</returns>
+    /// <param name="name">The name of the type.</param>
+    /// <returns>The type if it was found, null otherwise.</returns>
     public TypeInfo? TryGetByName(string name) {
         return Types.FirstOrDefault(type => type.Name == name);
     }
 
     /// <summary>
-    /// Retrieve a non-generic type directly
+    /// Retrieve a non-generic type directly.
     /// </summary>
-    /// <typeparam name="T">The the type to retrieve</typeparam>
-    /// <returns>The type</returns>
+    /// <typeparam name="T">The the type to retrieve.</typeparam>
+    /// <returns>The identifier pf the type.</returns>
     private TypeIdentifier GetFromType<T>() {
         Type type = typeof(T);
 
@@ -158,38 +157,105 @@ internal sealed class TypeHandler {
         return new TypeIdentifier(typeInfo, []);
     }
 
+    /// <summary>
+    /// Collection of properties that represent all types constants can have.
+    /// </summary>
     public sealed class CoreTypeHelper {
+        /// <summary>
+        /// Identifier for null references.
+        /// </summary>
         public required TypeIdentifier Null { get; init; }
+
+        /// <summary>
+        /// Identifier for 8-bit signed integers.
+        /// </summary>
         public required TypeIdentifier I8 { get; init; }
+
+        /// <summary>
+        /// Identifier for 16-bit signed integers.
+        /// </summary>
         public required TypeIdentifier I16 { get; init; }
+
+        /// <summary>
+        /// Identifier for 32-bit signed integers.
+        /// </summary>
         public required TypeIdentifier I32 { get; init; }
+
+        /// <summary>
+        /// Identifier for 64-bit signed integers.
+        /// </summary>
         public required TypeIdentifier I64 { get; init; }
+
+        /// <summary>
+        /// Identifier for 128-bit signed integers.
+        /// </summary>
         public required TypeIdentifier I128 { get; init; }
+
+        /// <summary>
+        /// Identifier for 8-bit unsigned integers.
+        /// </summary>
         public required TypeIdentifier U8 { get; init; }
+
+        /// <summary>
+        /// Identifier for 16-bit unsigned integers.
+        /// </summary>
         public required TypeIdentifier U16 { get; init; }
+
+        /// <summary>
+        /// Identifier for 32-bit unsigned integers.
+        /// </summary>
         public required TypeIdentifier U32 { get; init; }
+
+        /// <summary>
+        /// Identifier for 64-bit unsigned integers.
+        /// </summary>
         public required TypeIdentifier U64 { get; init; }
+
+        /// <summary>
+        /// Identifier for 128-bit unsigned integers.
+        /// </summary>
         public required TypeIdentifier U128 { get; init; }
+
+        /// <summary>
+        /// Identifier for 16-bit floats.
+        /// </summary>
         public required TypeIdentifier F16 { get; init; }
+
+        /// <summary>
+        /// Identifier for 32-bit floats.
+        /// </summary>
         public required TypeIdentifier F32 { get; init; }
+
+        /// <summary>
+        /// Identifier for 64-bit floats.
+        /// </summary>
         public required TypeIdentifier F64 { get; init; }
+
+        /// <summary>
+        /// Identifier for booleans.
+        /// </summary>
         public required TypeIdentifier Bool { get; init; }
+
+        /// <summary>
+        /// Identifier for characters.
+        /// </summary>
         public required TypeIdentifier Char { get; init; }
+
+        /// <summary>
+        /// Identifier for strings.
+        /// </summary>
         public required TypeIdentifier Str { get; init; }
     }
 
+    // TODO comments
     public sealed class PrimitiveConversionHelper {
-        private const byte NONE = 0;
-        private const byte EXTEND = 1;
-        
-        
-        private CoreTypeHelper CoreTypeHelper { get; }
         private TypeIdentifier[] PrimitiveTypes { get; }
-        private byte[,] ConversionTable { get; }
-        
+        private TypeIdentifier[] SignedIntegerTypes { get; }
+        private TypeIdentifier[] UnsignedIntegerTypes { get; }
+        private TypeIdentifier[] FloatTypes { get; }
+        private PrimitiveCast[,] ConversionTable { get; }
+
         public PrimitiveConversionHelper(CoreTypeHelper types) {
-            CoreTypeHelper = types;
-            
             PrimitiveTypes = [
                 types.I8,
                 types.I16,
@@ -207,41 +273,129 @@ internal sealed class TypeHandler {
                 types.Bool,
                 types.Char
             ];
-            
-            ConversionTable = new byte[PrimitiveTypes.Length, PrimitiveTypes.Length];
-            
-            AddConversion(types.I8, [types.I16, types.I32, types.I64, types.I128], EXTEND);
-            AddConversion(types.I16, [types.I32, types.I64, types.I128], EXTEND);
-            AddConversion(types.I32, [types.I64, types.I128], EXTEND);
-            AddConversion(types.I64, [types.I128], EXTEND);
-            
-            AddConversion(types.U8, [types.I16, types.U16, types.I32, types.U32, types.I64, types.U64, types.I128, types.U128], EXTEND);
-            AddConversion(types.U16, [types.I32, types.U32, types.I64, types.U64, types.I128, types.U128], EXTEND);
-            AddConversion(types.U32, [types.I64, types.U64, types.I128, types.U128], EXTEND);
-            AddConversion(types.U64, [types.I128, types.U128], EXTEND);
+
+            SignedIntegerTypes = [
+                types.I8,
+                types.I16,
+                types.I32,
+                types.I64,
+                types.I128
+            ];
+
+            UnsignedIntegerTypes = [
+                types.U8,
+                types.U16,
+                types.U32,
+                types.U64,
+                types.U128
+            ];
+
+            FloatTypes = [
+                types.F16,
+                types.F32,
+                types.F64
+            ];
+
+            ConversionTable = new PrimitiveCast[PrimitiveTypes.Length, PrimitiveTypes.Length];
+
+            RegisterCasts(types);
         }
 
-        private void AddConversion(TypeIdentifier source, IEnumerable<TypeIdentifier> destination, byte conversionType) {
-            int sourceIndex = Array.IndexOf(PrimitiveTypes, source);
+        private void RegisterCasts(CoreTypeHelper types) {
+            // signed int
+            for (int sourceIndex = 0; sourceIndex < SignedIntegerTypes.Length; sourceIndex++) {
+                for (int destinationIndex = 0; destinationIndex < SignedIntegerTypes.Length; destinationIndex++) {
+                    PrimitiveCast cast = PrimitiveCast.NotRequired;
 
-            foreach (TypeIdentifier destinationType in destination) {
+                    if (sourceIndex < destinationIndex) cast = PrimitiveCast.ResizeImplicit;
+                    else if (sourceIndex > destinationIndex) cast = PrimitiveCast.ResizeExplicit;
+
+                    AddCast(SignedIntegerTypes[sourceIndex], SignedIntegerTypes[destinationIndex], cast);
+                }
+            }
+
+            foreach (TypeIdentifier signedType in SignedIntegerTypes) {
+                foreach (TypeIdentifier unsignedType in UnsignedIntegerTypes) {
+                    AddCast(signedType, unsignedType, PrimitiveCast.ResizeExplicit);
+                }
+            }
+
+            foreach (TypeIdentifier signedType in SignedIntegerTypes) {
+                foreach (TypeIdentifier floatType in FloatTypes) {
+                    AddCast(signedType, floatType, PrimitiveCast.SignedToFloatImplicit);
+                }
+            }
+
+            // unsigned int
+            for (int sourceIndex = 0; sourceIndex < UnsignedIntegerTypes.Length; sourceIndex++) {
+                for (int destinationIndex = 0; destinationIndex < UnsignedIntegerTypes.Length; destinationIndex++) {
+                    PrimitiveCast cast = PrimitiveCast.NotRequired;
+
+                    if (sourceIndex < destinationIndex) cast = PrimitiveCast.ResizeImplicit;
+                    else if (sourceIndex > destinationIndex) cast = PrimitiveCast.ResizeExplicit;
+
+                    AddCast(UnsignedIntegerTypes[sourceIndex], UnsignedIntegerTypes[destinationIndex], cast);
+                }
+            }
+
+            for (int sourceIndex = 0; sourceIndex < UnsignedIntegerTypes.Length; sourceIndex++) {
+                for (int destinationIndex = 0; destinationIndex < UnsignedIntegerTypes.Length; destinationIndex++) {
+                    PrimitiveCast cast = sourceIndex >= destinationIndex ? PrimitiveCast.ResizeExplicit : PrimitiveCast.ResizeImplicit;
+
+                    AddCast(UnsignedIntegerTypes[sourceIndex], SignedIntegerTypes[destinationIndex], cast);
+                }
+            }
+
+            foreach (TypeIdentifier unsignedType in UnsignedIntegerTypes) {
+                foreach (TypeIdentifier floatType in FloatTypes) {
+                    AddCast(unsignedType, floatType, PrimitiveCast.UnsignedToFloatImplicit);
+                }
+            }
+
+            AddCast(types.U16, types.Char, PrimitiveCast.NotRequired);
+
+            // float
+            foreach (TypeIdentifier floatType in FloatTypes) {
+                foreach (TypeIdentifier signedType in SignedIntegerTypes) {
+                    AddCast(floatType, signedType, PrimitiveCast.FloatToSignedExplicit);
+                }
+
+                foreach (TypeIdentifier unsignedType in UnsignedIntegerTypes) {
+                    AddCast(floatType, unsignedType, PrimitiveCast.FloatToUnsignedExplicit);
+                }
+            }
+
+            for (int sourceIndex = 0; sourceIndex < FloatTypes.Length; sourceIndex++) {
+                for (int destinationIndex = 0; destinationIndex < FloatTypes.Length; destinationIndex++) {
+                    PrimitiveCast cast = PrimitiveCast.NotRequired;
+
+                    if (sourceIndex < destinationIndex) cast = PrimitiveCast.FloatToFloatImplicit;
+                    else if (sourceIndex > destinationIndex) cast = PrimitiveCast.FloatToFloatExplicit;
+
+                    AddCast(FloatTypes[sourceIndex], FloatTypes[destinationIndex], cast);
+                }
+            }
+
+            // char
+            AddCast(types.Char, types.Char, PrimitiveCast.NotRequired);
+            AddCast(types.Char, types.U16, PrimitiveCast.NotRequired);
+
+            // bool
+            AddCast(types.Bool, types.Bool, PrimitiveCast.NotRequired);
+
+            return;
+
+            void AddCast(TypeIdentifier sourceType, TypeIdentifier destinationType, PrimitiveCast cast) {
+                int sourceIndex = Array.IndexOf(PrimitiveTypes, sourceType);
                 int destinationIndex = Array.IndexOf(PrimitiveTypes, destinationType);
 
-                ConversionTable[sourceIndex, destinationIndex] = conversionType;
+                ConversionTable[sourceIndex, destinationIndex] = cast;
             }
         }
 
-        /*private TypeIdentifier FindExtendCast(TypeIdentifier source, TypeIdentifier destination) {
-            
-        }*/
-        
         public bool IsPrimitiveType(TypeIdentifier type) {
-            if (type == CoreTypeHelper.Null) {
-                return true;
-            }
-            
-            foreach (TypeIdentifier t in PrimitiveTypes) {
-                if (type == t) {
+            foreach (TypeIdentifier primitiveType in PrimitiveTypes) {
+                if (type == primitiveType) {
                     return true;
                 }
             }
@@ -249,15 +403,15 @@ internal sealed class TypeHandler {
             return false;
         }
 
-        public bool CommonExtendType(TypeIdentifier source, TypeIdentifier destination) {
+        public PrimitiveCast GetCast(TypeIdentifier source, TypeIdentifier destination) {
             int sourceIndex = Array.IndexOf(PrimitiveTypes, source);
             int destinationIndex = Array.IndexOf(PrimitiveTypes, destination);
 
             if (sourceIndex < 0 || destinationIndex < 0) {
-                return false;
+                return PrimitiveCast.None;
             }
 
-            return ConversionTable[sourceIndex, destinationIndex] == EXTEND;
+            return ConversionTable[sourceIndex, destinationIndex];
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Data;
+using Analysis;
 using Interpreter.Types;
 using static Grammar.ScrantonParser;
 

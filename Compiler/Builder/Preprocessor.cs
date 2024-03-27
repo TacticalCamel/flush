@@ -3,15 +3,25 @@
 using static Grammar.ScrantonParser;
 using Handlers;
 using Grammar;
-using Data;
+using Analysis;
 
-internal sealed class Preprocessor(CompilerOptions options, IssueHandler issueHandler, TypeHandler typeHandler): ScrantonBaseVisitor<object?> {
+/// <summary>
+/// Implements the first pass traversal of the AST. This loads types, methods and
+/// determines the actual types of expressions, but not yet emits any instructions.
+/// </summary>
+/// <param name="options">The compiler options to use.</param>
+/// <param name="issueHandler">The issue handler to use.</param>
+/// <param name="typeHandler">The type handler to use.</param>
+/// <param name="dataHandler">The data handler to use.</param>
+internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler issueHandler, TypeHandler typeHandler, DataHandler dataHandler): ScrantonBaseVisitor<object?> {
     private CompilerOptions Options { get; } = options;
     private IssueHandler IssueHandler { get; } = issueHandler;
     private TypeHandler TypeHandler { get; } = typeHandler;
-    
-    public override object? VisitProgram(ProgramContext context) {
-        return VisitChildren(context);
+    private DataHandler DataHandler { get; } = dataHandler;
+
+    // TODO temporary
+    private static void DebugNode(ExpressionContext context) {
+        Console.WriteLine($"{context.GetType().Name.Replace("Context", ""),-33} {context.GetText(),-20} {context.Result}");
     }
     
     public override object? VisitProgramHeader(ProgramHeaderContext context) {
@@ -21,15 +31,7 @@ internal sealed class Preprocessor(CompilerOptions options, IssueHandler issueHa
 
         return null;
     }
-    
-    public override object? VisitProgramBody(ProgramBodyContext context) {
-        return VisitChildren(context);
-    }
-    
-    public override object? VisitModuleSegment(ModuleSegmentContext context) {
-        return VisitChildren(context);
-    }
-    
+
     public override object? VisitModuleStatement(ModuleStatementContext context) {
         string name = VisitNamespace(context.Name);
 
@@ -37,11 +39,7 @@ internal sealed class Preprocessor(CompilerOptions options, IssueHandler issueHa
 
         return null;
     }
-
-    public override object? VisitImportSegment(ImportSegmentContext context) {
-        return VisitChildren(context);
-    }
-
+    
     public override object? VisitImportStatement(ImportStatementContext context) {
         // subtypes must be visited
         return Visit(context);

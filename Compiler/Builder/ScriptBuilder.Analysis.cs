@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Antlr4.Runtime;
-using Data;
+using Analysis;
 
 internal partial class ScriptBuilder {
     public void BindToLexerErrorListener(Lexer lexer) {
@@ -13,22 +13,23 @@ internal partial class ScriptBuilder {
     }
 
     public string[] GetIssuesWithSeverity(Severity severity) {
-        Severity minimumSeverity = severity;
+        Severity minimumSeverity = severity switch {
+            Severity.Warning when Options.TreatWarningsAsErrors => Severity.Error,
+            Severity.Error when Options.TreatWarningsAsErrors => Severity.Warning,
+            _ => severity
+        };
 
-        if (Options.TreatWarningsAsErrors && severity == Severity.Warning) minimumSeverity = Severity.Error;
-        if (Options.TreatWarningsAsErrors && severity == Severity.Error) minimumSeverity = Severity.Warning;
-        
         return IssueHandler
-            .Where(issue => issue.Severity >= minimumSeverity && issue.Severity <= severity)
+            .Where(issue => issue.Severity >= minimumSeverity && issue.Severity <= severity && (issue.Severity >= Severity.Error || !Options.IgnoredIssues.Contains(issue.Id)))
             .OrderBy(issue => issue.Position)
-            .Select(x => x.ToString(severity))
+            .Select(issue => issue.ToString(severity))
             .ToArray();
     }
 
     private void CancelIfHasErrors() {
-        Severity errorLevel = Options.TreatWarningsAsErrors ? Severity.Warning : Severity.Error;
+        Severity errorSeverity = Options.TreatWarningsAsErrors ? Severity.Warning : Severity.Error;
 
-        if (IssueHandler.Any(x => x.Severity >= errorLevel)) {
+        if (IssueHandler.Any(issue => issue.Severity >= errorSeverity && (issue.Severity >= Severity.Error || !Options.IgnoredIssues.Contains(issue.Id)))) {
             throw new OperationCanceledException();
         }
     }

@@ -4,7 +4,7 @@ namespace Compiler;
 
 using Grammar;
 using Builder;
-using Data;
+using Analysis;
 using Antlr4.Runtime;
 using Interpreter.Serialization;
 using Microsoft.Extensions.Logging;

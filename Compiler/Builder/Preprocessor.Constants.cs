@@ -1,16 +1,21 @@
 ﻿namespace Compiler.Builder;
 
 using Data;
+using Analysis;
 using System.Globalization;
 using static Grammar.ScrantonParser;
 
-internal sealed partial class ScriptBuilder {
+internal sealed partial class Preprocessor {
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
-        return VisitConstant(context.Constant);
+        context.Result = VisitConstant(context.Constant);
+        
+        DebugNode(context);
+
+        return context.Result;
     }
 
     public override ExpressionResult? VisitConstant(ConstantContext context) {
-        // subtypes must be visited
+        // visit subtypes
         return (ExpressionResult?)Visit(context);
     }
 
@@ -20,7 +25,7 @@ internal sealed partial class ScriptBuilder {
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
 
-        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 1 : 0), NumberStyles.Integer, hasNegativeSign);
+        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 1 : 0), NumberStyles.Integer, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
@@ -29,7 +34,7 @@ internal sealed partial class ScriptBuilder {
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
         
-        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.HexNumber, hasNegativeSign);
+        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.HexNumber, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitBinaryLiteral(BinaryLiteralContext context) {
@@ -38,7 +43,7 @@ internal sealed partial class ScriptBuilder {
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
         
-        return AddInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.BinaryNumber, hasNegativeSign);
+        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.BinaryNumber, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitDoubleFloat(DoubleFloatContext context) {
@@ -102,13 +107,12 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        MemoryAddress address = DataHandler.I16.Add((short)result);
-        return new ExpressionResult(address, TypeHandler.CoreTypes.Char);
+        return new ExpressionResult(DataHandler.I16.Add((short)result), TypeHandler.CoreTypes.Char);
     }
 
     public override ExpressionResult VisitStringLiteral(StringLiteralContext context) {
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
-        
+
         List<char> characters = [];
 
         while (text.Length > 0) {
@@ -134,7 +138,15 @@ internal sealed partial class ScriptBuilder {
         return new ExpressionResult(DataHandler.Bool.Add(false), TypeHandler.CoreTypes.Bool);
     }
 
-    private ExpressionResult? AddInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles, bool isNegative) {
+    /// <summary>
+    /// Convert a span of characters into an integer and store it in the smallest possible byte width.
+    /// </summary>
+    /// <param name="context">The context of the number node.</param>
+    /// <param name="number">The string representation of the number.</param>
+    /// <param name="styles">The style of the number.</param>
+    /// <param name="isNegative">True if the number is negative, false otherwise.</param>
+    /// <returns></returns>
+    private ExpressionResult? StoreInteger(ConstantContext context, ReadOnlySpan<char> number, NumberStyles styles, bool isNegative) {
         // convert value and check if too large in absolute value
         bool isValid = UInt128.TryParse(number, styles, null, out UInt128 value);
 
@@ -211,6 +223,13 @@ internal sealed partial class ScriptBuilder {
         }
     }
 
+    /// <summary>
+    /// Remove and return the first unescaped character from a span.
+    /// </summary>
+    /// <param name="context">The context of the node which contains the characters. Used for error messages.</param>
+    /// <param name="characters">The span containing the characters.</param>
+    /// <param name="inString">True if the span represents a string, false if it's a char.</param>
+    /// <returns>The first unescaped character of the span.</returns>
     private char GetFirstCharacter(ConstantContext context, ref ReadOnlySpan<char> characters, bool inString) {
         // must contain at least 1 character
         if (characters.Length == 0) {

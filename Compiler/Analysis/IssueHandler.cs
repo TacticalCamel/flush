@@ -1,21 +1,22 @@
-﻿namespace Compiler.Handlers;
+﻿namespace Compiler.Analysis;
 
 using System.Collections;
 using Antlr4.Runtime;
-using Data;
 
 /// <summary>
 /// This class manages the issues thrown during compilation.
-/// Issues can be added manually, and it can listen for lexer and parser errors
+/// Issues can be added manually, and it can listen for lexer and parser errors.
 /// </summary>
 internal sealed class IssueHandler: IAntlrErrorListener<IToken>, IAntlrErrorListener<int>, IEnumerable<Issue> {
-    /// <summary> The collection of issues </summary>
+    /// <summary>
+    /// The collection of issues.
+    /// </summary>
     private List<Issue> Issues { get; } = [];
     
     /// <summary>
-    /// Add an issue to the collection
+    /// Add an issue to the collection.
     /// </summary>
-    /// <param name="issue">The issue to add</param>
+    /// <param name="issue">The issue to add.</param>
     public void Add(Issue issue) {
         Issues.Add(issue);
     }

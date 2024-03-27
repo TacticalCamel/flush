@@ -6,18 +6,18 @@ using Data;
 
 /// <summary>
 /// This class manages the memory space of the program data section at compile time.
-/// Objects which can exist in the data section can be stored and their address can be retrieved 
+/// Objects which can exist in the data section can be stored and their address can be retrieved.
 /// </summary>
 internal sealed unsafe class DataHandler {
     /// <summary>
-    /// the limit for the size of the data section is approximately 2 gigabytes
-    /// it is a reasonable assumption that we will not need more
+    /// The limit for the size of the data section is approximately 2 gigabytes.
+    /// It is a reasonable assumption that we will not need more.
     /// </summary>
     private int DataLength { get; set; }
 
     /// <summary>
-    /// allocating objects that have a size not divisible by the rounding factor will leave holes in the data array
-    /// allow storing small objects in these holes while still aligning as many objects as possible
+    /// Allocating objects that have a size not divisible by the rounding factor will leave holes in the data array.
+    /// Allow storing small objects in these holes while still aligning as many objects as possible.
     /// </summary>
     private List<Hole> Holes { get; }
 
@@ -26,38 +26,58 @@ internal sealed unsafe class DataHandler {
     // unsigned and signed integers have the same binary representation
     // so using a single collection is enough for a given size
 
-    /// <summary> 8-bit integers </summary>
+    /// <summary>
+    /// Collection of 8-bit integers.
+    /// </summary>
     public IObjectCollection<I8> I8 { get; }
 
-    /// <summary> 16-bit integers and unicode characters </summary>
+    /// <summary>
+    /// Collection of 16-bit integers and unicode characters.
+    /// </summary>
     public IObjectCollection<I16> I16 { get; }
 
-    /// <summary> 32-bit integers </summary>
+    /// <summary>
+    /// Collection of 32-bit integers.
+    /// </summary>
     public IObjectCollection<I32> I32 { get; }
 
-    /// <summary> 64-bit integers </summary>
+    /// <summary>
+    /// Collection of 64-bit integers.
+    /// </summary>
     public IObjectCollection<I64> I64 { get; }
     
-    /// <summary> 128-bit integers </summary>
+    /// <summary>
+    /// Collection of 128-bit integers.
+    /// </summary>
     public IObjectCollection<I128> I128 { get; }
 
-    /// <summary> 16-bit floating-point numbers </summary>
+    /// <summary>
+    /// Collection of 16-bit floating-point numbers.
+    /// </summary>
     public IObjectCollection<F16> F16 { get; }
 
-    /// <summary> 32-bit floating-point numbers </summary>
+    /// <summary>
+    /// Collection of 32-bit floating-point numbers.
+    /// </summary>
     public IObjectCollection<F32> F32 { get; }
 
-    /// <summary> 64-bit floating-point numbers </summary>
+    /// <summary>
+    /// Collection of 64-bit floating-point numbers.
+    /// </summary>
     public IObjectCollection<F64> F64 { get; }
 
-    /// <summary> booleans </summary>
+    /// <summary>
+    /// Collection of booleans.
+    /// </summary>
     public IObjectCollection<Bool> Bool { get; }
 
-    /// <summary> strings </summary>
+    /// <summary>
+    /// Collection of strings.
+    /// </summary>
     public IObjectCollection<string> Str { get; }
 
     /// <summary>
-    /// Create a new data handler with no stored data
+    /// Create a new data handler with no stored data.
     /// </summary>
     public DataHandler() {
         DataLength = 0;
@@ -77,10 +97,10 @@ internal sealed unsafe class DataHandler {
 
     /// <summary>
     /// Search for the optimal place for an object in memory.
-    /// The type of the object is not relevant, only its size
+    /// The type of the object is not relevant, only its size.
     /// </summary>
-    /// <param name="size">The size of the object in bytes</param>
-    /// <returns>The assigned address of the object</returns>
+    /// <param name="size">The size of the object in bytes.</param>
+    /// <returns>The assigned address of the object.</returns>
     private int AddObject(int size) {
         // the block size for aligning objects
         const int ROUNDING_FACTOR = 4;
@@ -143,9 +163,9 @@ internal sealed unsafe class DataHandler {
     }
 
     /// <summary>
-    /// Create a byte array containing all objects stored by this data handler
+    /// Create a byte array containing all objects stored by this data handler.
     /// </summary>
-    /// <returns>The created byte array</returns>
+    /// <returns>The created byte array.</returns>
     public byte[] ToBytes() {
         int length = RoundUp(DataLength, 16);
         byte[] bytes = new byte[length];
@@ -165,49 +185,49 @@ internal sealed unsafe class DataHandler {
     }
 
     /// <summary>
-    /// Round up the integer by a given factor. It is assumed both numbers are positive
+    /// Round up the integer by a given factor. It is assumed both numbers are positive.
     /// </summary>
-    /// <param name="value">The number to round up</param>
-    /// <param name="factor">the rounding factor</param>
-    /// <returns>The rounded-up value</returns>
+    /// <param name="value">The number to round up.</param>
+    /// <param name="factor">the rounding factor.</param>
+    /// <returns>The rounded-up value.</returns>
     private static int RoundUp(int value, int factor) {
         return (value + factor - 1) / factor * factor;
     }
 
     /// <summary>
     /// An interface containing all the methods that must be implemented
-    /// by a collection storing objects in the data section
+    /// by a collection storing objects in the data section.
     /// </summary>
-    /// <typeparam name="T">The type of the stored object</typeparam>
+    /// <typeparam name="T">The type of the stored object.</typeparam>
     public interface IObjectCollection<in T> {
         /// <summary>
         /// Store an object in the collection.
         /// </summary>
-        /// <param name="value">The object to store</param>
-        /// <returns>The memory address of the object</returns>
+        /// <param name="value">The object to store.</param>
+        /// <returns>The address of the object in the data section.</returns>
         public MemoryAddress Add(T value);
         
         /// <summary>
-        /// Write all stored objects to a byte array using their memory addresses
+        /// Write all stored objects to a byte array using their memory addresses.
         /// </summary>
-        /// <param name="bytes">The destination array</param>
+        /// <param name="bytes">The destination array.</param>
         public void WriteContents(byte[] bytes);
     }
 
     /// <summary>
-    /// The simplest implementation of IObjectCollection for unmanaged types
+    /// The simplest implementation of IObjectCollection for unmanaged types.
     /// </summary>
-    /// <param name="dataHandler">The data handler to use</param>
-    /// <typeparam name="T">The type of the stored object</typeparam>
+    /// <param name="dataHandler">The data handler to use.</param>
+    /// <typeparam name="T">The type of the stored object.</typeparam>
     private sealed class PrimitiveCollection<T>(DataHandler dataHandler) : IObjectCollection<T> where T : unmanaged {
         /// <summary>
-        /// To determine the actual address of an object, the current DataHandler instance must be used
+        /// To determine the actual address of an object, the current DataHandler instance must be used.
         /// </summary>
         private DataHandler DataHandler { get; } = dataHandler;
         
         /// <summary>
-        /// Store object-address pairs in a dictionary
-        /// This allows for duplicate-checks and returning the address of duplicates
+        /// Store object-address pairs in a dictionary.
+        /// This allows for duplicate-checks and returning the address of duplicates.
         /// </summary>
         private Dictionary<T, int> Objects { get; } = [];
         
@@ -217,7 +237,7 @@ internal sealed unsafe class DataHandler {
 
             // return the stored address of duplicates
             if (contains) {
-                return MemoryAddress.CreateInData((ulong)address);
+                return MemoryAddress.CreateInData(address);
             }
 
             // determine object address
@@ -227,7 +247,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData((ulong)address);
+            return MemoryAddress.CreateInData(address);;
         }
         
         public void WriteContents(byte[] bytes) {
@@ -243,18 +263,18 @@ internal sealed unsafe class DataHandler {
     }
 
     /// <summary>
-    /// An implementation of IObjectCollection for strings
+    /// An implementation of IObjectCollection for strings.
     /// </summary>
-    /// <param name="dataHandler">The data handler to use</param>
+    /// <param name="dataHandler">The data handler to use.</param>
     private sealed class StringCollection(DataHandler dataHandler) : IObjectCollection<string> {
         /// <summary>
-        /// To determine the actual address of an object, the current DataHandler instance must be used
+        /// To determine the actual address of an object, the current DataHandler instance must be used.
         /// </summary>
         private DataHandler DataHandler { get; } = dataHandler;
         
         /// <summary>
-        /// Store object-address pairs in a dictionary
-        /// This allows for duplicate-checks and returning the address of duplicates
+        /// Store object-address pairs in a dictionary.
+        /// This allows for duplicate-checks and returning the address of duplicates.
         /// </summary>
         private Dictionary<string, int> Objects { get; } = [];
 
@@ -266,7 +286,7 @@ internal sealed unsafe class DataHandler {
             // the way strings are stored in memory only allows the optimisation for duplicates,
             // if the 2 strings are exactly the same
             if (contains) {
-                return MemoryAddress.CreateInData((ulong)address);
+                return MemoryAddress.CreateInData(address);;
             }
 
             // determine object address
@@ -276,7 +296,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData((ulong)address);
+            return MemoryAddress.CreateInData(address);;
         }
 
         public void WriteContents(byte[] bytes) {
@@ -299,16 +319,20 @@ internal sealed unsafe class DataHandler {
 
     /// <summary>
     /// A simple class to represent a small region of memory.
-    /// This memory is free but unaligned, so small objects can still be placed there, but larger ones should start be aligned
+    /// This memory is free but unaligned, so small objects can still be positioned here.
     /// </summary>
-    /// <param name="address">The starting memory address</param>
-    /// <param name="size">The size in bytes</param>
+    /// <param name="address">The starting memory address.</param>
+    /// <param name="size">The size in bytes.</param>
     [StructLayout(LayoutKind.Sequential)]
     private readonly struct Hole(int address, int size) {
-        /// <summary> The starting memory address </summary>
+        /// <summary>
+        /// The starting memory address.
+        /// </summary>
         public readonly int Address = address;
         
-        /// <summary> The size in bytes </summary>
+        /// <summary>
+        /// The size in bytes.
+        /// </summary>
         public readonly int Size = size;
     }
 }
