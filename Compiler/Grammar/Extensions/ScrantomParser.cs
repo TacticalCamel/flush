@@ -9,4 +9,3 @@ public partial class ScrantonParser {
         internal ExpressionResult? Result { get; set; }
     }
 }
-

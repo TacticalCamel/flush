@@ -8,13 +8,13 @@ using static Grammar.ScrantonParser;
 internal sealed partial class ScriptBuilder {
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
         VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
-        
+
         ExpressionResult? result = VisitExpression(context.Expression);
-        
+
         if (variable is null) {
             return null;
         }
-        
+
         Logger.Debug($"{variable} = {result?.ToString() ?? "null"}");
 
         return null;
@@ -27,7 +27,7 @@ internal sealed partial class ScriptBuilder {
         if (type is null) {
             return null;
         }
-        
+
         return new VariableIdentifier(type, name);
     }
 
@@ -38,22 +38,22 @@ internal sealed partial class ScriptBuilder {
 
     public override TypeIdentifier? VisitSimpleType(SimpleTypeContext context) {
         string name = VisitId(context.Name);
-        
+
         TypeInfo? type = TypeHandler.TryGetByName(name);
 
         if (type is null) {
             IssueHandler.Add(Issue.UnknownVariableType(context, name));
             return null;
         }
-        
+
         return new TypeIdentifier(type, []);
     }
 
     public override TypeIdentifier? VisitGenericType(GenericTypeContext context) {
         string name = VisitId(context.Name);
-        
+
         TypeInfo? type = TypeHandler.TryGetByName(name);
-        
+
         if (type is null) {
             IssueHandler.Add(Issue.UnknownVariableType(context, name));
             return null;
@@ -72,10 +72,10 @@ internal sealed partial class ScriptBuilder {
 
             genericParameters[i] = typeIdentifier;
         }
-        
+
         return new TypeIdentifier(type, genericParameters);
     }
-    
+
     public override ExpressionResult? VisitExpression(ExpressionContext context) {
         // subtypes must be visited
         return (ExpressionResult?)Visit(context);

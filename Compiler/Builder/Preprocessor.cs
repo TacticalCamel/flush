@@ -13,7 +13,7 @@ using Analysis;
 /// <param name="issueHandler">The issue handler to use.</param>
 /// <param name="typeHandler">The type handler to use.</param>
 /// <param name="dataHandler">The data handler to use.</param>
-internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler issueHandler, TypeHandler typeHandler, DataHandler dataHandler): ScrantonBaseVisitor<object?> {
+internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler issueHandler, TypeHandler typeHandler, DataHandler dataHandler) : ScrantonBaseVisitor<object?> {
     private CompilerOptions Options { get; } = options;
     private IssueHandler IssueHandler { get; } = issueHandler;
     private TypeHandler TypeHandler { get; } = typeHandler;
@@ -23,7 +23,7 @@ internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler
     private static void DebugNode(ExpressionContext context) {
         Console.WriteLine($"{context.GetType().Name.Replace("Context", ""),-33} {context.GetText(),-20} {context.Result}");
     }
-    
+
     public override object? VisitProgramHeader(ProgramHeaderContext context) {
         VisitChildren(context);
 
@@ -39,12 +39,12 @@ internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler
 
         return null;
     }
-    
+
     public override object? VisitImportStatement(ImportStatementContext context) {
         // subtypes must be visited
         return Visit(context);
     }
-    
+
     public override object? VisitManualImport(ManualImportContext context) {
         string name = VisitNamespace(context.Name);
 
@@ -59,7 +59,7 @@ internal sealed partial class Preprocessor(CompilerOptions options, IssueHandler
 
     public override object? VisitAutoImport(AutoImportContext context) {
         bool success = TypeHandler.EnableAutoImport();
-        
+
         if (!success) {
             IssueHandler.Add(Issue.AutoImportAlreadyEnabled(context));
         }

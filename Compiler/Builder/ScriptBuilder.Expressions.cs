@@ -80,7 +80,7 @@ internal sealed partial class ScriptBuilder {
         if (left is null) {
             return null;
         }
-        
+
         if (left.Address.IsInData) {
             Instructions.PushFromData(left, left.Type.Size);
         }
@@ -88,22 +88,22 @@ internal sealed partial class ScriptBuilder {
         foreach (Instruction i in left.InstructionsAfter) {
             Instructions.Add(i);
         }
-        
+
         // resolve right side
         ExpressionResult? right = rightContext.Result ?? VisitExpression(rightContext);
 
         if (right is null) {
             return null;
         }
-        
+
         if (right.Address.IsInData) {
             Instructions.PushFromData(right, right.Type.Size);
         }
-        
+
         foreach (Instruction i in right.InstructionsAfter) {
             Instructions.Add(i);
         }
-        
+
         bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(left.Type);
         bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(right.Type);
 
@@ -199,14 +199,13 @@ internal sealed partial class ScriptBuilder {
     #region Operator methods
 
     private ExpressionResult? PrimitiveAddition(ExpressionResult left, ExpressionResult right) {
-        
         MemoryAddress address = Instructions.AddInt(left.Type.Size);
-        
+
         return new ExpressionResult(address, left.Type);
     }
 
     #endregion
-    
+
     public override string VisitId(IdContext context) {
         return context.Start.Text;
     }

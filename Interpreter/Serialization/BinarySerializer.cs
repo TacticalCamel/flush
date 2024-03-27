@@ -11,7 +11,7 @@ public static class BinarySerializer {
     public static Version U64ToVersion(ulong value) {
         return new Version((ushort)(value >> 48), (ushort)(value >> 32), (ushort)(value >> 16), (ushort)value);
     }
-    
+
     public static byte[] ScriptToBytes(Script script) {
         ReadOnlySpan<byte> codeBytes = MemoryMarshal.AsBytes(script.Instructions.Span);
 
@@ -32,7 +32,7 @@ public static class BinarySerializer {
 
         return bytes;
     }
-    
+
     public static Script? BytesToScript(byte[] bytes, ILogger logger) {
         bool success = MemoryMarshal.TryRead(bytes, out MetaData meta);
 
@@ -63,7 +63,7 @@ public static class BinarySerializer {
         // get instructions
         Memory<byte> instructionBytes = new(bytes, meta.CodeOffset, bytes.Length - meta.CodeOffset);
         ReadOnlyMemory<Instruction> instructions = CastMemoryManager<byte, Instruction>.Cast(instructionBytes);
-        
+
         return new Script(meta, data, instructions);
     }
 }

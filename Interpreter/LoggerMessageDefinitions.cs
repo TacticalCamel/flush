@@ -9,7 +9,7 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Bytecode version is mismatched (current version is {current}, but version {target} is targeted)")]
     public static partial void BytecodeVersionMismatch(this ILogger logger, Version target, Version current);
-    
+
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Running script:\r\n{script}")]
     public static partial void ExecutingScript(this ILogger logger, Script script);
 }

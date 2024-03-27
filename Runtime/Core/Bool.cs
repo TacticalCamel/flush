@@ -7,7 +7,7 @@ public struct Bool {
     private Bool(bool value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator Bool(bool value) {
         return new Bool(value);

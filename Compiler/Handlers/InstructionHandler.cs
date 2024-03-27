@@ -4,10 +4,10 @@ using Data;
 using System.Collections;
 using Interpreter.Bytecode;
 
-internal sealed class InstructionHandler: IEnumerable<Instruction> {
+internal sealed class InstructionHandler : IEnumerable<Instruction> {
     private List<Instruction> Instructions { get; } = [];
     private uint StackSize { get; set; }
-    
+
     public IEnumerator<Instruction> GetEnumerator() {
         return Instructions.GetEnumerator();
     }
@@ -18,9 +18,9 @@ internal sealed class InstructionHandler: IEnumerable<Instruction> {
 
     public MemoryAddress PushFromData(ExpressionResult expression, byte size) {
         MemoryAddress address = MemoryAddress.CreateOnStack(StackSize);
-        
+
         StackSize += size;
-        
+
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
             DataAddress = (int)expression.Address.Value,
@@ -36,7 +36,7 @@ internal sealed class InstructionHandler: IEnumerable<Instruction> {
             Size = size
         });
 
-        StackSize -=  size;
+        StackSize -= size;
 
         return MemoryAddress.CreateOnStack(StackSize - size);
     }

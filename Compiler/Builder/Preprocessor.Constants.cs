@@ -8,7 +8,7 @@ using static Grammar.ScrantonParser;
 internal sealed partial class Preprocessor {
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
         context.Result = VisitConstant(context.Constant);
-        
+
         DebugNode(context);
 
         return context.Result;
@@ -30,19 +30,19 @@ internal sealed partial class Preprocessor {
 
     public override ExpressionResult? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
         string number = context.start.Text;
-        
+
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
-        
+
         return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.HexNumber, hasNegativeSign);
     }
 
     public override ExpressionResult? VisitBinaryLiteral(BinaryLiteralContext context) {
         string number = context.start.Text;
-        
+
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
-        
+
         return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.BinaryNumber, hasNegativeSign);
     }
 
@@ -154,62 +154,62 @@ internal sealed partial class Preprocessor {
         if (isNegative) {
             isValid &= value <= (UInt128)(-Int128.MinValue);
         }
-        
+
         // return if failed
         if (!isValid) {
             IssueHandler.Add(Issue.IntegerTooLarge(context));
             return null;
         }
-        
+
         // determine smallest signed type that can store the value
         if (isNegative) {
             Int128 signedValue = -(Int128)value;
-            
+
             if (signedValue >= sbyte.MinValue) {
                 return new ExpressionResult(DataHandler.I8.Add((sbyte)signedValue), TypeHandler.CoreTypes.I8);
             }
-            
+
             if (signedValue >= short.MinValue) {
                 return new ExpressionResult(DataHandler.I16.Add((short)signedValue), TypeHandler.CoreTypes.I16);
             }
-            
+
             if (signedValue >= int.MinValue) {
                 return new ExpressionResult(DataHandler.I32.Add((int)signedValue), TypeHandler.CoreTypes.I32);
             }
-            
+
             if (signedValue >= long.MinValue) {
                 return new ExpressionResult(DataHandler.I64.Add((long)signedValue), TypeHandler.CoreTypes.I64);
             }
 
             return new ExpressionResult(DataHandler.I128.Add(signedValue), TypeHandler.CoreTypes.I128);
         }
-        
+
         // determine smallest unsigned type that can represent the value
         // also get the smallest signed type
         // for example: 100 -> u8 / i8, but 200 -> u8 / i16
-        
+
         // later we might need this information
         // since "-100 + 100" and "-100 + 200" are both i8 + u8
         // and the common type is i8 for the first one, but i16 for the second one 
-        
+
         if (value <= byte.MaxValue) {
             TypeIdentifier signedType = value <= (UInt128)sbyte.MaxValue ? TypeHandler.CoreTypes.I8 : TypeHandler.CoreTypes.I16;
 
             return new ExpressionResult(DataHandler.I8.Add((sbyte)value), TypeHandler.CoreTypes.U8, signedType);
         }
-        
+
         if (value <= ushort.MaxValue) {
             TypeIdentifier signedType = value <= (UInt128)short.MaxValue ? TypeHandler.CoreTypes.I16 : TypeHandler.CoreTypes.I32;
 
             return new ExpressionResult(DataHandler.I16.Add((short)value), TypeHandler.CoreTypes.U16, signedType);
         }
-        
+
         if (value <= uint.MaxValue) {
             TypeIdentifier signedType = value <= (UInt128)int.MaxValue ? TypeHandler.CoreTypes.I32 : TypeHandler.CoreTypes.I64;
 
             return new ExpressionResult(DataHandler.I32.Add((int)value), TypeHandler.CoreTypes.U32, signedType);
         }
-        
+
         if (value <= ulong.MaxValue) {
             TypeIdentifier signedType = value <= (UInt128)long.MaxValue ? TypeHandler.CoreTypes.I64 : TypeHandler.CoreTypes.I128;
 
@@ -218,7 +218,7 @@ internal sealed partial class Preprocessor {
 
         {
             TypeIdentifier? signedType = value <= (UInt128)Int128.MaxValue ? TypeHandler.CoreTypes.I128 : null;
-            
+
             return new ExpressionResult(DataHandler.I128.Add((Int128)value), TypeHandler.CoreTypes.U128, signedType);
         }
     }

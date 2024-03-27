@@ -7,7 +7,7 @@ public struct F16 {
     private F16(Half value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator F16(Half value) {
         return new F16(value);

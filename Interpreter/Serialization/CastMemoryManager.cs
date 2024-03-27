@@ -10,7 +10,7 @@ internal sealed class CastMemoryManager<TFrom, TTo>(Memory<TFrom> from) : Memory
     public static Memory<TTo> Cast(Memory<TFrom> from) {
         return new CastMemoryManager<TFrom, TTo>(from).Memory;
     }
-    
+
     protected override void Dispose(bool disposing) { }
 
     public override MemoryHandle Pin(int elementIndex = 0) {

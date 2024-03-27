@@ -216,7 +216,7 @@ internal sealed partial class Preprocessor {
                 left.InstructionsAfter.Add(i.Value);
             }
         }
-        
+
         // cast right
         else {
             Instruction? i = GetCastInstruction(right.Type, resultType);

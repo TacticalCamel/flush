@@ -9,12 +9,12 @@ using Runtime.Core;
 public static class ClassLoader {
     private const string DEFAULT_INCLUDE = "core";
     private const string DEFAULT_EXCLUDE = "internal";
-    
+
     public static Version BytecodeVersion => typeof(ClassLoader).Assembly.GetName().Version ?? new Version();
-    
+
     public static List<TypeInfo> LoadModules(string[] modules, bool auto) {
         List<TypeInfo> types = [];
-        
+
         // iterate through every public type in the runtime assembly
         foreach (Type type in typeof(ScrantonObject).Assembly.ExportedTypes) {
             // get module of the type
@@ -25,7 +25,7 @@ public static class ClassLoader {
             if (module is null) {
                 continue;
             }
-            
+
             // type excluded by force
             if (DEFAULT_EXCLUDE.Any(excluded => module.StartsWith(excluded))) {
                 continue;
@@ -48,7 +48,7 @@ public static class ClassLoader {
                 Members = [],
                 Size = (byte)(type.IsClass ? 8 : Marshal.SizeOf(type))
             };
-            
+
             System.Reflection.MemberInfo[] members = type
                 .GetMembers(BindingFlags.Static | BindingFlags.Public)
                 .Where(x => x.Name == "op_Implicit" && x.GetCustomAttribute<InternalAttribute>() is null)
@@ -57,7 +57,7 @@ public static class ClassLoader {
             foreach (System.Reflection.MemberInfo m in members) {
                 Console.WriteLine(m.ToString() ?? "null");
             }
-            
+
 
             types.Add(typeInfo);
         }
@@ -77,7 +77,7 @@ public static class ClassLoader {
 
         return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
     }
-    
+
     public static string GetTypeName(Type type) {
         return type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name;
     }

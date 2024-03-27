@@ -14,7 +14,7 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Result was written to path \"{path}\"")]
     public static partial void FileWriteSuccess(this ILogger logger, string path);
-    
+
     #endregion
 
 
@@ -31,7 +31,7 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 103, Level = LogLevel.Warning, Message = "Value {values} for flag \"{flag}\" is invalid")]
     public static partial void InvalidFlagValue(this ILogger logger, string flag, string[] values);
-    
+
     #endregion
 
 

@@ -45,7 +45,7 @@ internal sealed unsafe class DataHandler {
     /// Collection of 64-bit integers.
     /// </summary>
     public IObjectCollection<I64> I64 { get; }
-    
+
     /// <summary>
     /// Collection of 128-bit integers.
     /// </summary>
@@ -104,7 +104,7 @@ internal sealed unsafe class DataHandler {
     private int AddObject(int size) {
         // the block size for aligning objects
         const int ROUNDING_FACTOR = 4;
-        
+
         int address;
 
         // more complicated size: object size is not divisible by the rounding factor
@@ -155,7 +155,7 @@ internal sealed unsafe class DataHandler {
         // simple case: object size is divisible by the rounding factor
         // object will be aligned and leave no holes in memory
         address = DataLength;
-        
+
         // update the size
         DataLength += size;
 
@@ -206,7 +206,7 @@ internal sealed unsafe class DataHandler {
         /// <param name="value">The object to store.</param>
         /// <returns>The address of the object in the data section.</returns>
         public MemoryAddress Add(T value);
-        
+
         /// <summary>
         /// Write all stored objects to a byte array using their memory addresses.
         /// </summary>
@@ -224,13 +224,13 @@ internal sealed unsafe class DataHandler {
         /// To determine the actual address of an object, the current DataHandler instance must be used.
         /// </summary>
         private DataHandler DataHandler { get; } = dataHandler;
-        
+
         /// <summary>
         /// Store object-address pairs in a dictionary.
         /// This allows for duplicate-checks and returning the address of duplicates.
         /// </summary>
         private Dictionary<T, int> Objects { get; } = [];
-        
+
         public MemoryAddress Add(T value) {
             // check if the object is already stored
             bool contains = Objects.TryGetValue(value, out int address);
@@ -247,15 +247,16 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData(address);;
+            return MemoryAddress.CreateInData(address);
+            ;
         }
-        
+
         public void WriteContents(byte[] bytes) {
             // simple foreach through all objects
             foreach (KeyValuePair<T, int> pair in Objects) {
                 // create a span starting at the object address
                 Span<byte> destination = bytes.AsSpan(pair.Value);
-                
+
                 // this method can be used only because T is unmanaged
                 MemoryMarshal.Write(destination, pair.Key);
             }
@@ -271,7 +272,7 @@ internal sealed unsafe class DataHandler {
         /// To determine the actual address of an object, the current DataHandler instance must be used.
         /// </summary>
         private DataHandler DataHandler { get; } = dataHandler;
-        
+
         /// <summary>
         /// Store object-address pairs in a dictionary.
         /// This allows for duplicate-checks and returning the address of duplicates.
@@ -286,7 +287,8 @@ internal sealed unsafe class DataHandler {
             // the way strings are stored in memory only allows the optimisation for duplicates,
             // if the 2 strings are exactly the same
             if (contains) {
-                return MemoryAddress.CreateInData(address);;
+                return MemoryAddress.CreateInData(address);
+                ;
             }
 
             // determine object address
@@ -296,7 +298,8 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData(address);;
+            return MemoryAddress.CreateInData(address);
+            ;
         }
 
         public void WriteContents(byte[] bytes) {
@@ -329,7 +332,7 @@ internal sealed unsafe class DataHandler {
         /// The starting memory address.
         /// </summary>
         public readonly int Address = address;
-        
+
         /// <summary>
         /// The size in bytes.
         /// </summary>

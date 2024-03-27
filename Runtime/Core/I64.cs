@@ -7,7 +7,7 @@ public struct I64 {
     private I64(long value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator I64(long value) {
         return new I64(value);

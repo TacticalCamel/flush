@@ -7,7 +7,7 @@ public struct U8 {
     private U8(byte value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator U8(byte value) {
         return new U8(value);

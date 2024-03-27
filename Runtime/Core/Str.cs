@@ -7,7 +7,7 @@ public class Str {
     private Str(string value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator Str(string value) {
         return new Str(value);

@@ -11,17 +11,17 @@ internal sealed class Issue {
     /// The unique identifier of the issue.
     /// </summary>
     public required uint Id { get; init; }
-    
+
     ///
     /// <summary> The severity of the issue.
     /// </summary>
     public required Severity Severity { get; init; }
-    
+
     /// <summary>
     /// The message of the issue.
     /// </summary>
     public required string Message { get; init; }
-    
+
     /// <summary>
     /// The location of the issue in the source file.
     /// </summary>
@@ -44,7 +44,7 @@ internal sealed class Issue {
     private Issue(FilePosition position) {
         Position = position;
     }
-    
+
     /// <summary>
     /// Return a string that represents the current issue.
     /// </summary>
@@ -53,7 +53,7 @@ internal sealed class Issue {
     public string ToString(Severity overrideLevel) {
         return $"{Position}: {overrideLevel} SRA{Id:D3}: {Message}";
     }
-    
+
     /// <summary>
     /// Return a string that represents the current issue.
     /// </summary>
@@ -63,9 +63,9 @@ internal sealed class Issue {
     }
 
     #region Templates
-    
+
     // these templates provide the only way to create issue objects
-    
+
     public static Issue LexerTokenInvalid(FilePosition position, string message) => new(position) {
         Id = 101,
         Severity = Severity.Error,
@@ -95,13 +95,13 @@ internal sealed class Issue {
         Severity = Severity.Warning,
         Message = $"Module {name} is already imported"
     };
-    
+
     public static Issue IntegerTooLarge(ParserRuleContext context) => new(context) {
         Id = 204,
         Severity = Severity.Error,
         Message = "Integer value is too large"
     };
-    
+
     public static Issue InvalidFloatFormat(ParserRuleContext context) => new(context) {
         Id = 205,
         Severity = Severity.Error,
@@ -119,36 +119,36 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = "Unclosed escape sequence"
     };
-    
+
     public static Issue UnknownVariableType(ParserRuleContext context, string name) => new(context) {
         Id = 208,
         Severity = Severity.Error,
         Message = $"Unknown variable type {name}"
     };
-    
+
     public static Issue UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
         Id = 209,
         Severity = Severity.Error,
         Message = $"Unknown operator {name}"
     };
-    
+
     public static Issue InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {
         Id = 210,
         Severity = Severity.Error,
         Message = $"Unicode character escapes must be {length}-digit long"
     };
-    
+
     public static Issue InvalidCharFormat(ParserRuleContext context) => new(context) {
         Id = 211,
         Severity = Severity.Error,
         Message = "Invalid char format"
     };
-    
+
     public static Issue InvalidBinaryOperation(ParserRuleContext context, TypeIdentifier left, TypeIdentifier right, string op) => new(context) {
         Id = 212,
         Severity = Severity.Error,
         Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };
-    
+
     #endregion
 }

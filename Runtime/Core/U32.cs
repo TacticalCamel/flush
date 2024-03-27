@@ -7,7 +7,7 @@ public struct U32 {
     private U32(uint value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator U32(uint value) {
         return new U32(value);

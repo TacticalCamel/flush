@@ -33,7 +33,7 @@ public sealed unsafe class ScriptExecutor {
                 case OperationCode.addi:
                     fixed (byte* bytePtr = &Stack[StackPtr]) {
                         switch (i.Size) {
-                            case 1: 
+                            case 1:
                                 *(bytePtr - 2) = (byte)(*(bytePtr - 1) + *(bytePtr - 2));
                                 break;
                             case 2: {
@@ -58,7 +58,7 @@ public sealed unsafe class ScriptExecutor {
                             }
                         }
                     }
-                    
+
                     StackPtr -= i.Size;
 
                     Console.WriteLine($"{nameof(OperationCode.addi)} {i.Size}\n    {ToString()}\n");
@@ -70,7 +70,7 @@ public sealed unsafe class ScriptExecutor {
 
                     Console.WriteLine($"{nameof(OperationCode.pshz)} {i.Size}\n    {ToString()}\n");
                     break;
-                
+
                 case OperationCode.addf:
                     fixed (byte* bytePtr = &Stack[StackPtr]) {
                         switch (i.Size) {
@@ -91,18 +91,18 @@ public sealed unsafe class ScriptExecutor {
                             }
                         }
                     }
-                    
+
                     StackPtr -= i.Size;
 
                     Console.WriteLine($"{nameof(OperationCode.addf)} {i.Size}\n    {ToString()}\n");
                     break;
-                
+
                 case OperationCode.pop:
                     StackPtr -= i.Size;
 
                     Console.WriteLine($"{nameof(OperationCode.pop)} {i.Size}\n    {ToString()}\n");
                     break;
-                
+
                 /*case OperationCode.itof: break;
                 case OperationCode.utof: break;
                 case OperationCode.ftof: break;*/

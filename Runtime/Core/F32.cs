@@ -7,7 +7,7 @@ public struct F32 {
     private F32(float value) {
         Value = value;
     }
-    
+
     [Internal]
     public static implicit operator F32(float value) {
         return new F32(value);

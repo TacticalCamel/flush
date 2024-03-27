@@ -42,14 +42,14 @@ public sealed class Script {
 
         // data section
         sb.AppendLine(".data");
-        
+
         for (int i = 0; i < Data.Length; i += 16) {
             int end = Math.Min(i + 16, Data.Length);
 
             ReadOnlySpan<byte> row = Data.Span[i..end];
 
             sb.Append($"    0x{i:X8}       ");
-            
+
             foreach (byte b in row) {
                 sb.Append($"{b:X2} ");
             }
@@ -66,7 +66,7 @@ public sealed class Script {
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
-            
+
             sb.Append($"    0x{instructionSize * i:X8}       {name}");
 
             for (int j = 0; j < 16; j++) {

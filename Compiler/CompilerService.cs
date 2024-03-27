@@ -16,7 +16,7 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     public Script? Compile(string code) {
         // create a new builder
         ScriptBuilder scriptBuilder = new(Options, Logger);
-        
+
         // create lexer and listen to errors
         AntlrInputStream inputStream = new(code);
         ScrantonLexer lexer = new(inputStream);
@@ -33,7 +33,7 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
 
             // retrieve result
             Script script = scriptBuilder.GetResult();
-            
+
             // log results
             LogBuildResults(scriptBuilder, true);
             return script;
@@ -55,16 +55,16 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
         // get and log hints
         string[] hints = scriptBuilder.GetIssuesWithSeverity(Severity.Hint);
-        if(hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
-        
+        if (hints.Length > 0) Logger.BuildHint(string.Join(Environment.NewLine, hints));
+
         // get and log warnings
         string[] warnings = scriptBuilder.GetIssuesWithSeverity(Severity.Warning);
-        if(warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
-        
+        if (warnings.Length > 0) Logger.BuildWarning(string.Join(Environment.NewLine, warnings));
+
         // get and log errors
         string[] errors = scriptBuilder.GetIssuesWithSeverity(Severity.Error);
-        if(errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
-        
+        if (errors.Length > 0) Logger.BuildError(string.Join(Environment.NewLine, errors));
+
         // log summary
         if (success) {
             Logger.BuildResultSuccess(errors.Length, warnings.Length);

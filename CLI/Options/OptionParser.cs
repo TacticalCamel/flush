@@ -10,7 +10,7 @@ internal sealed class OptionParser {
     /// The prefix that identifier short option names
     /// </summary>
     public const string PREFIX_SHORT = "-";
-    
+
     /// <summary>
     /// The prefix that identifier long option names
     /// </summary>
@@ -20,17 +20,17 @@ internal sealed class OptionParser {
     /// Logger to use for warning messages.
     /// </summary>
     private ILogger Logger { get; }
-    
+
     /// <summary>
     /// The parsing dictionary to map option names to option values.
     /// </summary>
     private Dictionary<string, string[]> Options { get; }
-    
+
     /// <summary>
     /// Dictionary to map types to methods that convert them from strings to their intended type.
     /// </summary>
     private Dictionary<Type, MethodInfo> ParseMethods { get; }
-    
+
     /// <summary>
     /// Get all the remaining option keys.
     /// </summary>
@@ -51,7 +51,7 @@ internal sealed class OptionParser {
         for (int i = 0; i <= args.Length; i++) {
             // the starting index 
             int start = i;
-            
+
             // the first string will be the name of the option
             // use the target key for the first option
             string key = start < 1 ? defaultKey : args[start - 1];
@@ -76,7 +76,7 @@ internal sealed class OptionParser {
         foreach (MethodInfo method in methods) {
             // get the actual return type
             Type? returnType = method.ReturnType.IsValueType ? Nullable.GetUnderlyingType(method.ReturnType) : method.ReturnType;
-            
+
             // method must have a return value
             if (returnType is null) continue;
 
@@ -99,10 +99,10 @@ internal sealed class OptionParser {
     public TOptions ParseFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] TOptions>() where TOptions : new() {
         // create the object with its default constructor
         TOptions result = new();
-        
+
         // get the properties of the type
         PropertyInfo[] properties = typeof(TOptions).GetProperties();
-        
+
         // dictionary to map option names to the properties of the type
         Dictionary<string, PropertyInfo> flags = [];
 
@@ -110,7 +110,7 @@ internal sealed class OptionParser {
         foreach (PropertyInfo property in properties) {
             // get the display attribute of the property
             DisplayAttribute? attribute = property.GetCustomAttribute<DisplayAttribute>();
-            
+
             // if not present, ignore
             if (attribute is null) continue;
 
@@ -129,7 +129,7 @@ internal sealed class OptionParser {
         foreach (string key in Options.Keys) {
             // get the property mapped to the current option name
             flags.TryGetValue(key, out PropertyInfo? property);
-            
+
             // if not present, ignore
             // the current option name may still be valid for another type
             if (property is null) continue;
@@ -147,7 +147,7 @@ internal sealed class OptionParser {
             // get values and remove the key from the dictionary
             // null return value is not possible, because key is always present in the dictionary
             string[] values = TryRemoveOption(key)!;
-            
+
             // convert values to the desired type
             object? value = parseMethod.Invoke(null, [values]);
 
@@ -163,7 +163,7 @@ internal sealed class OptionParser {
 
         return result;
     }
-    
+
     /// <summary>
     /// Tries to remove an option and return the associated values.
     /// </summary>

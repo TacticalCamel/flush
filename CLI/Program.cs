@@ -34,7 +34,7 @@ internal static class Program {
 
         // try to read the source file
         TryReadSource(interfaceLogger, targets, out SourceFile? sourceFile);
-        
+
         // no valid source file, exit application
         if (sourceFile is null) return;
 
@@ -146,13 +146,13 @@ internal static class Program {
         // calculate the maximum length of the options
         // will need this pad the names with spaces, so the descriptions are aligned
         int padLength = Math.Max(interfaceHelpOptions.Max(x => x.Key.Length), compilerHelpOptions.Max(x => x.Key.Length)) + 4;
-        
+
         // display the gathered information
         DisplayOptions(interfaceHelpOptions, "Interface options");
         DisplayOptions(compilerHelpOptions, "Compiler options");
 
         return;
-        
+
         // search a type for option properties
         Dictionary<string, string> GetHelpOptionsFor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>() {
             // get a dictionary of name-description pairs for every option in a class
@@ -167,7 +167,7 @@ internal static class Program {
                 string shortName = attribute.ShortName is null ? string.Empty : OptionParser.PREFIX_SHORT + attribute.ShortName;
                 string name = attribute.Name is null ? string.Empty : OptionParser.PREFIX_LONG + attribute.Name;
                 string separator = attribute.ShortName is not null && attribute.Name is not null ? ", " : string.Empty;
-                
+
                 return $"{name}{separator}{shortName}";
             }
 
