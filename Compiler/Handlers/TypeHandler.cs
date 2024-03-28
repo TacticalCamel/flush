@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
+using Interpreter.Bytecode;
 using Interpreter.Types;
 
 /// <summary>
@@ -247,7 +248,7 @@ internal sealed class TypeHandler {
         public required TypeIdentifier Str { get; init; }
     }
 
-    // TODO not documented
+    // TODO comment
     public sealed class PrimitiveConversionHelper {
         private TypeIdentifier[] PrimitiveTypes { get; }
         private TypeIdentifier[] SignedIntegerTypes { get; }
@@ -402,10 +403,41 @@ internal sealed class TypeHandler {
 
             return false;
         }
+        
+        public bool ArePrimitiveTypes(TypeIdentifier first, TypeIdentifier second) {
+            return IsPrimitiveType(first) && IsPrimitiveType(second);
+        }
+        
+        public Instruction? GetCastInstruction(TypeIdentifier sourceType, TypeIdentifier targetType) {
+            PrimitiveCast cast = GetCast(sourceType, targetType);
 
-        public PrimitiveCast GetCast(TypeIdentifier source, TypeIdentifier destination) {
-            int sourceIndex = Array.IndexOf(PrimitiveTypes, source);
-            int destinationIndex = Array.IndexOf(PrimitiveTypes, destination);
+            switch(cast) {
+                case PrimitiveCast.ResizeImplicit: {
+                    int difference = targetType.Size - sourceType.Size;
+
+                    if (difference > 0) {
+                         return new Instruction {
+                            Code = OperationCode.pshz,
+                            Size = difference
+                        };
+                    }
+                    else {
+                        return new Instruction {
+                            Code = OperationCode.pop,
+                            Size = -difference
+                        };
+                    }
+                }
+                default:
+                    break;
+            }
+
+            return null;
+        }
+        
+        public PrimitiveCast GetCast(TypeIdentifier sourceType, TypeIdentifier targetType) {
+            int sourceIndex = Array.IndexOf(PrimitiveTypes, sourceType);
+            int destinationIndex = Array.IndexOf(PrimitiveTypes, targetType);
 
             if (sourceIndex < 0 || destinationIndex < 0) {
                 return PrimitiveCast.None;

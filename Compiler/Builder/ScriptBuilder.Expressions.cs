@@ -1,18 +1,34 @@
-﻿using Interpreter.Bytecode;
-
-namespace Compiler.Builder;
+﻿namespace Compiler.Builder;
 
 using Data;
 using Analysis;
+using Interpreter.Bytecode;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
+    public override ExpressionResult? VisitExpression(ExpressionContext context) {
+        // subtypes must be visited
+        ExpressionResult? result = (ExpressionResult?)Visit(context);
+
+        Console.WriteLine($"res: {result} {context.GetText()} {context.GetType().Name} {context.EmitOnVisit.Count}");
+
+        return result;
+    }
+
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
         return context.Result;
     }
 
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
         return VisitExpression(context.Body);
+    }
+
+    public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
+        ExpressionResult? result = VisitExpression(context.Expression);
+
+        Console.WriteLine($"res: {result} {context.GetText()} {context.GetType().Name} {context.EmitOnVisit.Count}");
+        
+        return null;
     }
 
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
@@ -79,28 +95,28 @@ internal sealed partial class ScriptBuilder {
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
         // resolve left side
         ExpressionResult? left = VisitExpression(leftContext);
-        
+
         // return if there was an error
         if (left is null) {
             return null;
         }
-        
+
         // move object to stack if it's in the data section
         if (left.Address.Location == MemoryLocation.Data) {
             Instructions.PushFromData(left, left.Type.Size);
         }
-        
+
         // emit instructions
-        foreach (Instruction i in leftContext.InstructionsAfterTraversal) {
+        foreach (Instruction i in leftContext.EmitOnVisit) {
             Instructions.Add(i);
         }
 
         // get actual type
-        TypeIdentifier leftType = leftContext.OverrideType ?? left.Type;
+        TypeIdentifier leftType = leftContext.ExpressionType ?? left.Type;
 
         // resolve right side
         ExpressionResult? right = VisitExpression(rightContext);
-        
+
         // return if there was an error
         if (right is null) {
             return null;
@@ -112,16 +128,16 @@ internal sealed partial class ScriptBuilder {
         }
 
         // emit instructions
-        foreach (Instruction i in rightContext.InstructionsAfterTraversal) {
+        foreach (Instruction i in rightContext.EmitOnVisit) {
             Instructions.Add(i);
         }
-        
+
         // get actual type
-        TypeIdentifier rightType = rightContext.OverrideType ?? right.Type;
+        TypeIdentifier rightType = rightContext.ExpressionType ?? right.Type;
 
         bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(leftType);
         bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(rightType);
-        
+
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;

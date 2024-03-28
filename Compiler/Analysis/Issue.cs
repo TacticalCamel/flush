@@ -120,10 +120,10 @@ internal sealed class Issue {
         Message = "Unclosed escape sequence"
     };
 
-    public static Issue UnknownVariableType(ParserRuleContext context, string name) => new(context) {
+    public static Issue UnrecognizedType(ParserRuleContext context, string name) => new(context) {
         Id = 208,
         Severity = Severity.Error,
-        Message = $"Unknown variable type {name}"
+        Message = $"Unknown type {name}"
     };
 
     public static Issue InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {

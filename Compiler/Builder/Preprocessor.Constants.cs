@@ -6,142 +6,264 @@ using Data;
 using Analysis;
 
 internal sealed partial class Preprocessor {
-    public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
-        ConstantResult? result = VisitConstant(context.Constant);
-
-        if (result is null) {
-            return null;
-        }
-
-        context.Result = result;
-
-        return result;
-    }
-
+    /// <summary>
+    /// Visits a constant.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result if successful, null otherwise.</returns>
     public override ConstantResult? VisitConstant(ConstantContext context) {
         return (ConstantResult?)Visit(context);
     }
 
+    /// <summary>
+    /// Visits and stores an integer which is in the decimal format.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with an integer type if successful, null otherwise.</returns>
     public override ConstantResult? VisitDecimalLiteral(DecimalLiteralContext context) {
-        string number = context.start.Text;
+        // the string value of the number
+        ReadOnlySpan<char> number = context.start.Text.AsSpan();
 
+        // check if the number has a sign prefix
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
 
-        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 1 : 0), NumberStyles.Integer, hasNegativeSign);
+        // calculate the index of the first digit
+        int prefixLength = hasNegativeSign || hasPositiveSign ? 1 : 0;
+        
+        // remove the prefix
+        number = number[prefixLength..];
+
+        // call the common method for storing numbers,
+        // with the decimal format
+        return StoreInteger(context, number, NumberStyles.Integer, hasNegativeSign);
     }
 
+    /// <summary>
+    /// Visits and stores an integer which is in the hexadecimal format.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with an integer type if successful, null otherwise.</returns>
     public override ConstantResult? VisitHexadecimalLiteral(HexadecimalLiteralContext context) {
-        string number = context.start.Text;
+        // the string value of the number
+        ReadOnlySpan<char> number = context.start.Text.AsSpan();
 
+        // check if the number has a sign prefix
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
 
-        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.HexNumber, hasNegativeSign);
+        // calculate the index of the first digit
+        int prefixLength = hasNegativeSign || hasPositiveSign ? 3 : 2;
+        
+        // remove the prefix
+        number = number[prefixLength..];
+
+        // call the common method for storing numbers,
+        // with the hex format
+        return StoreInteger(context, number, NumberStyles.HexNumber, hasNegativeSign);
     }
 
+    /// <summary>
+    /// Visits and stores an integer which is in the binary format.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with an integer type if successful, null otherwise.</returns>
     public override ConstantResult? VisitBinaryLiteral(BinaryLiteralContext context) {
-        string number = context.start.Text;
+        // the string value of the number
+        ReadOnlySpan<char> number = context.start.Text.AsSpan();
 
+        // check if the number has a sign prefix
         bool hasNegativeSign = number[0] == '-';
         bool hasPositiveSign = number[0] == '+';
 
-        return StoreInteger(context, number.AsSpan(hasNegativeSign || hasPositiveSign ? 3 : 2), NumberStyles.BinaryNumber, hasNegativeSign);
+        // calculate the index of the first digit
+        int prefixLength = hasNegativeSign || hasPositiveSign ? 3 : 2;
+        
+        // remove the prefix
+        number = number[prefixLength..];
+
+        // call the common method for storing numbers,
+        // with the binary format
+        return StoreInteger(context, number, NumberStyles.BinaryNumber, hasNegativeSign);
     }
 
-    public override ConstantResult? VisitDoubleFloat(DoubleFloatContext context) {
-        ReadOnlySpan<char> text = context.start.Text.AsSpan();
-
-        if (char.IsAsciiLetter(text[^1])) {
-            text = text[..^1];
-        }
-
-        bool success = double.TryParse(text, out double value);
-
-        if (success) {
-            return new ConstantResult(DataHandler.F64.Add(value), TypeHandler.CoreTypes.F64);
-        }
-
-        IssueHandler.Add(Issue.InvalidFloatFormat(context));
-        return null;
-    }
-
-    public override ConstantResult? VisitSingleFloat(SingleFloatContext context) {
-        ReadOnlySpan<char> text = context.start.Text.AsSpan();
-
-        if (char.IsAsciiLetter(text[^1])) {
-            text = text[..^1];
-        }
-
-        bool success = float.TryParse(text, out float value);
-
-        if (success) {
-            return new ConstantResult(DataHandler.F32.Add(value), TypeHandler.CoreTypes.F32);
-        }
-
-        IssueHandler.Add(Issue.InvalidFloatFormat(context));
-        return null;
-    }
-
+    /// <summary>
+    /// Visits and stores a 16-bit float.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of 16-bit float if successful, null otherwise.</returns>
     public override ConstantResult? VisitHalfFloat(HalfFloatContext context) {
+        // the string value of the number
         ReadOnlySpan<char> text = context.start.Text.AsSpan();
 
+        // remove the float suffix, if present
         if (char.IsAsciiLetter(text[^1])) {
             text = text[..^1];
         }
 
+        // try to convert the string to a number
         bool success = Half.TryParse(text, out Half value);
 
-        if (success) {
-            return new ConstantResult(DataHandler.F16.Add(value), TypeHandler.CoreTypes.F16);
+        // stop and throw an error if the format is invalid
+        if (!success) {
+            IssueHandler.Add(Issue.InvalidFloatFormat(context));
+            return null;
         }
+        
+        // store the number
+        MemoryAddress address = DataHandler.F16.Add(value);
 
-        IssueHandler.Add(Issue.InvalidFloatFormat(context));
-        return null;
+        return new ConstantResult(address, TypeHandler.CoreTypes.F16);
     }
 
+    /// <summary>
+    /// Visits and stores a 32-bit float.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of 32-bit float if successful, null otherwise.</returns>
+    public override ConstantResult? VisitSingleFloat(SingleFloatContext context) {
+        // the string value of the number
+        ReadOnlySpan<char> text = context.start.Text.AsSpan();
+
+        // remove the float suffix, if present
+        if (char.IsAsciiLetter(text[^1])) {
+            text = text[..^1];
+        }
+
+        // try to convert the string to a number
+        bool success = float.TryParse(text, out float value);
+
+        // stop and throw an error if the format is invalid
+        if (!success) {
+            IssueHandler.Add(Issue.InvalidFloatFormat(context));
+            return null;
+        }
+        
+        // store the number
+        MemoryAddress address = DataHandler.F32.Add(value);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.F32);
+    }
+
+    /// <summary>
+    /// Visits and stores a 64-bit float.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of 64-bit float if successful, null otherwise.</returns>
+    public override ConstantResult? VisitDoubleFloat(DoubleFloatContext context) {
+        // the string value of the number
+        ReadOnlySpan<char> text = context.start.Text.AsSpan();
+
+        // remove the float suffix, if present
+        if (char.IsAsciiLetter(text[^1])) {
+            text = text[..^1];
+        }
+
+        // try to convert the string to a number
+        bool success = double.TryParse(text, out double value);
+
+        // stop and throw an error if the format is invalid
+        if (!success) {
+            IssueHandler.Add(Issue.InvalidFloatFormat(context));
+            return null;
+        }
+
+        // store the number
+        MemoryAddress address = DataHandler.F64.Add(value);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.F64);
+    }
+
+    /// <summary>
+    /// Visits, unescapes then stores a char literal.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of char if successful, null otherwise.</returns>
     public override ConstantResult? VisitCharLiteral(CharLiteralContext context) {
+        // the char value without quotes
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
 
-        char? result = GetFirstCharacter(context, ref text, false);
+        // try to get the first char
+        char? result = TryGetFirstCharacter(context, ref text, false);
 
+        // stop if an error occured
+        // or the literal is longer that 1 characters
         if (text.Length > 0 || result is null) {
             IssueHandler.Add(Issue.InvalidCharFormat(context));
             return null;
         }
 
-        return new ConstantResult(DataHandler.I16.Add((short)result.Value), TypeHandler.CoreTypes.Char);
+        // store the character as a 16-bit integer
+        MemoryAddress address = DataHandler.I16.Add((short)result.Value);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.Char);
     }
 
+    /// <summary>
+    /// Visits, unescapes then stores a string literal.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of string if successful, null otherwise.</returns>
     public override ConstantResult? VisitStringLiteral(StringLiteralContext context) {
+        // the string value without quotes
         ReadOnlySpan<char> text = context.start.Text.AsSpan(1..^1);
 
+        // the resulting array of characters
         List<char> characters = [];
 
+        // while there is a next character
         while (text.Length > 0) {
-            char? character = GetFirstCharacter(context, ref text, true);
+            // try to get the first char
+            char? character = TryGetFirstCharacter(context, ref text, true);
 
+            // stop if an error occured
             if (character is null) {
                 return null;
             }
 
+            // add the character to the end of the list
             characters.Add(character.Value);
         }
 
+        // create a string from the character
         string result = string.Concat(characters);
 
-        return new ConstantResult(DataHandler.Str.Add(result), TypeHandler.CoreTypes.Str);
+        // store the string
+        MemoryAddress address = DataHandler.Str.Add(result);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.Str);
     }
 
+    /// <summary>
+    /// Visits and stores the true keyword.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of bool.</returns>
+    public override ConstantResult VisitTrueKeyword(TrueKeywordContext context) {
+        // store the value
+        MemoryAddress address = DataHandler.Bool.Add(true);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.Bool);
+    }
+
+    /// <summary>
+    /// Visits and stores the false keyword.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of bool.</returns>
+    public override ConstantResult VisitFalseKeyword(FalseKeywordContext context) {
+        // store the value
+        MemoryAddress address = DataHandler.Bool.Add(false);
+
+        return new ConstantResult(address, TypeHandler.CoreTypes.Bool);
+    }
+
+    /// <summary>
+    /// Visits the null keyword.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A constant result with the type of null.</returns>
     public override ConstantResult VisitNullKeyword(NullKeywordContext context) {
         return new ConstantResult(MemoryAddress.Null, TypeHandler.CoreTypes.Null);
-    }
-
-    public override ConstantResult VisitTrueKeyword(TrueKeywordContext context) {
-        return new ConstantResult(DataHandler.Bool.Add(true), TypeHandler.CoreTypes.Bool);
-    }
-
-    public override ConstantResult VisitFalseKeyword(FalseKeywordContext context) {
-        return new ConstantResult(DataHandler.Bool.Add(false), TypeHandler.CoreTypes.Bool);
     }
 }
