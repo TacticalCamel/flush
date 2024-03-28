@@ -237,7 +237,7 @@ internal sealed unsafe class DataHandler {
 
             // return the stored address of duplicates
             if (contains) {
-                return MemoryAddress.CreateInData(address);
+                return new MemoryAddress((ulong)address, MemoryLocation.Data);
             }
 
             // determine object address
@@ -247,8 +247,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData(address);
-            ;
+            return new MemoryAddress((ulong)address, MemoryLocation.Data);
         }
 
         public void WriteContents(byte[] bytes) {
@@ -287,8 +286,7 @@ internal sealed unsafe class DataHandler {
             // the way strings are stored in memory only allows the optimisation for duplicates,
             // if the 2 strings are exactly the same
             if (contains) {
-                return MemoryAddress.CreateInData(address);
-                ;
+                return new MemoryAddress((ulong)address, MemoryLocation.Data);
             }
 
             // determine object address
@@ -298,8 +296,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return MemoryAddress.CreateInData(address);
-            ;
+            return new MemoryAddress((ulong)address, MemoryLocation.Data);
         }
 
         public void WriteContents(byte[] bytes) {

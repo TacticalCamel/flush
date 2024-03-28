@@ -74,38 +74,42 @@ internal sealed partial class ScriptBuilder {
     }
 
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
+        Console.WriteLine($"{leftContext.GetText()} | {rightContext.GetText()}");
+        
         // resolve left side
-        ExpressionResult? left = leftContext.Result ?? VisitExpression(leftContext);
-
+        ExpressionResult? left = VisitExpression(leftContext);
+        
         if (left is null) {
             return null;
         }
 
-        if (left.Address.IsInData) {
+        if (left.Address.Location == MemoryLocation.Data) {
             Instructions.PushFromData(left, left.Type.Size);
         }
 
-        foreach (Instruction i in left.InstructionsAfter) {
+        foreach (Instruction i in leftContext.InstructionsAfterTraversal) {
             Instructions.Add(i);
         }
 
         // resolve right side
-        ExpressionResult? right = rightContext.Result ?? VisitExpression(rightContext);
+        ExpressionResult? right = VisitExpression(rightContext);
 
         if (right is null) {
             return null;
         }
 
-        if (right.Address.IsInData) {
+        if (right.Address.Location == MemoryLocation.Data) {
             Instructions.PushFromData(right, right.Type.Size);
         }
 
-        foreach (Instruction i in right.InstructionsAfter) {
+        foreach (Instruction i in rightContext.InstructionsAfterTraversal) {
             Instructions.Add(i);
         }
 
         bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(left.Type);
         bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(right.Type);
+        
+        Console.WriteLine($"{leftContext.GetText()} ~ {left} | {rightContext.GetText()} ~ {right}");
 
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call

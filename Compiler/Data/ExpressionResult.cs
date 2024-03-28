@@ -1,12 +1,20 @@
 ﻿namespace Compiler.Data;
 
-using Interpreter.Bytecode;
-
-internal sealed class ExpressionResult(MemoryAddress address, TypeIdentifier type, TypeIdentifier? implicitType = null) {
+/// <summary>
+/// Represents a value that can be returned after traversing an expression node in the AST.
+/// </summary>
+/// <param name="address">The address of the result.</param>
+/// <param name="type">The type of the result.</param>
+internal class ExpressionResult(MemoryAddress address, TypeIdentifier type) {
+    /// <summary>
+    /// The address of the result.
+    /// </summary>
     public MemoryAddress Address { get; } = address;
+
+    /// <summary>
+    /// The type of the result.
+    /// </summary>
     public TypeIdentifier Type { get; } = type;
-    public TypeIdentifier? ImplicitType { get; } = implicitType;
-    public List<Instruction> InstructionsAfter { get; } = [];
 
     public override string ToString() {
         return $"{Type} at {Address}";

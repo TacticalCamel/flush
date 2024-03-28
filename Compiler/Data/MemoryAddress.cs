@@ -1,45 +1,43 @@
 ﻿namespace Compiler.Data;
 
-using System.Runtime.InteropServices;
+/// <summary>
+/// Represents a 64-bit offset in memory in a given location.
+/// </summary>
+/// <param name="value">The offset of the address in bytes.</param>
+/// <param name="location">The location of the memory address.</param>
+internal readonly struct MemoryAddress(ulong value, MemoryLocation location) : IEquatable<MemoryAddress> {
+    /// <summary>
+    /// The default heap reference that points to no object.
+    /// </summary>
+    public static MemoryAddress Null { get; } = new(0, MemoryLocation.Heap);
 
-[StructLayout(LayoutKind.Sequential)]
-internal readonly struct MemoryAddress {
-    private const ulong VALUE_MASK = 0b0011111111111111111111111111111111111111111111111111111111111111;
-    private const ulong HEAP_MASK = 0b0000000000000000000000000000000000000000000000000000000000000000;
-    private const ulong DATA_MASK = 0b1000000000000000000000000000000000000000000000000000000000000000;
-    private const ulong STACK_MASK = 0b0100000000000000000000000000000000000000000000000000000000000000;
-    private const ulong LOCATION_MASK = 0b1100000000000000000000000000000000000000000000000000000000000000;
-    public static MemoryAddress Null { get; } = CreateOnHeap(0);
+    /// <summary>
+    /// The offset of the address in bytes.
+    /// It is safe to say this 64-bit value is enough.
+    /// </summary>
+    public ulong Value { get; } = value;
 
-    private ulong RawValue { get; }
-    private ulong Location => RawValue & LOCATION_MASK;
-    public ulong Value => RawValue & VALUE_MASK;
-    public bool IsInData => Location == DATA_MASK;
-    public bool IsOnStack => Location == STACK_MASK;
-    public bool IsOnHeap => Location == HEAP_MASK;
+    /// <summary>
+    /// The location of the memory address.
+    /// </summary>
+    public MemoryLocation Location { get; } = location;
 
-    private MemoryAddress(ulong rawValue) {
-        RawValue = rawValue;
-    }
-
-    public static MemoryAddress CreateInData(int value) {
-        ulong valueAsUlong = (ulong)value;
-
-        return new MemoryAddress((valueAsUlong & VALUE_MASK) | DATA_MASK);
-    }
-
-    public static MemoryAddress CreateOnStack(ulong value) {
-        return new MemoryAddress((value & VALUE_MASK) | STACK_MASK);
-    }
-
-    public static MemoryAddress CreateOnHeap(ulong value) {
-        return new MemoryAddress((value & VALUE_MASK) | HEAP_MASK);
-    }
-
+    /// <summary>
+    /// Compares the equality of 2 memory addresses.
+    /// </summary>
+    /// <param name="x">The first address.</param>
+    /// <param name="y">The second address.</param>
+    /// <returns>True if the 2 addresses point to the same location and have the same offset, false otherwise.</returns>
     public static bool operator ==(MemoryAddress x, MemoryAddress y) {
-        return x.RawValue == y.RawValue;
+        return x.Value == y.Value && x.Location == y.Location;
     }
 
+    /// <summary>
+    /// Compares the inequality of 2 memory addresses.
+    /// </summary>
+    /// <param name="x">The first address.</param>
+    /// <param name="y">The second address.</param>
+    /// <returns>True if the 2 addresses point to a different location or have a different offset, false otherwise.</returns>
     public static bool operator !=(MemoryAddress x, MemoryAddress y) {
         return !(x == y);
     }
@@ -53,10 +51,21 @@ internal readonly struct MemoryAddress {
     }
 
     public override int GetHashCode() {
-        return HashCode.Combine(RawValue);
+        return HashCode.Combine(Value, Location);
     }
 
     public override string ToString() {
-        return this == Null ? "nullptr" : $"{Location switch { DATA_MASK => "data", STACK_MASK => "stck", HEAP_MASK => "heap", _ => "err" }}:0x{Value:x}";
+        if (this == Null) {
+            return "nullref";
+        }
+
+        string location = Location switch {
+            MemoryLocation.Data => "data",
+            MemoryLocation.Stack => "stck",
+            MemoryLocation.Heap => "heap",
+            _ => "none"
+        };
+
+        return $"{location}:0x{Value:x}";
     }
 }

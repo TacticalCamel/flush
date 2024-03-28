@@ -8,15 +8,11 @@ using static Grammar.ScrantonParser;
 
 internal sealed partial class Preprocessor {
     public override ExpressionResult? VisitExpression(ExpressionContext context) {
-        // visit subtype
         return (ExpressionResult?)Visit(context);
     }
 
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
-        // nothing to do, nesting the expression was only necessary to change operator precedence
-        context.Result = VisitExpression(context.Body);
-
-        return context.Result;
+        return VisitExpression(context.Body);
     }
 
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
@@ -51,65 +47,12 @@ internal sealed partial class Preprocessor {
         return ResolveUnaryExpression(context.Expression, context.Operator.start.Type);
     }
 
-    // TODO implement
-    public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
-        ExpressionResult? left = VisitExpression(context.Type);
-
-        if (left is null) {
-            return null;
-        }
-
-        string name = VisitId(context.Member);
-
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
-        return null;
-    }
-
-    // TODO: implement
-    public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
-        // we have no way of knowing the actual meaning of this identifier
-        // it could be a variable or a member access
-
-        // assume it is a variable and handle other cases elsewhere
-        // since this node should not be visited in other cases,
-        // we can throw an error if the variable was not found
-
-        string name = VisitId(context.Identifier);
-
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
-        return null;
-    }
-
-    // TODO: implement
-    public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
-        ExpressionResult? callerExpression = VisitExpression(context.Caller);
-
-        // get parameter expressions
-        ExpressionContext[] expressions = context.ExpressionList.expression();
-
-        // create an array for results
-        ExpressionResult[] results = new ExpressionResult[expressions.Length];
-
-        // resolve parameters and return if any of them was null
-        for (int i = 0; i < expressions.Length; i++) {
-            ExpressionResult? result = VisitExpression(expressions[i]);
-
-            if (result is null) {
-                return null;
-            }
-
-            results[i] = result;
-        }
-
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
-        return null;
-    }
-
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
         // resolve both sides
         ExpressionResult? left = VisitExpression(leftContext);
         ExpressionResult? right = VisitExpression(rightContext);
 
+        // cancel processing if an error occured
         if (left is null || right is null) {
             return null;
         }
@@ -119,12 +62,12 @@ internal sealed partial class Preprocessor {
 
         // true if both expression types are primitive types
         // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;
+        bool isPrimitiveOperation = isLeftPrimitive && isRightPrimitive;
 
         // calculate results
         // ah sweet, man-made horrors beyond my comprehension
         ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveType ? PrimitiveAddition(left, right) : null,
+            OP_PLUS => isPrimitiveOperation ? PrimitiveAddition(left, right) : null,
             OP_MINUS => null,
             OP_MULTIPLY => null,
             OP_DIVIDE => null,
@@ -151,10 +94,6 @@ internal sealed partial class Preprocessor {
             OP_OR_ASSIGN => null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
-
-        context.Result = result;
-
-        DebugNode(context);
 
         if (result is null) {
             IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
@@ -186,10 +125,6 @@ internal sealed partial class Preprocessor {
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
-        context.Result = result;
-
-        DebugNode(context);
-
         return result;
     }
 
@@ -213,21 +148,16 @@ internal sealed partial class Preprocessor {
             Instruction? i = GetCastInstruction(left.Type, resultType);
 
             if (i is not null) {
-                left.InstructionsAfter.Add(i.Value);
             }
         }
 
         // cast right
-        else {
+        else if (right.Type != resultType) {
             Instruction? i = GetCastInstruction(right.Type, resultType);
 
             if (i is not null) {
-                right.InstructionsAfter.Add(i.Value);
             }
         }
-
-
-        Console.WriteLine($"{left.Type} + {right.Type} -> {resultType} ({cast})");
 
         return new ExpressionResult(MemoryAddress.Null, resultType);
 
@@ -287,5 +217,59 @@ internal sealed partial class Preprocessor {
             PrimitiveCast.NotRequired => true,
             _ => false
         };
+    }
+    
+    // TODO implement
+    public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
+        ExpressionResult? left = VisitExpression(context.Type);
+
+        if (left is null) {
+            return null;
+        }
+
+        string name = VisitId(context.Member);
+
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
+        return null;
+    }
+
+    // TODO: implement
+    public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
+        // we have no way of knowing the actual meaning of this identifier
+        // it could be a variable or a member access
+
+        // assume it is a variable and handle other cases elsewhere
+        // since this node should not be visited in other cases,
+        // we can throw an error if the variable was not found
+
+        string name = VisitId(context.Identifier);
+
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
+        return null;
+    }
+
+    // TODO: implement
+    public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
+        ExpressionResult? callerExpression = VisitExpression(context.Caller);
+
+        // get parameter expressions
+        ExpressionContext[] expressions = context.ExpressionList.expression();
+
+        // create an array for results
+        ExpressionResult[] results = new ExpressionResult[expressions.Length];
+
+        // resolve parameters and return if any of them was null
+        for (int i = 0; i < expressions.Length; i++) {
+            ExpressionResult? result = VisitExpression(expressions[i]);
+
+            if (result is null) {
+                return null;
+            }
+
+            results[i] = result;
+        }
+
+        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
+        return null;
     }
 }

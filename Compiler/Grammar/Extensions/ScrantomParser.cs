@@ -2,10 +2,10 @@
 
 namespace Compiler.Grammar;
 
-using Data;
+using Interpreter.Bytecode;
 
 public partial class ScrantonParser {
     public partial class ExpressionContext {
-        internal ExpressionResult? Result { get; set; }
+        internal List<Instruction> InstructionsAfterTraversal { get; } = [];
     }
 }

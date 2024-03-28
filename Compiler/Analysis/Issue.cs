@@ -126,26 +126,20 @@ internal sealed class Issue {
         Message = $"Unknown variable type {name}"
     };
 
-    public static Issue UnrecognizedOperator(ParserRuleContext context, string name) => new(context) {
-        Id = 209,
-        Severity = Severity.Error,
-        Message = $"Unknown operator {name}"
-    };
-
     public static Issue InvalidUnicodeEscape(ParserRuleContext context, int length) => new(context) {
-        Id = 210,
+        Id = 209,
         Severity = Severity.Error,
         Message = $"Unicode character escapes must be {length}-digit long"
     };
 
     public static Issue InvalidCharFormat(ParserRuleContext context) => new(context) {
-        Id = 211,
+        Id = 210,
         Severity = Severity.Error,
         Message = "Invalid char format"
     };
 
     public static Issue InvalidBinaryOperation(ParserRuleContext context, TypeIdentifier left, TypeIdentifier right, string op) => new(context) {
-        Id = 212,
+        Id = 211,
         Severity = Severity.Error,
         Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };

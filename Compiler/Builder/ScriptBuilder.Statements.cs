@@ -7,20 +7,20 @@ using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
-        VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
-
         ExpressionResult? result = VisitExpression(context.Expression);
+
+        /*VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
 
         if (variable is null) {
             return null;
         }
 
-        Logger.Debug($"{variable} = {result?.ToString() ?? "null"}");
+        Logger.Debug($"{variable} = {result?.ToString() ?? "null"}");*/
 
         return null;
     }
 
-    public override VariableIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
+    /*public override VariableIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
         TypeIdentifier? type = VisitType(context.Type);
         string name = VisitId(context.Name);
 
@@ -29,7 +29,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         return new VariableIdentifier(type, name);
-    }
+    }*/
 
     public override TypeIdentifier? VisitType(TypeContext context) {
         // subtypes must be visited

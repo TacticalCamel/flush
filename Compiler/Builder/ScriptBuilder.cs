@@ -22,7 +22,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         CancelIfHasErrors();
 
         // create a preprocessor
-        Preprocessor preprocessor = new(Options, IssueHandler, TypeHandler, DataHandler);
+        Preprocessor preprocessor = new(IssueHandler, TypeHandler, DataHandler);
 
         // traverse AST: 1st pass
         preprocessor.VisitProgram(programContext);

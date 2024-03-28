@@ -17,7 +17,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
     }
 
     public MemoryAddress PushFromData(ExpressionResult expression, byte size) {
-        MemoryAddress address = MemoryAddress.CreateOnStack(StackSize);
+        MemoryAddress address = new(StackSize, MemoryLocation.Stack);
 
         StackSize += size;
 
@@ -38,7 +38,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
 
         StackSize -= size;
 
-        return MemoryAddress.CreateOnStack(StackSize - size);
+        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
 
     public void Extend(byte fromSize, byte toSize) {

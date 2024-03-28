@@ -247,7 +247,7 @@ internal sealed class TypeHandler {
         public required TypeIdentifier Str { get; init; }
     }
 
-    // TODO comments
+    // TODO not documented
     public sealed class PrimitiveConversionHelper {
         private TypeIdentifier[] PrimitiveTypes { get; }
         private TypeIdentifier[] SignedIntegerTypes { get; }

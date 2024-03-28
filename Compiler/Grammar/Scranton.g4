@@ -128,6 +128,7 @@ expression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
 	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessOperatorExpression
 	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
+	| HEAD_START Type=type HEAD_END Expression=expression #CastExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
 	| Expression=expression Operator=opRightUnary #RightUnaryOperatorExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
