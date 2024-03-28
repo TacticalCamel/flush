@@ -7,8 +7,11 @@ using Analysis;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
+    public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
+        return context.Result;
+    }
+
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
-        // nothing to do, nesting the expression was only necessary to change operator precedence
         return VisitExpression(context.Body);
     }
 
@@ -74,43 +77,51 @@ internal sealed partial class ScriptBuilder {
     }
 
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-        Console.WriteLine($"{leftContext.GetText()} | {rightContext.GetText()}");
-        
         // resolve left side
         ExpressionResult? left = VisitExpression(leftContext);
         
+        // return if there was an error
         if (left is null) {
             return null;
         }
-
+        
+        // move object to stack if it's in the data section
         if (left.Address.Location == MemoryLocation.Data) {
             Instructions.PushFromData(left, left.Type.Size);
         }
-
+        
+        // emit instructions
         foreach (Instruction i in leftContext.InstructionsAfterTraversal) {
             Instructions.Add(i);
         }
 
+        // get actual type
+        TypeIdentifier leftType = leftContext.OverrideType ?? left.Type;
+
         // resolve right side
         ExpressionResult? right = VisitExpression(rightContext);
-
+        
+        // return if there was an error
         if (right is null) {
             return null;
         }
 
+        // move object to stack if it's in the data section
         if (right.Address.Location == MemoryLocation.Data) {
             Instructions.PushFromData(right, right.Type.Size);
         }
 
+        // emit instructions
         foreach (Instruction i in rightContext.InstructionsAfterTraversal) {
             Instructions.Add(i);
         }
-
-        bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(left.Type);
-        bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(right.Type);
         
-        Console.WriteLine($"{leftContext.GetText()} ~ {left} | {rightContext.GetText()} ~ {right}");
+        // get actual type
+        TypeIdentifier rightType = rightContext.OverrideType ?? right.Type;
 
+        bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(leftType);
+        bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(rightType);
+        
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;
@@ -118,7 +129,7 @@ internal sealed partial class ScriptBuilder {
         // calculate results
         // ah sweet, man-made horrors beyond my comprehension
         ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveType ? PrimitiveAddition(left, right) : null,
+            OP_PLUS => isPrimitiveType ? PrimitiveAddition(leftType, rightType) : null,
             OP_MINUS => null,
             OP_MULTIPLY => null,
             OP_DIVIDE => null,
@@ -202,10 +213,14 @@ internal sealed partial class ScriptBuilder {
 
     #region Operator methods
 
-    private ExpressionResult? PrimitiveAddition(ExpressionResult left, ExpressionResult right) {
-        MemoryAddress address = Instructions.AddInt(left.Type.Size);
+    private ExpressionResult? PrimitiveAddition(TypeIdentifier leftType, TypeIdentifier rightType) {
+        if (leftType != rightType) {
+            return null;
+        }
 
-        return new ExpressionResult(address, left.Type);
+        MemoryAddress address = Instructions.AddInt(leftType.Size);
+
+        return new ExpressionResult(address, leftType);
     }
 
     #endregion

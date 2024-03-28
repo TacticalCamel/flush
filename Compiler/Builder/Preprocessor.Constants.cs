@@ -1,13 +1,21 @@
 ﻿namespace Compiler.Builder;
 
+using static Grammar.ScrantonParser;
+using System.Globalization;
 using Data;
 using Analysis;
-using System.Globalization;
-using static Grammar.ScrantonParser;
 
 internal sealed partial class Preprocessor {
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
-        return VisitConstant(context.Constant);
+        ConstantResult? result = VisitConstant(context.Constant);
+
+        if (result is null) {
+            return null;
+        }
+
+        context.Result = result;
+
+        return result;
     }
 
     public override ConstantResult? VisitConstant(ConstantContext context) {

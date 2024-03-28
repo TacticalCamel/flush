@@ -11,14 +11,6 @@ public enum OperationCode : byte {
     /// <remarks>opcode:1 size:4 data-address:4</remarks>
     pshd,
 
-    /// <summary>Adds the 2 top elements of the stack as integers.</summary>
-    /// <remarks>opcode:1 size:1</remarks>
-    addi,
-
-    /// <summary>Adds the 2 top elements of the stack as floats.</summary>
-    /// <remarks>opcode:1 size:1</remarks>
-    addf,
-
     /// <summary>Push a number of 0 bytes to the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     pshz,
@@ -38,4 +30,36 @@ public enum OperationCode : byte {
     /// <summary>Reinterpret the top of the stack from one float type to another</summary>
     /// <remarks>opcode:1 float-size:1 float-size:1</remarks>
     ftof,
+
+    /// <summary>Adds the 2 top elements of the stack as integers.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    addi,
+
+    /// <summary>Adds the 2 top elements of the stack as floats.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    addf,
+    
+    /// <summary>Subtracts the 2 top elements of the stack as integers.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    subi,
+    
+    /// <summary>Subtracts the 2 top elements of the stack as floats.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    subf,
+    
+    /// <summary>Multiplies the 2 top elements of the stack as integers.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    muli,
+    
+    /// <summary>Multiplies the 2 top elements of the stack as floats.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    mulf,
+    
+    /// <summary>Divides the 2 top elements of the stack as integers.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    divi,
+    
+    /// <summary>Divides the 2 top elements of the stack as floats.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    divf,
 }

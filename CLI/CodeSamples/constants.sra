@@ -1,6 +1,6 @@
 import auto
 
-1 + 2 + (u32)3;
+0xff + 0xff00 + 0xffff0000;
 
 /*
 3.14f + 3;

@@ -43,48 +43,4 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         return new Script(data, instructions);
     }
-
-    public override object? VisitProgram(ProgramContext context) {
-        return VisitChildren(context);
-    }
-
-    public override object? VisitProgramBody(ProgramBodyContext context) {
-        return VisitChildren(context);
-    }
-
-    #region Unused visit methods
-
-    public override object? VisitAutoImport(AutoImportContext context) {
-        return null;
-    }
-
-    public override object? VisitManualImport(ManualImportContext context) {
-        return null;
-    }
-
-    public override object? VisitProgramHeader(ProgramHeaderContext context) {
-        return null;
-    }
-
-    public override object? VisitModuleSegment(ModuleSegmentContext context) {
-        return null;
-    }
-
-    public override object? VisitModuleStatement(ModuleStatementContext context) {
-        return null;
-    }
-
-    public override object? VisitImportSegment(ImportSegmentContext context) {
-        return null;
-    }
-
-    public override object? VisitImportStatement(ImportStatementContext context) {
-        return null;
-    }
-
-    public override object? VisitNamespace(NamespaceContext context) {
-        return null;
-    }
-
-    #endregion
 }

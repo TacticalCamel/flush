@@ -16,18 +16,14 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return GetEnumerator();
     }
 
-    public MemoryAddress PushFromData(ExpressionResult expression, byte size) {
-        MemoryAddress address = new(StackSize, MemoryLocation.Stack);
-
-        StackSize += size;
-
+    public void PushFromData(ExpressionResult expression, byte size) {
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
             DataAddress = (int)expression.Address.Value,
             Size = size
         });
 
-        return address;
+        StackSize += size;
     }
 
     public MemoryAddress AddInt(byte size) {
@@ -39,14 +35,6 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         StackSize -= size;
 
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
-    }
-
-    public void Extend(byte fromSize, byte toSize) {
-        Instructions.Add(new Instruction {
-            Code = OperationCode.pshz,
-            Size = fromSize,
-            ToSize = toSize
-        });
     }
 
     public void Add(Instruction instruction) {

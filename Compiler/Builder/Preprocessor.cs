@@ -1,9 +1,8 @@
-﻿
-namespace Compiler.Builder;
+﻿namespace Compiler.Builder;
 
 using static Grammar.ScrantonParser;
-using Handlers;
 using System.Globalization;
+using Handlers;
 using Data;
 using Grammar;
 using Analysis;

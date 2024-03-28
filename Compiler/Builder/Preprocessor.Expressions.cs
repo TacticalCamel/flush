@@ -1,10 +1,9 @@
-﻿using Interpreter.Bytecode;
+﻿namespace Compiler.Builder;
 
-namespace Compiler.Builder;
-
+using static Grammar.ScrantonParser;
+using Interpreter.Bytecode;
 using Data;
 using Analysis;
-using static Grammar.ScrantonParser;
 
 internal sealed partial class Preprocessor {
     public override ExpressionResult? VisitExpression(ExpressionContext context) {
@@ -63,25 +62,26 @@ internal sealed partial class Preprocessor {
         // true if both expression types are primitive types
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveOperation = isLeftPrimitive && isRightPrimitive;
-
+        
         // calculate results
-        // ah sweet, man-made horrors beyond my comprehension
-        ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveOperation ? PrimitiveAddition(left, right) : null,
-            OP_MINUS => null,
-            OP_MULTIPLY => null,
-            OP_DIVIDE => null,
-            OP_MODULUS => null,
-            OP_SHIFT_LEFT => null,
-            OP_SHIFT_RIGHT => null,
-            OP_EQ => null,
-            OP_NOT_EQ => null,
-            OP_LESS => null,
-            OP_GREATER => null,
-            OP_LESS_EQ => null,
-            OP_GREATER_EQ => null,
-            OP_AND => null,
-            OP_OR => null,
+        TypeIdentifier? result = operatorType switch {
+            // same as addition
+            OP_PLUS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_MINUS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_MULTIPLY => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_DIVIDE => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_MODULUS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_EQ => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_NOT_EQ => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_LESS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_GREATER => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_LESS_EQ => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_GREATER_EQ => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_AND => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_OR => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_SHIFT_LEFT => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            OP_SHIFT_RIGHT => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
+            // can have different type
             OP_ASSIGN => null,
             OP_MULTIPLY_ASSIGN => null,
             OP_DIVIDE_ASSIGN => null,
@@ -95,11 +95,13 @@ internal sealed partial class Preprocessor {
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
+        // cancel processing if an error occured
         if (result is null) {
             IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+            return null;
         }
 
-        return result;
+        return new ExpressionResult(MemoryAddress.Null, result);
     }
 
     private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, int operatorType) {
@@ -130,7 +132,7 @@ internal sealed partial class Preprocessor {
 
     #region Operator methods
 
-    private ExpressionResult? PrimitiveAddition(ExpressionResult left, ExpressionResult right) {
+    private TypeIdentifier? GetCommonPrimitiveType(ExpressionContext leftContext, ExpressionContext rightContext, ExpressionResult left, ExpressionResult right) {
         PrimitiveCast cast = GetBestCast(left.Type, right.Type, out TypeIdentifier? resultType);
 
         bool isImplicit = IsImplicitCast(cast);
@@ -142,12 +144,17 @@ internal sealed partial class Preprocessor {
         if (!isImplicit) {
             return null;
         }
-
+        
+        Console.WriteLine($"{leftContext.GetText()}:[{left.Type}] + {rightContext.GetText()}:[{right.Type}] -> [{resultType}]");
+        
         // cast left
         if (left.Type != resultType) {
             Instruction? i = GetCastInstruction(left.Type, resultType);
 
             if (i is not null) {
+                Console.WriteLine($"    casting left [{left.Type}] -> [{resultType}]");
+                leftContext.InstructionsAfterTraversal.Add(i.Value);
+                leftContext.OverrideType = resultType;
             }
         }
 
@@ -156,10 +163,13 @@ internal sealed partial class Preprocessor {
             Instruction? i = GetCastInstruction(right.Type, resultType);
 
             if (i is not null) {
+                Console.WriteLine($"    casting right [{right.Type}] -> [{resultType}]");
+                rightContext.InstructionsAfterTraversal.Add(i.Value);
+                rightContext.OverrideType = resultType;
             }
         }
 
-        return new ExpressionResult(MemoryAddress.Null, resultType);
+        return resultType;
 
         Instruction? GetCastInstruction(TypeIdentifier source, TypeIdentifier destination) {
             if (cast == PrimitiveCast.NotRequired) {
