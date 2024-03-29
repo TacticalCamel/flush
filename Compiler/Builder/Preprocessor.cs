@@ -184,15 +184,14 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
     }
 
     /// <summary>
-    /// TODO comment
+    /// TODO comment and finish
     /// </summary>
     /// <param name="context">The binary expression. Used for error messages.</param>
     /// <param name="leftContext">The expression of the left side.</param>
     /// <param name="rightContext">The expression of the right side.</param>
     /// <param name="operatorType">The identifier of the operator between the operands.</param>
     /// <exception cref="ArgumentException">The provided operator type is not valid for a binary expression.</exception>
-     private void ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-    /*
+    private void ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
         // resolve left and right side
         VisitExpression(leftContext);
         VisitExpression(rightContext);
@@ -202,16 +201,15 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             return;
         }
 
-        bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(left);
-        bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(right);
+        bool isLeftPrimitive = TypeHandler.Casts.IsPrimitiveType(left);
+        bool isRightPrimitive = TypeHandler.Casts.IsPrimitiveType(right);
 
         // true if both expression types are primitive types
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveOperation = isLeftPrimitive && isRightPrimitive;
-
+        
         // calculate results
         TypeIdentifier? result = operatorType switch {
-            // same as addition
             OP_PLUS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
             OP_MINUS => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
             OP_MULTIPLY => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
@@ -227,7 +225,6 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             OP_OR => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
             OP_SHIFT_LEFT => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
             OP_SHIFT_RIGHT => isPrimitiveOperation ? GetCommonPrimitiveType(leftContext, rightContext, left, right) : null,
-            // can have different type
             OP_ASSIGN => null,
             OP_MULTIPLY_ASSIGN => null,
             OP_DIVIDE_ASSIGN => null,
@@ -241,98 +238,102 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
-        // cancel processing if an error occured
         if (result is null) {
-            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
-            return;
+            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left, right, DefaultVocabulary.GetDisplayName(operatorType)));
         }
-    */
     }
 
-    // TODO whatever is happening here
+    private void ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
+        // resolve the inner expression
+        VisitExpression(innerContext);
 
-/*
-    private TypeIdentifier? GetCommonPrimitiveType(ExpressionContext leftContext, ExpressionContext rightContext, ExpressionResult left, ExpressionResult right) {
-        PrimitiveCast cast = GetBestCast(left.Type, right.Type, out TypeIdentifier? resultType);
+        /*
+        // return if an error occured
+        if (expression is null) {
+            return null;
+        }
 
-        bool isImplicit = IsImplicitCast(cast);
+        // true if the expression type is a primitive type or null
+        // in this case we can use a simple instruction instead of a function call
+        bool isPrimitiveType = TypeHandler.PrimitiveConversions.IsPrimitiveType(expression.Type);
+
+        // calculate results
+        ExpressionResult? result = operatorType switch {
+            OP_PLUS => null,
+            OP_MINUS => null,
+            OP_NOT => null,
+            OP_INCREMENT => null,
+            OP_DECREMENT => null,
+            _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
+        };
+
+        return result;
+        */
+    }
+
+    private TypeIdentifier? GetCommonPrimitiveType(ExpressionContext leftContext, ExpressionContext rightContext, TypeIdentifier left, TypeIdentifier right) {
+        PrimitiveCast cast = GetBestCast(left, right, out TypeIdentifier? resultType);
 
         if (resultType is null) {
             return null;
         }
 
+        bool isImplicit = IsImplicitCast(cast);
+
         if (!isImplicit) {
             return null;
         }
 
-        Console.WriteLine($"{leftContext.GetText()}:[{left.Type}] + {rightContext.GetText()}:[{right.Type}] -> [{resultType}]");
+        Console.WriteLine($"{leftContext.GetText()}:[{left}] + {rightContext.GetText()}:[{right}] -> [{resultType}]");
 
         // cast left
-        if (left.Type != resultType) {
-            Instruction? i = GetCastInstruction(left.Type, resultType);
+        if (left != resultType) {
+            Instruction? i = TypeHandler.Casts.GetCastInstruction(left, resultType);
 
             if (i is not null) {
-                Console.WriteLine($"    casting left [{left.Type}] -> [{resultType}]");
-                leftContext.EmitAfterVisit.Add(i.Value);
+                Console.WriteLine($"    casting left [{left}] -> [{resultType}]");
+                leftContext.EmitOnVisit.Add(i.Value);
                 leftContext.ExpressionType = resultType;
             }
         }
 
         // cast right
-        else if (right.Type != resultType) {
-            Instruction? i = GetCastInstruction(right.Type, resultType);
+        else if (right != resultType) {
+            Instruction? i = TypeHandler.Casts.GetCastInstruction(right, resultType);
 
             if (i is not null) {
-                Console.WriteLine($"    casting right [{right.Type}] -> [{resultType}]");
-                rightContext.EmitAfterVisit.Add(i.Value);
+                Console.WriteLine($"    casting right [{right}] -> [{resultType}]");
+                rightContext.EmitOnVisit.Add(i.Value);
                 rightContext.ExpressionType = resultType;
             }
         }
 
         return resultType;
-
-        Instruction? GetCastInstruction(TypeIdentifier source, TypeIdentifier destination) {
-            if (cast == PrimitiveCast.NotRequired) {
-                return null;
-            }
-
-            if (cast == PrimitiveCast.ResizeImplicit) {
-                int difference = destination.Size - source.Size;
-
-                if (difference > 0) {
-                    return new Instruction { Code = OperationCode.pshz, Size = difference };
-                }
-
-                return new Instruction { Code = OperationCode.pop, Size = -difference };
-            }
-
-            return null;
-        }
     }
 
-    private PrimitiveCast GetBestCast(TypeIdentifier sourceType, TypeIdentifier targetType, out TypeIdentifier? res) {
+    private PrimitiveCast GetBestCast(TypeIdentifier firstType, TypeIdentifier secondType, out TypeIdentifier? resultType) {
         // cast left side to right side
-        PrimitiveCast castLeft = TypeHandler.PrimitiveConversions.GetCast(sourceType, targetType);
+        PrimitiveCast castLeft = TypeHandler.Casts.GetCast(firstType, secondType);
 
         // cast right side to left side
-        PrimitiveCast castRight = TypeHandler.PrimitiveConversions.GetCast(targetType, sourceType);
+        PrimitiveCast castRight = TypeHandler.Casts.GetCast(secondType, firstType);
 
         // if casting the right side is easier,
-        // the type of the left side will be the result 
+        // the type of the left side will be the result
         if (castLeft < castRight) {
-            res = sourceType;
+            resultType = firstType;
             return castRight;
         }
 
         // if casting the left side is harder but possible,
-        // the type of the right side will be the result 
+        // the type of the right side will be the result
         if (PrimitiveCast.None < castLeft) {
-            res = targetType;
+            resultType = secondType;
             return castLeft;
         }
 
         // casting is not possible
-        res = null;
+        resultType = null;
         return PrimitiveCast.None;
     }
 
@@ -345,5 +346,5 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             PrimitiveCast.NotRequired => true,
             _ => false
         };
-    }*/
+    }
 }

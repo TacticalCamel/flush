@@ -10,8 +10,6 @@ internal sealed partial class ScriptBuilder {
         // subtypes must be visited
         ExpressionResult? result = (ExpressionResult?)Visit(context);
 
-        Console.WriteLine($"res: {result} {context.GetText()} {context.GetType().Name} {context.EmitOnVisit.Count}");
-
         return result;
     }
 
@@ -26,9 +24,7 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
         ExpressionResult? result = VisitExpression(context.Expression);
 
-        Console.WriteLine($"res: {result} {context.GetText()} {context.GetType().Name} {context.EmitOnVisit.Count}");
-        
-        return null;
+        return result;
     }
 
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
@@ -135,8 +131,8 @@ internal sealed partial class ScriptBuilder {
         // get actual type
         TypeIdentifier rightType = rightContext.ExpressionType ?? right.Type;
 
-        bool isLeftPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(leftType);
-        bool isRightPrimitive = TypeHandler.PrimitiveConversions.IsPrimitiveType(rightType);
+        bool isLeftPrimitive = TypeHandler.Casts.IsPrimitiveType(leftType);
+        bool isRightPrimitive = TypeHandler.Casts.IsPrimitiveType(rightType);
 
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call
@@ -187,7 +183,7 @@ internal sealed partial class ScriptBuilder {
 
         // true if the expression type is a primitive type or null
         // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveType = TypeHandler.PrimitiveConversions.IsPrimitiveType(expression.Type);
+        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(expression.Type);
 
         // calculate results
         ExpressionResult? result = operatorType switch {

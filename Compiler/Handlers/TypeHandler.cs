@@ -10,26 +10,26 @@ using Interpreter.Types;
 /// </summary>
 internal sealed class TypeHandler {
     /// <summary>
-    /// Backing field for core types so the public property can have a non nullable type.
+    /// Backing field for the core type helper so the public property can have a non-nullable type.
     /// </summary>
     private CoreTypeHelper? CoreTypesBackingField;
 
     /// <summary>
     /// Helper to retrieve type identifiers for core types.
     /// </summary>
-    /// <exception cref="Exception">Thrown when type helper is accessed before loading types.</exception>
+    /// <exception cref="Exception">Thrown when the property is accessed before loading types.</exception>
     public CoreTypeHelper CoreTypes => CoreTypesBackingField ?? throw new Exception("Core type helper accessed before loading types");
 
     /// <summary>
-    /// Backing field for conversion helper so the public property can have a non nullable type.
+    /// Backing field for the cast helper so the public property can have a non-nullable type.
     /// </summary>
-    private PrimitiveConversionHelper? PrimitiveConversionsBackingField;
+    private CastHelper? CastsBackingField;
 
     /// <summary>
-    /// Helper to retrieve conversions between primitive types.
+    /// Helper for type conversions.
     /// </summary>
-    /// <exception cref="Exception">Thrown when conversion helper is accessed before loading types.</exception>
-    public PrimitiveConversionHelper PrimitiveConversions => PrimitiveConversionsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
+    /// <exception cref="Exception">Thrown when the property is accessed before loading types.</exception>
+    public CastHelper Casts => CastsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
 
     /// <summary>
     /// The module of the current program.
@@ -98,7 +98,7 @@ internal sealed class TypeHandler {
             Null = new TypeIdentifier(TypeInfo.Null, [])
         };
 
-        PrimitiveConversionsBackingField = new PrimitiveConversionHelper(CoreTypesBackingField);
+        CastsBackingField = new CastHelper(CoreTypesBackingField);
     }
 
     /// <summary>
@@ -249,14 +249,37 @@ internal sealed class TypeHandler {
     }
 
     // TODO comment
-    public sealed class PrimitiveConversionHelper {
+    public sealed class CastHelper {
+        /// <summary>
+        /// A collection of all primitive types.
+        /// </summary>
         private TypeIdentifier[] PrimitiveTypes { get; }
+        
+        /// <summary>
+        /// A collection of all signed integer types.
+        /// </summary>
         private TypeIdentifier[] SignedIntegerTypes { get; }
+        
+        /// <summary>
+        /// A collection of all unsigned integer types.
+        /// </summary>
         private TypeIdentifier[] UnsignedIntegerTypes { get; }
+        
+        /// <summary>
+        /// A collection of all floating point types.
+        /// </summary>
         private TypeIdentifier[] FloatTypes { get; }
+        
+        /// <summary>
+        /// A 2-dimensional array to access conversion between primitive types.
+        /// </summary>
         private PrimitiveCast[,] ConversionTable { get; }
 
-        public PrimitiveConversionHelper(CoreTypeHelper types) {
+        /// <summary>
+        /// Creates a new cast helper from a core type helper.
+        /// </summary>
+        /// <param name="types">The core type helper to use.</param>
+        public CastHelper(CoreTypeHelper types) {
             PrimitiveTypes = [
                 types.I8,
                 types.I16,
@@ -302,6 +325,10 @@ internal sealed class TypeHandler {
             RegisterCasts(types);
         }
 
+        /// <summary>
+        /// Initializes all type casts between primitive types.
+        /// </summary>
+        /// <param name="types">The core type helper to use.</param>
         private void RegisterCasts(CoreTypeHelper types) {
             // signed int
             for (int sourceIndex = 0; sourceIndex < SignedIntegerTypes.Length; sourceIndex++) {
@@ -386,6 +413,7 @@ internal sealed class TypeHandler {
 
             return;
 
+            // add a cast between 2 types
             void AddCast(TypeIdentifier sourceType, TypeIdentifier destinationType, PrimitiveCast cast) {
                 int sourceIndex = Array.IndexOf(PrimitiveTypes, sourceType);
                 int destinationIndex = Array.IndexOf(PrimitiveTypes, destinationType);
@@ -394,6 +422,11 @@ internal sealed class TypeHandler {
             }
         }
 
+        /// <summary>
+        /// Checks if a type is primitive.
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns>True if the type is primitive, false otherwise.</returns>
         public bool IsPrimitiveType(TypeIdentifier type) {
             foreach (TypeIdentifier primitiveType in PrimitiveTypes) {
                 if (type == primitiveType) {
@@ -404,6 +437,12 @@ internal sealed class TypeHandler {
             return false;
         }
         
+        /// <summary>
+        /// Checks if the given types are primitive.
+        /// </summary>
+        /// <param name="first">The first type to check.</param>
+        /// <param name="second">The second type to check.</param>
+        /// <returns>True if both types are primitive, false otherwise.</returns>
         public bool ArePrimitiveTypes(TypeIdentifier first, TypeIdentifier second) {
             return IsPrimitiveType(first) && IsPrimitiveType(second);
         }
