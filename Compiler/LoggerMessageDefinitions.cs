@@ -2,6 +2,9 @@
 
 using Microsoft.Extensions.Logging;
 
+/// <summary>
+/// Logger message templates to be used by the compiler.
+/// </summary>
 internal static partial class LoggerMessageDefinitions {
     #region Build
 

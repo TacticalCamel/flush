@@ -446,35 +446,8 @@ internal sealed class TypeHandler {
         public bool ArePrimitiveTypes(TypeIdentifier first, TypeIdentifier second) {
             return IsPrimitiveType(first) && IsPrimitiveType(second);
         }
-        
-        public Instruction? GetCastInstruction(TypeIdentifier sourceType, TypeIdentifier targetType) {
-            PrimitiveCast cast = GetCast(sourceType, targetType);
 
-            switch(cast) {
-                case PrimitiveCast.ResizeImplicit: {
-                    int difference = targetType.Size - sourceType.Size;
-
-                    if (difference > 0) {
-                         return new Instruction {
-                            Code = OperationCode.pshz,
-                            Size = difference
-                        };
-                    }
-                    else {
-                        return new Instruction {
-                            Code = OperationCode.pop,
-                            Size = -difference
-                        };
-                    }
-                }
-                default:
-                    break;
-            }
-
-            return null;
-        }
-        
-        public PrimitiveCast GetCast(TypeIdentifier sourceType, TypeIdentifier targetType) {
+        public PrimitiveCast GetPrimitiveCast(TypeIdentifier sourceType, TypeIdentifier targetType) {
             int sourceIndex = Array.IndexOf(PrimitiveTypes, sourceType);
             int destinationIndex = Array.IndexOf(PrimitiveTypes, targetType);
 

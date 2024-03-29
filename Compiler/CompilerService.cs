@@ -1,4 +1,8 @@
-﻿[assembly: CLSCompliant(false)]
+﻿// best place to put this if we don't want to create a different file.
+// necessary because the generated classes have this attribute,
+// but the containing assembly doesn't so the C# compiler cries.
+
+[assembly: CLSCompliant(false)]
 
 namespace Compiler;
 
@@ -9,10 +13,28 @@ using Antlr4.Runtime;
 using Interpreter.Serialization;
 using Microsoft.Extensions.Logging;
 
+/// <summary>
+/// This class is the public interface of the compiler.
+/// It is wrapper responsible for directing the compilation process.
+/// </summary>
+/// <param name="logger">The logger used by the compiler.</param>
+/// <param name="options">The settings of the compiler.</param>
 public sealed class CompilerService(ILogger logger, CompilerOptions options) {
+    /// <summary>
+    /// The logger used by the compiler.
+    /// </summary>
     private ILogger Logger { get; } = logger;
+
+    /// <summary>
+    /// The settings of the compiler.
+    /// </summary>
     private CompilerOptions Options { get; } = options;
 
+    /// <summary>
+    /// Transform the given source code to an executable.
+    /// </summary>
+    /// <param name="code">The source code.</param>
+    /// <returns>An executable script if successful, null otherwise.</returns>
     public Script? Compile(string code) {
         // create a new builder
         ScriptBuilder scriptBuilder = new(Options, Logger);
@@ -29,10 +51,7 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
 
         try {
             // build program
-            scriptBuilder.Build(parser.program());
-
-            // retrieve result
-            Script script = scriptBuilder.GetResult();
+            Script script = scriptBuilder.Build(parser.program());
 
             // log results
             LogBuildResults(scriptBuilder, true);
@@ -52,6 +71,11 @@ public sealed class CompilerService(ILogger logger, CompilerOptions options) {
         }
     }
 
+    /// <summary>
+    /// Log the results of the compilation.
+    /// </summary>
+    /// <param name="scriptBuilder">The script builder used for the compilation.</param>
+    /// <param name="success">True if the compilation was successful, false otherwise.</param>
     private void LogBuildResults(ScriptBuilder scriptBuilder, bool success) {
         // get and log hints
         string[] hints = scriptBuilder.GetIssuesWithSeverity(Severity.Hint);

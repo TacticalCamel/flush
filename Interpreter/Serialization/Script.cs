@@ -67,7 +67,7 @@ public sealed class Script {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
 
-            sb.Append($"    0x{instructionSize * i:X8}       {name}");
+            sb.Append($"    0x{instructionSize * i:X8}       {name,-4}");
 
             for (int j = 0; j < 16; j++) {
                 sb.Append($"{(j % 2 == 0 ? " " : "")}{instruction.Data[j]:X2}");

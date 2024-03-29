@@ -1,6 +1,7 @@
 import auto
 
-(u16)255 + 1;
+i32 i = (i32)1 + 255;
+
 
 //0xff + 0xff00 + 0xffff0000;
 

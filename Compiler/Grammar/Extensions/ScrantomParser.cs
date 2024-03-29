@@ -3,20 +3,37 @@
 namespace Compiler.Grammar;
 
 using Data;
-using Interpreter.Bytecode;
 
 public partial class ScrantonParser {
     public partial class ExpressionContext {
-        internal TypeIdentifier? ExpressionType { get; set; }
-        internal List<Instruction> EmitOnVisit { get; } = [];
+        /// <summary>
+        /// The type of the expression.
+        /// Assigned when the expression is visited.
+        /// </summary>
+        internal TypeIdentifier? OriginalType { get; set; }
+        
+        /// <summary>
+        /// The target type of the expression.
+        /// Assigned when the parent node is visited.
+        /// </summary>
+        internal TypeIdentifier? FinalType { get; set; }
+
+        public override string ToString() {
+            return $"{GetText()} [{OriginalType?.ToString() ?? "null"}]{(Equals(OriginalType, FinalType) ? "" : $">>[{FinalType?.ToString() ?? "null"}]")}";
+        }
     }
 
     public partial class ConstantExpressionContext {
         /// <summary>
-        /// The result of visiting a constant.
-        /// Storing the type and location in memory is important, because we need both
-        /// to emit an instruction in the second pass.
+        /// The address of the constant.
+        /// Assigned when the expression is visited.
         /// </summary>
-        internal ConstantResult? Result { get; set; }
+        internal MemoryAddress? Address { get; set; }
+        
+        /// <summary>
+        /// An alternative type of the constant.
+        /// Assigned when the expression is visited.
+        /// </summary>
+        internal TypeIdentifier? AlternativeType { get; set; }
     }
 }

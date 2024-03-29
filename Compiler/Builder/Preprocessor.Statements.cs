@@ -1,8 +1,9 @@
 ﻿namespace Compiler.Builder;
 
+using static Grammar.ScrantonParser;
+using Antlr4.Runtime;
 using Analysis;
 using Data;
-using Grammar;
 using Interpreter.Types;
 
 internal sealed partial class Preprocessor {
@@ -11,7 +12,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The identifier of the type if it exists, null otherwise.</returns>
-    public override TypeIdentifier? VisitType(ScrantonParser.TypeContext context) {
+    public override TypeIdentifier? VisitType(TypeContext context) {
         return (TypeIdentifier?)Visit(context);
     }
 
@@ -20,7 +21,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The identifier of the type if it exists, null otherwise.</returns>
-    public override TypeIdentifier? VisitSimpleType(ScrantonParser.SimpleTypeContext context) {
+    public override TypeIdentifier? VisitSimpleType(SimpleTypeContext context) {
         // get the name of the type
         string name = VisitId(context.Name);
 
@@ -41,7 +42,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The identifier of the type if it exists, null otherwise.</returns>
-    public override TypeIdentifier? VisitGenericType(ScrantonParser.GenericTypeContext context) {
+    public override TypeIdentifier? VisitGenericType(GenericTypeContext context) {
         // get the name of the type
         string name = VisitId(context.Name);
 
@@ -57,7 +58,7 @@ internal sealed partial class Preprocessor {
         // TODO no checks are performed for number of generic parameters
 
         // get generic parameter nodes
-        ScrantonParser.TypeContext[] typeContexts = context.type();
+        TypeContext[] typeContexts = context.type();
 
         // create an array for results
         TypeIdentifier[] genericParameters = new TypeIdentifier[typeContexts.Length];
@@ -77,5 +78,55 @@ internal sealed partial class Preprocessor {
         }
 
         return new TypeIdentifier(type, genericParameters);
+    }
+    
+    public override TypeIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
+        return VisitType(context.Type);
+    }
+    
+    public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
+        TypeIdentifier? type = VisitVariableWithType(context.VariableWithType);
+
+        if (type is null) {
+            return null;
+        }
+        
+        VisitExpression(context.Expression);
+
+        context.Expression.FinalType = type;
+        
+        return null;
+    }
+    
+    // TODO just here for debug
+    public override object? VisitStatement(StatementContext context) {
+        VisitChildren(context);
+
+        DebugToTree(context);
+
+        return null;
+
+        void DebugToTree(ParserRuleContext? root, int depth = 0) {
+            if (root is null) {
+                return;
+            }
+
+            if (root is ExpressionContext) {
+                Console.WriteLine($"{new string(' ', depth * 4)}{root}");
+                depth++;
+            }
+
+            for (int i = 0; i < root.ChildCount; i++) {
+                if (root.GetChild(i) is not ParserRuleContext child) {
+                    continue;
+                }
+
+                if (root is ExpressionContext && child is not ExpressionContext) {
+                    continue;
+                }
+
+                DebugToTree(child, depth);
+            }
+        }
     }
 }

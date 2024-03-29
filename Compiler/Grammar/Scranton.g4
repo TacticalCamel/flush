@@ -121,14 +121,11 @@ tryBlock
 	
 expression
 	: Constant=constant #ConstantExpression
-//	| Lambda=lambda #LambdaExpression
-//	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
-//	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
 	| Identifier=id #IdentifierExpression
-	| HEAD_START Body=expression HEAD_END #NestedExpression
 	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessOperatorExpression
-	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
 	| HEAD_START Type=type HEAD_END Expression=expression #CastExpression
+	| HEAD_START Body=expression HEAD_END #NestedExpression
+	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
 	| Expression=expression Operator=opRightUnary #RightUnaryOperatorExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
@@ -137,6 +134,9 @@ expression
 	| Left=expression Operator=opComparison Right=expression #ComparisonOperatorExpression
 	| Left=expression Operator=opLogical Right=expression #LogicalOperatorExpression
 	| Left=expression Operator=opAssignment Right=expression #AssigmentOperatorExpression
+//	| Lambda=lambda #LambdaExpression
+//	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
+//	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
 	;
 
 constant

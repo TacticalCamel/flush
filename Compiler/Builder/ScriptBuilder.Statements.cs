@@ -20,7 +20,8 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
-    /*public override VariableIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
+    /*
+    public override VariableIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
         TypeIdentifier? type = VisitType(context.Type);
         string name = VisitId(context.Name);
 
@@ -29,5 +30,10 @@ internal sealed partial class ScriptBuilder {
         }
 
         return new VariableIdentifier(type, name);
-    }*/
+    }
+    */
+    
+    public override string VisitId(IdContext context) {
+        return context.Start.Text;
+    }
 }

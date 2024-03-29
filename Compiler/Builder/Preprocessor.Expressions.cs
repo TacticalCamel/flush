@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using static Grammar.ScrantonParser;
-using Interpreter.Bytecode;
+using Analysis;
 using Data;
 
 internal sealed partial class Preprocessor {
@@ -22,14 +22,14 @@ internal sealed partial class Preprocessor {
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
     public override object? VisitConstantExpression(ConstantExpressionContext context) {
+        // get constant result
         ConstantResult? result = VisitConstant(context.Constant);
-
-        if (result is null) {
-            return null;
-        }
-
-        context.Result = result;
-        context.ExpressionType = result.Type;
+        
+        // assign address and type
+        context.Address = result?.Address;
+        context.OriginalType = result?.Type;
+        context.AlternativeType = result?.SecondaryType;
+        
         return null;
     }
 
@@ -56,19 +56,6 @@ internal sealed partial class Preprocessor {
     }
 
     /// <summary>
-    /// Visits a nested expression and assigns it the same type as its inner expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitNestedExpression(NestedExpressionContext context) {
-        VisitExpression(context.Body);
-
-        context.ExpressionType = context.Body.ExpressionType;
-
-        return null;
-    }
-
-    /// <summary>
     /// Visits a member access.
     /// </summary>
     /// <param name="context">The node to visit.</param>
@@ -86,6 +73,61 @@ internal sealed partial class Preprocessor {
 
         IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
         return null;*/
+    }
+    
+    /// <summary>
+    /// Visits an expression cast.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
+    public override object? VisitCastExpression(CastExpressionContext context) {
+        // get the target type
+        TypeIdentifier? targetType = VisitType(context.Type);
+
+        // stop if the type does not exist
+        if (targetType is null) {
+            return null;
+        }
+
+        // resolve the expression
+        VisitExpression(context.Expression);
+
+        TypeIdentifier? sourceType = context.Expression.OriginalType;
+        
+        // stop if an error occured
+        if (sourceType is null) {
+            return null;
+        }
+
+        // check if the cast exists
+        if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
+            PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+            
+            if (cast == PrimitiveCast.None) {
+                IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
+                return null;
+            }
+        }
+        
+        context.Expression.FinalType = targetType;
+        context.OriginalType = targetType;
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Visits a nested expression and assigns it the same type as its inner expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
+    public override object? VisitNestedExpression(NestedExpressionContext context) {
+        VisitExpression(context.Body);
+
+        // assign types
+        context.Body.FinalType = context.Body.OriginalType;
+        context.OriginalType = context.Body.OriginalType;
+
+        return null;
     }
 
     /// <summary>
@@ -120,53 +162,6 @@ internal sealed partial class Preprocessor {
     }
 
     /// <summary>
-    /// Visits an expression cast.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitCastExpression(CastExpressionContext context) {
-        // get the target type
-        TypeIdentifier? targetType = VisitType(context.Type);
-
-        // stop if the type does not exist
-        if (targetType is null) {
-            return null;
-        }
-
-        // resolve the expression
-        VisitExpression(context.Expression);
-
-        // get the type of the expression
-        TypeIdentifier? sourceType = context.Expression.ExpressionType;
-
-        // stop if an error occured
-        if (sourceType is null) {
-            return null;
-        }
-
-        // true if both expression types are primitive types
-        // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveOperation = TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType);
-
-        if (!isPrimitiveOperation) {
-            throw new NotImplementedException();
-        }
-
-        // get the cast instruction
-        Instruction? instruction = TypeHandler.Casts.GetCastInstruction(sourceType, targetType);
-
-        // if we need a cast instruction, add it to the context
-        if (instruction is not null) {
-            context.EmitOnVisit.Add(instruction.Value);
-        }
-
-        // set the context type to target type
-        context.ExpressionType = targetType;
-
-        return null;
-    }
-
-    /// <summary>
     /// Visits a left unary expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
@@ -189,17 +184,6 @@ internal sealed partial class Preprocessor {
     }
 
     /// <summary>
-    /// Visits a additive expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
-        ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
-
-        return null;
-    }
-
-    /// <summary>
     /// Visits a multiplicative expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
@@ -209,7 +193,18 @@ internal sealed partial class Preprocessor {
 
         return null;
     }
+    
+    /// <summary>
+    /// Visits a additive expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
+    public override object? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
+        ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
+        return null;
+    }
+    
     /// <summary>
     /// Visits a shift expression.
     /// </summary>
