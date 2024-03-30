@@ -102,7 +102,7 @@ internal sealed partial class Preprocessor {
     public override object? VisitStatement(StatementContext context) {
         VisitChildren(context);
 
-        DebugToTree(context);
+        // DebugToTree(context);
 
         return null;
 

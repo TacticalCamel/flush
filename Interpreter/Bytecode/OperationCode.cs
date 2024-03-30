@@ -106,4 +106,28 @@ public enum OperationCode : byte {
     /// <summary>Compares the inequality 2 top elements of the stack and replaces them with them with the resulting bool value.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     neq,
+    
+    /// <summary>Increment the top element of the stack as an integer.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    inci,
+    
+    /// <summary>Increment the top element of the stack as an float.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    incf,
+    
+    /// <summary>Decrement the top element of the stack as an integer.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    deci,
+    
+    /// <summary>Decrement the top element of the stack as an float.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    decf,
+    
+    /// <summary>Swaps the sign of the top element of the stack as an integer.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    sswi,
+    
+    /// <summary>Swaps the sign of the top element of the stack as an float.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    sswf,
 }

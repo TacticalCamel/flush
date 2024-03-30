@@ -61,5 +61,28 @@ internal enum PrimitiveCast : byte {
     /// No conversion is required.
     /// The value can be interpreted without change.
     /// </summary>
-    NotRequired,
+    NotRequired
+}
+
+internal static class CastEnumExtensions {
+    public static bool IsImplicit(this PrimitiveCast cast) {
+        return cast switch {
+            PrimitiveCast.FloatToFloatExplicit => true,
+            PrimitiveCast.UnsignedToFloatImplicit => true,
+            PrimitiveCast.SignedToFloatImplicit => true,
+            PrimitiveCast.ResizeImplicit => true,
+            PrimitiveCast.NotRequired => true,
+            _ => false
+        };
+    }
+    
+    public static bool IsExplicit(this PrimitiveCast cast) {
+        return cast switch {
+            PrimitiveCast.FloatToFloatImplicit => true,
+            PrimitiveCast.FloatToUnsignedExplicit => true,
+            PrimitiveCast.FloatToSignedExplicit => true,
+            PrimitiveCast.ResizeExplicit => true,
+            _ => false
+        };
+    }
 }

@@ -46,6 +46,15 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
     
+    public MemoryAddress PrimitiveUnaryOperation(byte size, OperationCode code) {
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
+        });
+        
+        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
+    }
+    
     public MemoryAddress PrimitiveComparisonOperation(byte size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,

@@ -6,8 +6,6 @@ using Microsoft.Extensions.Logging;
 /// Logger message templates to be used by the compiler.
 /// </summary>
 internal static partial class LoggerMessageDefinitions {
-    #region Build
-
     [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "{message}")]
     public static partial void BuildHint(this ILogger logger, string message);
 
@@ -25,13 +23,4 @@ internal static partial class LoggerMessageDefinitions {
 
     [LoggerMessage(EventId = 5, Level = LogLevel.Critical, Message = "Unexpected build error")]
     public static partial void UnexpectedBuildError(this ILogger logger, Exception e);
-
-    #endregion
-
-    #region Compilation
-
-    [LoggerMessage(EventId = 100, Level = LogLevel.Debug, Message = "{message}")]
-    public static partial void Debug(this ILogger logger, string message);
-
-    #endregion
 }

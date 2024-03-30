@@ -149,6 +149,18 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Type '{source}' cannot be cast to '{target}'"
     };
+    
+    public static Issue ExplicitCastRedundant(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
+        Id = 213,
+        Severity = Severity.Warning,
+        Message = $"Explicit cast from '{source}' to '{target}' is redundant"
+    };
+    
+    public static Issue ProgramEmpty(ParserRuleContext context) => new(context) {
+        Id = 214,
+        Severity = Severity.Warning,
+        Message = "The compiled program contains no instructions"
+    };
 
     #endregion
 }

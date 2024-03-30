@@ -70,9 +70,12 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         // check for errors in 2nd pass
         CancelIfHasErrors();
 
-
         byte[] data = DataHandler.ToBytes();
         Instruction[] instructions = Instructions.ToArray();
+
+        if (instructions.Length == 0) {
+            IssueHandler.Add(Issue.ProgramEmpty(programContext));
+        }
 
         return new Script(data, instructions);
     }
@@ -147,26 +150,26 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         return CastExpression(context) ? new ExpressionResult(result.Address, context.FinalType) : null;
     }
 
-    private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
+    private ExpressionResult? ResolveUnaryExpression(ExpressionContext _, ExpressionContext innerContext, int operatorType) {
         // resolve the expression
-        ExpressionResult? expression = VisitExpression(innerContext);
+        ExpressionResult? inner = VisitExpression(innerContext);
 
         // return if an error occured
-        if (expression is null) {
+        if (inner is null) {
             return null;
         }
 
         // true if the expression type is a primitive type or null
         // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(expression.Type);
+        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(inner.Type);
 
         // calculate results
         ExpressionResult? result = operatorType switch {
-            OP_PLUS => null,
-            OP_MINUS => null,
+            OP_PLUS => isPrimitiveType ? inner : null,
+            OP_MINUS => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.sswi, OperationCode.sswf) : null,
             OP_NOT => null,
-            OP_INCREMENT => null,
-            OP_DECREMENT => null,
+            OP_INCREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.inci, OperationCode.incf) : null,
+            OP_DECREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.deci, OperationCode.decf) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
@@ -187,7 +190,6 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         bool success = Instructions.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
 
         // stop if failed
-        // TODO return value should be void, but not every cast type is handled yet
         if (!success) {
             IssueHandler.Add(Issue.InvalidCast(context, context.OriginalType, context.FinalType));
         }
@@ -198,6 +200,17 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     #region Operator methods
 
     private ExpressionResult? UnaryNumberOperation(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
+        // must be an integer or float
+        if (TypeHandler.Casts.IsIntegerType(type)) {
+            MemoryAddress address = Instructions.PrimitiveUnaryOperation(type.Size, integerCode);
+            return new ExpressionResult(address, type);
+        }
+
+        if (TypeHandler.Casts.IsFloatType(type)) {
+            MemoryAddress address = Instructions.PrimitiveUnaryOperation(type.Size, floatCode);
+            return new ExpressionResult(address, type);
+        }
+
         return null;
     }
 

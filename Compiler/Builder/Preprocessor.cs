@@ -337,6 +337,10 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             }
         }
 
+        if (!bestCast.IsImplicit()) {
+            return null;
+        }
+
         return bestType;
     }
 }

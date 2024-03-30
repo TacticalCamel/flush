@@ -92,6 +92,7 @@ internal sealed partial class Preprocessor {
         // resolve the expression
         VisitExpression(context.Expression);
 
+        // get the source type
         TypeIdentifier? sourceType = context.Expression.OriginalType;
 
         // stop if an error occured
@@ -100,6 +101,7 @@ internal sealed partial class Preprocessor {
         }
 
         // check if the cast exists
+        // allow both explicit and implicit
         if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
             PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
 
