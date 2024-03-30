@@ -41,14 +41,15 @@ public static class ClassLoader {
 
             // import type
             string name = GetTypeName(type);
-
+            
+            
             TypeInfo typeInfo = new() {
                 Module = module,
                 Name = name,
                 Members = [],
-                Size = (byte)(type.IsClass ? 8 : Marshal.SizeOf(type))
+                Size = GetSize(type)
             };
-
+            
             System.Reflection.MemberInfo[] members = type
                 .GetMembers(BindingFlags.Static | BindingFlags.Public)
                 .Where(x => x.Name == "op_Implicit" && x.GetCustomAttribute<InternalAttribute>() is null)
@@ -76,6 +77,24 @@ public static class ClassLoader {
         }
 
         return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
+    }
+
+    private static byte GetSize(Type type) {
+        if (type.IsClass) {
+            return 8;
+        }
+
+        // stupid thinks a char is 1 byte
+        if (type == typeof(Char)) {
+            return 2;
+        }
+        
+        // but booleans are 4 bytes because why not
+        if (type == typeof(Bool)) {
+            return 1;
+        }
+
+        return (byte)Marshal.SizeOf(type);
     }
 
     public static string GetTypeName(Type type) {

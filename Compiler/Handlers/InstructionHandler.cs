@@ -45,6 +45,17 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
 
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
+    
+    public MemoryAddress PrimitiveComparisonOperation(byte size, OperationCode code) {
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
+        });
+
+        StackSize -= (uint)(2 * size - 1);
+
+        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
+    }
 
     public bool Cast(int sourceSize, int targetSize, PrimitiveCast cast) {
         int difference = targetSize - sourceSize;

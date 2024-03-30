@@ -103,21 +103,22 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         // calculate results
         ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveType ? PrimitiveAddition(left.Type, right.Type) : null,
-            OP_MINUS => isLeftPrimitive ? PrimitiveSubtraction(left.Type, right.Type) : null,
-            OP_MULTIPLY => isLeftPrimitive ? PrimitiveMultiplication(left.Type, right.Type) : null,
-            OP_DIVIDE => isLeftPrimitive ? PrimitiveDivision(left.Type, right.Type) : null,
-            OP_MODULUS => null,
+            OP_PLUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.addi, OperationCode.addf) : null,
+            OP_MINUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.subi, OperationCode.subf) : null,
+            OP_MULTIPLY => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.muli, OperationCode.mulf) : null,
+            OP_DIVIDE => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.divi, OperationCode.divf) : null,
+            OP_MODULUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.modi, OperationCode.modf) : null,
             OP_SHIFT_LEFT => null,
             OP_SHIFT_RIGHT => null,
-            OP_EQ => null,
-            OP_NOT_EQ => null,
+            OP_EQ => isPrimitiveType ? ComparisonOperation(left.Type, right.Type, OperationCode.eq) : null,
+            OP_NOT_EQ => isPrimitiveType ? ComparisonOperation(left.Type, right.Type, OperationCode.neq) : null,
             OP_LESS => null,
             OP_GREATER => null,
             OP_LESS_EQ => null,
             OP_GREATER_EQ => null,
-            OP_AND => null,
-            OP_OR => null,
+            OP_AND => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
+            OP_OR => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
+            OP_XOR => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
             OP_ASSIGN => null,
             OP_MULTIPLY_ASSIGN => null,
             OP_DIVIDE_ASSIGN => null,
@@ -193,4 +194,59 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         return success;
     }
+
+    #region Operator methods
+
+    private ExpressionResult? UnaryNumberOperation(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
+        return null;
+    }
+
+    private ExpressionResult? BinaryNumberOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode integerCode, OperationCode floatCode) {
+        // must operate on the same types
+        if (leftType != rightType) {
+            return null;
+        }
+
+        // must be an integer or float
+        if (TypeHandler.Casts.IsIntegerType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, integerCode);
+            return new ExpressionResult(address, leftType);
+        }
+
+        if (TypeHandler.Casts.IsFloatType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, floatCode);
+            return new ExpressionResult(address, leftType);
+        }
+
+        return null;
+    }
+
+    private ExpressionResult? BitwiseOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+        // must operate on the same types
+        if (leftType != rightType) {
+            return null;
+        }
+
+        // must be a bool or integer
+        if (leftType != TypeHandler.CoreTypes.Bool && !TypeHandler.Casts.IsIntegerType(leftType)) {
+            return null;
+        }
+
+        MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, code);
+
+        return new ExpressionResult(address, leftType);
+    }
+
+    private ExpressionResult? ComparisonOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+        // must operate on the same types
+        if (leftType != rightType) {
+            return null;
+        }
+
+        // can be any type
+        MemoryAddress address = Instructions.PrimitiveComparisonOperation(leftType.Size, code);
+        return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
+    }
+
+    #endregion
 }

@@ -79,7 +79,11 @@ OP_AND
 OP_OR
  	: '|'
  	;
- 
+
+OP_XOR
+	: '^'
+	;
+
 OP_ASSIGN
 	: '='
 	;
@@ -87,7 +91,7 @@ OP_ASSIGN
 OP_PLUS_ASSIGN
 	: '+='
 	;
-	
+
 OP_MINUS_ASSIGN
 	: '-='
 	;
@@ -107,7 +111,7 @@ OP_MODULUS_ASSIGN
 OP_SHIFT_LEFT_ASSIGN
 	: '<<='
 	;
-	
+
 OP_SHIFT_RIGHT_ASSIGN
 	: '>>='
 	;

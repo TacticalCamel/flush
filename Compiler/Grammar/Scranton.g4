@@ -73,6 +73,7 @@ statement
 	: regularStatement STATEMENT_SEP
 	| controlStatement STATEMENT_SEP
 	| blockStatement
+	| STATEMENT_SEP
 	;
 
 regularStatement
@@ -210,6 +211,7 @@ opComparison
 opLogical
 	: OP_AND
 	| OP_OR
+	| OP_XOR
 	;
 
 opAssignment

@@ -70,4 +70,40 @@ public enum OperationCode : byte {
     /// <summary>Divides the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     divf,
+    
+    /// <summary>Takes the modulus of the 2 top elements of the stack as integers.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    modi,
+    
+    /// <summary>Takes the modulus of the 2 top elements of the stack as floats.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    modf,
+    
+    /// <summary>Shifts the bits of a value to the left.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    shfl,
+    
+    /// <summary>Shifts the bits of a value to the right.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    shfr,
+    
+    /// <summary>Takes the bitwise 'and' result of the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    and,
+    
+    /// <summary>Takes the bitwise 'or' result of the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    or,
+    
+    /// <summary>Takes the bitwise 'xor' result of the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    xor,
+    
+    /// <summary>Compares the equality 2 top elements of the stack and replaces them with them with the resulting bool value.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    eq,
+    
+    /// <summary>Compares the inequality 2 top elements of the stack and replaces them with them with the resulting bool value.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    neq,
 }

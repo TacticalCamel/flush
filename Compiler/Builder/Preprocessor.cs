@@ -246,6 +246,7 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             OP_GREATER_EQ => true,
             OP_AND => true,
             OP_OR => true,
+            OP_XOR => true,
             OP_SHIFT_LEFT => true,
             OP_SHIFT_RIGHT => true,
             _ => false
