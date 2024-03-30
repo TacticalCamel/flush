@@ -48,10 +48,11 @@ public sealed class Script {
 
             ReadOnlySpan<byte> row = Data.Span[i..end];
 
-            sb.Append($"    0x{i:X8}       ");
+            sb.Append($"    0x{i:X8}           ");
 
-            foreach (byte b in row) {
-                sb.Append($"{b:X2} ");
+            for (int j = 0; j < row.Length; j++) {
+                byte b = row[j];
+                sb.Append($"{(j % 2 == 0 ? ' ' : "")}{b.ToString("X2")}");
             }
 
             sb.AppendLine();
@@ -62,6 +63,7 @@ public sealed class Script {
         // code section
         int instructionSize = Marshal.SizeOf<Instruction>();
 
+
         sb.AppendLine(".code");
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
@@ -70,7 +72,7 @@ public sealed class Script {
             sb.Append($"    0x{instructionSize * i:X8}       {name,-4}");
 
             for (int j = 0; j < 16; j++) {
-                sb.Append($"{(j % 2 == 0 ? " " : "")}{instruction.Data[j]:X2}");
+                sb.Append($"{(j % 2 == 0 ? ' ' : "")}{instruction.Data[j].ToString("X2")}");
             }
 
             sb.AppendLine();

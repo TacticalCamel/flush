@@ -24,12 +24,12 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
     /// The issue handler to use.
     /// </summary>
     private IssueHandler IssueHandler { get; } = issueHandler;
-    
+
     /// <summary>
     /// The type handler to use.
     /// </summary>
     private TypeHandler TypeHandler { get; } = typeHandler;
-    
+
     /// <summary>
     /// The data handler to use.
     /// </summary>
@@ -203,17 +203,17 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
     private void ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
         // resolve the inner expression
         VisitExpression(innerContext);
-        
+
         // stop if an error occured
         if (innerContext.OriginalType is null) {
             return;
         }
-        
+
         // unary operators do not change the type
         innerContext.FinalType = innerContext.OriginalType;
         context.OriginalType = innerContext.OriginalType;
     }
-    
+
     /// <summary>
     /// Resolves a binary expression.
     /// </summary>
@@ -250,11 +250,11 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             OP_SHIFT_RIGHT => true,
             _ => false
         };
-        
+
         // calculate results
         // we do not care if the operation for the common type exists or not
         TypeIdentifier? commonType = FindCommonType(left, right, allowLeftCast, true);
-        
+
         // stop if no valid common type exists
         if (commonType is null) {
             IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.OriginalType, right.OriginalType, DefaultVocabulary.GetDisplayName(operatorType)));
@@ -289,7 +289,7 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
 
         PrimitiveCast bestCast = PrimitiveCast.None;
         TypeIdentifier? bestType = null;
-        
+
         // cast left to right
         if (allowLeftCast) {
             foreach (TypeIdentifier? sourceType in leftTypes) {
@@ -297,7 +297,7 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
                     if (sourceType is null || targetType is null) {
                         continue;
                     }
-                    
+
                     // TODO implement non-primitive cast
                     if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
                         continue;
@@ -320,7 +320,7 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
                     if (sourceType is null || targetType is null) {
                         continue;
                     }
-                    
+
                     // TODO implement non-primitive cast
                     if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
                         continue;

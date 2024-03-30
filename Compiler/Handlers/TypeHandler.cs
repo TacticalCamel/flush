@@ -254,22 +254,22 @@ internal sealed class TypeHandler {
         /// A collection of all primitive types.
         /// </summary>
         private TypeIdentifier[] PrimitiveTypes { get; }
-        
+
         /// <summary>
         /// A collection of all signed integer types.
         /// </summary>
         private TypeIdentifier[] SignedIntegerTypes { get; }
-        
+
         /// <summary>
         /// A collection of all unsigned integer types.
         /// </summary>
         private TypeIdentifier[] UnsignedIntegerTypes { get; }
-        
+
         /// <summary>
         /// A collection of all floating point types.
         /// </summary>
         private TypeIdentifier[] FloatTypes { get; }
-        
+
         /// <summary>
         /// A 2-dimensional array to access conversion between primitive types.
         /// </summary>
@@ -349,6 +349,8 @@ internal sealed class TypeHandler {
             }
 
             foreach (TypeIdentifier signedType in SignedIntegerTypes) {
+                if (signedType.Size > 8) continue;
+
                 foreach (TypeIdentifier floatType in FloatTypes) {
                     AddCast(signedType, floatType, PrimitiveCast.SignedToFloatImplicit);
                 }
@@ -375,6 +377,8 @@ internal sealed class TypeHandler {
             }
 
             foreach (TypeIdentifier unsignedType in UnsignedIntegerTypes) {
+                if (unsignedType.Size > 8) continue;
+
                 foreach (TypeIdentifier floatType in FloatTypes) {
                     AddCast(unsignedType, floatType, PrimitiveCast.UnsignedToFloatImplicit);
                 }
@@ -385,10 +389,12 @@ internal sealed class TypeHandler {
             // float
             foreach (TypeIdentifier floatType in FloatTypes) {
                 foreach (TypeIdentifier signedType in SignedIntegerTypes) {
+                    if (signedType.Size > 8) continue;
                     AddCast(floatType, signedType, PrimitiveCast.FloatToSignedExplicit);
                 }
 
                 foreach (TypeIdentifier unsignedType in UnsignedIntegerTypes) {
+                    if (unsignedType.Size > 8) continue;
                     AddCast(floatType, unsignedType, PrimitiveCast.FloatToUnsignedExplicit);
                 }
             }
@@ -436,7 +442,7 @@ internal sealed class TypeHandler {
 
             return false;
         }
-        
+
         /// <summary>
         /// Checks if the given types are primitive.
         /// </summary>
@@ -447,6 +453,30 @@ internal sealed class TypeHandler {
             return IsPrimitiveType(first) && IsPrimitiveType(second);
         }
 
+        /// <summary>
+        /// Checks if a type is a primitive integer type.
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns>True if the type is an integer, false otherwise.</returns>
+        public bool IsIntegerType(TypeIdentifier type) {
+            return SignedIntegerTypes.Contains(type) || UnsignedIntegerTypes.Contains(type);
+        }
+
+        /// <summary>
+        /// Checks if a type is a primitive float type.
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns>True if the type is a float, false otherwise.</returns>
+        public bool IsFloatType(TypeIdentifier type) {
+            return FloatTypes.Contains(type);
+        }
+
+        /// <summary>
+        /// Retrieves the cast type between 2 primitive types.
+        /// </summary>
+        /// <param name="sourceType">The type to cast from.</param>
+        /// <param name="targetType">The type to cast to.</param>
+        /// <returns>The type of the cast. If the supplied types are not primitive, returns the invalid cast value.</returns>
         public PrimitiveCast GetPrimitiveCast(TypeIdentifier sourceType, TypeIdentifier targetType) {
             int sourceIndex = Array.IndexOf(PrimitiveTypes, sourceType);
             int destinationIndex = Array.IndexOf(PrimitiveTypes, targetType);

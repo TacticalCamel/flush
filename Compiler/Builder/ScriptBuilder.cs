@@ -100,13 +100,13 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;
-        
+
         // calculate results
         ExpressionResult? result = operatorType switch {
             OP_PLUS => isPrimitiveType ? PrimitiveAddition(left.Type, right.Type) : null,
-            OP_MINUS => null,
-            OP_MULTIPLY => null,
-            OP_DIVIDE => null,
+            OP_MINUS => isLeftPrimitive ? PrimitiveSubtraction(left.Type, right.Type) : null,
+            OP_MULTIPLY => isLeftPrimitive ? PrimitiveMultiplication(left.Type, right.Type) : null,
+            OP_DIVIDE => isLeftPrimitive ? PrimitiveDivision(left.Type, right.Type) : null,
             OP_MODULUS => null,
             OP_SHIFT_LEFT => null,
             OP_SHIFT_RIGHT => null,
@@ -131,7 +131,19 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
-        return result;
+        // operation invalid
+        if (result is null) {
+            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+            return null;
+        }
+
+        // return value can be discarded
+        if (context.FinalType is null) {
+            return result;
+        }
+
+        // need the return value, cast it to the target type
+        return CastExpression(context) ? new ExpressionResult(result.Address, context.FinalType) : null;
     }
 
     private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
@@ -159,26 +171,26 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         return result;
     }
-    
+
     private bool CastExpression(ExpressionContext context) {
         if (context.OriginalType is null || context.FinalType is null) {
             return false;
         }
-        
+
         // TODO implement non-primitive casts
-        
+
         // get the type of cast required
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
-        
+
         // emit a cast instruction
-        bool success = Instructions.Cast(context.OriginalType, context.FinalType, cast);
+        bool success = Instructions.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
 
         // stop if failed
         // TODO return value should be void, but not every cast type is handled yet
         if (!success) {
             IssueHandler.Add(Issue.InvalidCast(context, context.OriginalType, context.FinalType));
         }
-        
+
         return success;
     }
 }

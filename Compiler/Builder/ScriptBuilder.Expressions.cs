@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Data;
-using Analysis;
+using Interpreter.Bytecode;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -28,7 +28,7 @@ internal sealed partial class ScriptBuilder {
         if (context.Address is null || context.OriginalType is null || context.FinalType is null) {
             return null;
         }
-        
+
         // push the constant to the stack if it's stored in the data section
         if (context.Address.Value.Location == MemoryLocation.Data) {
             Instructions.PushFromData(context.Address.Value, context.OriginalType.Size);
@@ -41,7 +41,7 @@ internal sealed partial class ScriptBuilder {
 
     public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
         throw new NotImplementedException();
-        
+
         /*
         string name = VisitId(context.Identifier);
 
@@ -52,7 +52,7 @@ internal sealed partial class ScriptBuilder {
 
     public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
         throw new NotImplementedException();
-        
+
         /*
         ExpressionResult? left = VisitExpression(context.Type);
 
@@ -66,7 +66,7 @@ internal sealed partial class ScriptBuilder {
         return null;
         */
     }
-    
+
     /// <summary>
     /// Visit a cast expression.
     /// Convert the value to the desired type.
@@ -75,16 +75,16 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
         ExpressionResult? result = VisitExpression(context.Expression);
-        
+
         if (result is null) {
             return null;
         }
-        
+
         bool success = CastExpression(context);
 
         return success ? new ExpressionResult(result.Address, context.FinalType!) : null;
     }
-    
+
     /// <summary>
     /// Visit a nested expression.
     /// Convert the value to the desired type.
@@ -97,15 +97,15 @@ internal sealed partial class ScriptBuilder {
         if (result is null) {
             return null;
         }
-        
+
         bool success = CastExpression(context);
-        
+
         return success ? new ExpressionResult(result.Address, context.FinalType!) : null;
     }
-    
+
     public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
         throw new NotImplementedException();
-        
+
         /*
         ExpressionResult? callerExpression = VisitExpression(context.Caller);
 
@@ -130,7 +130,7 @@ internal sealed partial class ScriptBuilder {
         return null;
         */
     }
-    
+
     public override ExpressionResult? VisitLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
         return ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
     }
@@ -138,15 +138,15 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitRightUnaryOperatorExpression(RightUnaryOperatorExpressionContext context) {
         return ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
     }
-    
+
     public override ExpressionResult? VisitMultiplicativeOperatorExpression(MultiplicativeOperatorExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
-    
+
     public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
-    
+
     public override ExpressionResult? VisitShiftOperatorExpression(ShiftOperatorExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
@@ -170,9 +170,71 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        MemoryAddress address = Instructions.AddInteger(leftType.Size);
+        if (TypeHandler.Casts.IsIntegerType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.addi);
+            return new ExpressionResult(address, leftType);
+        }
 
-        return new ExpressionResult(address, leftType);
+        if (TypeHandler.Casts.IsFloatType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.addf);
+            return new ExpressionResult(address, leftType);
+        }
+
+        return null;
+    }
+
+    private ExpressionResult? PrimitiveSubtraction(TypeIdentifier leftType, TypeIdentifier rightType) {
+        if (leftType != rightType) {
+            return null;
+        }
+
+        if (TypeHandler.Casts.IsIntegerType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.subi);
+            return new ExpressionResult(address, leftType);
+        }
+
+        if (TypeHandler.Casts.IsFloatType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.subf);
+            return new ExpressionResult(address, leftType);
+        }
+
+        return null;
+    }
+
+    private ExpressionResult? PrimitiveMultiplication(TypeIdentifier leftType, TypeIdentifier rightType) {
+        if (leftType != rightType) {
+            return null;
+        }
+
+        if (TypeHandler.Casts.IsIntegerType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.muli);
+            return new ExpressionResult(address, leftType);
+        }
+
+        if (TypeHandler.Casts.IsFloatType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.mulf);
+            return new ExpressionResult(address, leftType);
+        }
+
+        return null;
+    }
+
+    private ExpressionResult? PrimitiveDivision(TypeIdentifier leftType, TypeIdentifier rightType) {
+        if (leftType != rightType) {
+            return null;
+        }
+
+        if (TypeHandler.Casts.IsIntegerType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.divi);
+            return new ExpressionResult(address, leftType);
+        }
+
+        if (TypeHandler.Casts.IsFloatType(leftType)) {
+            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, OperationCode.divf);
+            return new ExpressionResult(address, leftType);
+        }
+
+        return null;
     }
 
     #endregion

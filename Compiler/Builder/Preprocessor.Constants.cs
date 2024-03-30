@@ -30,7 +30,7 @@ internal sealed partial class Preprocessor {
 
         // calculate the index of the first digit
         int prefixLength = hasNegativeSign || hasPositiveSign ? 1 : 0;
-        
+
         // remove the prefix
         number = number[prefixLength..];
 
@@ -54,7 +54,7 @@ internal sealed partial class Preprocessor {
 
         // calculate the index of the first digit
         int prefixLength = hasNegativeSign || hasPositiveSign ? 3 : 2;
-        
+
         // remove the prefix
         number = number[prefixLength..];
 
@@ -78,7 +78,7 @@ internal sealed partial class Preprocessor {
 
         // calculate the index of the first digit
         int prefixLength = hasNegativeSign || hasPositiveSign ? 3 : 2;
-        
+
         // remove the prefix
         number = number[prefixLength..];
 
@@ -109,7 +109,7 @@ internal sealed partial class Preprocessor {
             IssueHandler.Add(Issue.InvalidFloatFormat(context));
             return null;
         }
-        
+
         // store the number
         MemoryAddress address = DataHandler.F16.Add(value);
 
@@ -138,7 +138,7 @@ internal sealed partial class Preprocessor {
             IssueHandler.Add(Issue.InvalidFloatFormat(context));
             return null;
         }
-        
+
         // store the number
         MemoryAddress address = DataHandler.F32.Add(value);
 

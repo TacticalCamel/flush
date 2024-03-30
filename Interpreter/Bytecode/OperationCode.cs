@@ -31,6 +31,14 @@ public enum OperationCode : byte {
     /// <remarks>opcode:1 float-size:1 float-size:1</remarks>
     ftof,
 
+    /// <summary>Reinterpret the top of the stack from a float to an unsigned integer</summary>
+    /// <remarks>opcode:1 float-size:1 uint-size:1</remarks>
+    ftou,
+
+    /// <summary>Reinterpret the top of the stack from a float to a signed integer</summary>
+    /// <remarks>opcode:1 float-size:1 int-size:1</remarks>
+    ftoi,
+
     /// <summary>Adds the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     addi,
@@ -38,27 +46,27 @@ public enum OperationCode : byte {
     /// <summary>Adds the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     addf,
-    
+
     /// <summary>Subtracts the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     subi,
-    
+
     /// <summary>Subtracts the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     subf,
-    
+
     /// <summary>Multiplies the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     muli,
-    
+
     /// <summary>Multiplies the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     mulf,
-    
+
     /// <summary>Divides the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     divi,
-    
+
     /// <summary>Divides the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     divf,

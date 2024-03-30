@@ -20,16 +20,25 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
             DataAddress = (int)address.Value,
-            Size = size
+            TypeSize = size
         });
 
         StackSize += size;
     }
 
-    public MemoryAddress AddInteger(byte size) {
+    public void Pop(byte size) {
         Instructions.Add(new Instruction {
-            Code = OperationCode.addi,
-            Size = size
+            Code = OperationCode.pop,
+            TypeSize = size
+        });
+
+        StackSize -= size;
+    }
+
+    public MemoryAddress PrimitiveBinaryOperation(byte size, OperationCode code) {
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
         });
 
         StackSize -= size;
@@ -37,35 +46,78 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
 
-    public void Add(Instruction instruction) {
-        Instructions.Add(instruction);
-    }
-    
-    public bool Cast(TypeIdentifier sourceType, TypeIdentifier targetType, PrimitiveCast cast) {
-        switch(cast) {
-            case PrimitiveCast.NotRequired: {
+    public bool Cast(int sourceSize, int targetSize, PrimitiveCast cast) {
+        int difference = targetSize - sourceSize;
+
+        if (difference < 0) {
+            StackSize -= (uint)-difference;
+        }
+        else {
+            StackSize += (uint)difference;
+        }
+
+        switch (cast) {
+            case PrimitiveCast.NotRequired:
                 return true;
-            }
-            case PrimitiveCast.ResizeImplicit: {
-                int difference = targetType.Size - sourceType.Size;
+
+            case PrimitiveCast.ResizeImplicit or PrimitiveCast.ResizeExplicit:
+
+                if (sourceSize == targetSize) {
+                    return true;
+                }
 
                 Instructions.Add(new Instruction {
                     Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    Size = Math.Abs(difference)
+                    TypeSize = Math.Abs(difference)
                 });
-                
-                return true;
-            }
-            case PrimitiveCast.ResizeExplicit: {
-                int difference = targetType.Size - sourceType.Size;
 
-                Instructions.Add(new Instruction {
-                    Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    Size = Math.Abs(difference)
-                });
-                
                 return true;
-            }
+
+            case PrimitiveCast.FloatToFloatExplicit or PrimitiveCast.FloatToFloatImplicit:
+                Instructions.Add(new Instruction {
+                    Code = OperationCode.ftof,
+                    TypeSize = sourceSize,
+                    SecondTypeSize = targetSize
+                });
+
+                return true;
+
+            case PrimitiveCast.FloatToSignedExplicit:
+                Instructions.Add(new Instruction {
+                    Code = OperationCode.ftoi,
+                    TypeSize = sourceSize,
+                    SecondTypeSize = targetSize
+                });
+
+                return true;
+
+            case PrimitiveCast.FloatToUnsignedExplicit:
+                Instructions.Add(new Instruction {
+                    Code = OperationCode.ftou,
+                    TypeSize = sourceSize,
+                    SecondTypeSize = targetSize
+                });
+
+                return true;
+
+            case PrimitiveCast.SignedToFloatImplicit:
+                Instructions.Add(new Instruction {
+                    Code = OperationCode.itof,
+                    TypeSize = sourceSize,
+                    SecondTypeSize = targetSize
+                });
+
+                return true;
+
+            case PrimitiveCast.UnsignedToFloatImplicit:
+                Instructions.Add(new Instruction {
+                    Code = OperationCode.utof,
+                    TypeSize = sourceSize,
+                    SecondTypeSize = targetSize
+                });
+
+                return true;
+
             default:
                 return false;
         }

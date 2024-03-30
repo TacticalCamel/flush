@@ -11,7 +11,7 @@ public partial class ScrantonParser {
         /// Assigned when the expression is visited.
         /// </summary>
         internal TypeIdentifier? OriginalType { get; set; }
-        
+
         /// <summary>
         /// The target type of the expression.
         /// Assigned when the parent node is visited.
@@ -29,7 +29,7 @@ public partial class ScrantonParser {
         /// Assigned when the expression is visited.
         /// </summary>
         internal MemoryAddress? Address { get; set; }
-        
+
         /// <summary>
         /// An alternative type of the constant.
         /// Assigned when the expression is visited.

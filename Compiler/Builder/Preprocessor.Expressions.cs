@@ -24,12 +24,12 @@ internal sealed partial class Preprocessor {
     public override object? VisitConstantExpression(ConstantExpressionContext context) {
         // get constant result
         ConstantResult? result = VisitConstant(context.Constant);
-        
+
         // assign address and type
         context.Address = result?.Address;
         context.OriginalType = result?.Type;
         context.AlternativeType = result?.SecondaryType;
-        
+
         return null;
     }
 
@@ -74,7 +74,7 @@ internal sealed partial class Preprocessor {
         IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
         return null;*/
     }
-    
+
     /// <summary>
     /// Visits an expression cast.
     /// </summary>
@@ -93,7 +93,7 @@ internal sealed partial class Preprocessor {
         VisitExpression(context.Expression);
 
         TypeIdentifier? sourceType = context.Expression.OriginalType;
-        
+
         // stop if an error occured
         if (sourceType is null) {
             return null;
@@ -102,19 +102,19 @@ internal sealed partial class Preprocessor {
         // check if the cast exists
         if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
             PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
-            
+
             if (cast == PrimitiveCast.None) {
                 IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
                 return null;
             }
         }
-        
+
         context.Expression.FinalType = targetType;
         context.OriginalType = targetType;
-        
+
         return null;
     }
-    
+
     /// <summary>
     /// Visits a nested expression and assigns it the same type as its inner expression.
     /// </summary>
@@ -193,7 +193,7 @@ internal sealed partial class Preprocessor {
 
         return null;
     }
-    
+
     /// <summary>
     /// Visits a additive expression.
     /// </summary>
@@ -204,7 +204,7 @@ internal sealed partial class Preprocessor {
 
         return null;
     }
-    
+
     /// <summary>
     /// Visits a shift expression.
     /// </summary>

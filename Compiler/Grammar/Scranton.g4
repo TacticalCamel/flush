@@ -76,8 +76,8 @@ statement
 	;
 
 regularStatement
-	: variableDeclaration
-	| expression
+	: VariableDeclaration=variableDeclaration
+	| Expression=expression
 	;
 
 variableDeclaration

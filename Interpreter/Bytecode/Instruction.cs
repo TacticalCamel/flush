@@ -16,5 +16,8 @@ public unsafe struct Instruction {
     public int DataAddress;
 
     [FieldOffset(4)]
-    public int Size;
+    public int TypeSize;
+
+    [FieldOffset(8)]
+    public int SecondTypeSize;
 }

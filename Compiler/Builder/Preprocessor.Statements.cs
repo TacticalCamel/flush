@@ -79,25 +79,25 @@ internal sealed partial class Preprocessor {
 
         return new TypeIdentifier(type, genericParameters);
     }
-    
+
     public override TypeIdentifier? VisitVariableWithType(VariableWithTypeContext context) {
         return VisitType(context.Type);
     }
-    
+
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
         TypeIdentifier? type = VisitVariableWithType(context.VariableWithType);
 
         if (type is null) {
             return null;
         }
-        
+
         VisitExpression(context.Expression);
 
         context.Expression.FinalType = type;
-        
+
         return null;
     }
-    
+
     // TODO just here for debug
     public override object? VisitStatement(StatementContext context) {
         VisitChildren(context);

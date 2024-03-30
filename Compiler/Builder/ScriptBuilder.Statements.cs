@@ -32,8 +32,25 @@ internal sealed partial class ScriptBuilder {
         return new VariableIdentifier(type, name);
     }
     */
-    
+
     public override string VisitId(IdContext context) {
         return context.Start.Text;
+    }
+
+    public override object? VisitRegularStatement(RegularStatementContext context) {
+        if (context.Expression is not null) {
+            ExpressionResult? result = VisitExpression(context.Expression);
+
+            if (result is null) {
+                return null;
+            }
+
+            Instructions.Pop(result.Type.Size);
+        }
+        else {
+            VisitChildren(context);
+        }
+
+        return null;
     }
 }

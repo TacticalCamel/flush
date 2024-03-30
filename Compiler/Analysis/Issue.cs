@@ -143,7 +143,7 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };
-    
+
     public static Issue InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
         Id = 212,
         Severity = Severity.Error,
