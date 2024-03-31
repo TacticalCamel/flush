@@ -143,21 +143,27 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };
+    
+    public static Issue InvalidUnaryOperation(ParserRuleContext context, TypeIdentifier type, string op) => new(context) {
+        Id = 212,
+        Severity = Severity.Error,
+        Message = $"Operator {op} cannot be applied to '{type}'"
+    };
 
     public static Issue InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
-        Id = 212,
+        Id = 213,
         Severity = Severity.Error,
         Message = $"Type '{source}' cannot be cast to '{target}'"
     };
     
     public static Issue ExplicitCastRedundant(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
-        Id = 213,
+        Id = 214,
         Severity = Severity.Warning,
         Message = $"Explicit cast from '{source}' to '{target}' is redundant"
     };
     
     public static Issue ProgramEmpty(ParserRuleContext context) => new(context) {
-        Id = 214,
+        Id = 215,
         Severity = Severity.Warning,
         Message = "The compiled program contains no instructions"
     };

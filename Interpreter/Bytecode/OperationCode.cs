@@ -130,4 +130,8 @@ public enum OperationCode : byte {
     /// <summary>Swaps the sign of the top element of the stack as an float.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     sswf,
+    
+    /// <summary>Negates the top element of the stack as a bool.</summary>
+    /// <remarks>opcode:1</remarks>
+    negb,
 }

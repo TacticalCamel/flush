@@ -31,7 +31,7 @@ internal sealed partial class ScriptBuilder {
 
         // push the constant to the stack if it's stored in the data section
         if (context.Address.Value.Location == MemoryLocation.Data) {
-            Instructions.PushFromData(context.Address.Value, context.OriginalType.Size);
+            InstructionHandler.PushFromData(context.Address.Value, context.OriginalType.Size);
         }
 
         bool success = CastExpression(context);

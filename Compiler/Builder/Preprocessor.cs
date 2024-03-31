@@ -231,6 +231,23 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
             return;
         }
 
+        // for shift operators, the left cast is not converted and the right side is converted to i32
+        bool isShiftOperator = operatorType switch {
+            OP_SHIFT_LEFT => true,
+            OP_SHIFT_RIGHT => true,
+            OP_SHIFT_LEFT_ASSIGN => true,
+            OP_SHIFT_RIGHT_ASSIGN => true,
+            _ => false
+        };
+
+        if (isShiftOperator) {
+            left.FinalType = left.OriginalType;
+            right.FinalType = TypeHandler.CoreTypes.I32;
+            context.OriginalType = left.FinalType;
+            
+            return;
+        }
+
         // casting the left side is not valid for assignment operators
         bool allowLeftCast = operatorType switch {
             OP_PLUS => true,

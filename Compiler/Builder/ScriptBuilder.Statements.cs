@@ -11,7 +11,7 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        Instructions.Pop(result.Type.Size);
+        InstructionHandler.Pop(result.Type.Size);
         
         /*VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
 
@@ -49,7 +49,7 @@ internal sealed partial class ScriptBuilder {
                 return null;
             }
 
-            Instructions.Pop(result.Type.Size);
+            InstructionHandler.Pop(result.Type.Size);
         }
         else {
             VisitChildren(context);

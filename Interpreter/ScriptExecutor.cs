@@ -1,5 +1,6 @@
 ﻿namespace Interpreter;
 
+using System.Diagnostics;
 using Serialization;
 using Bytecode;
 
@@ -11,14 +12,25 @@ public sealed unsafe class ScriptExecutor(Script script) {
     private int StackPtr;
 
     public void Run() {
-        start: ;
+        Stopwatch stopwatch = Stopwatch.StartNew();
         
+        // start label to jump back to
+        start:
+
+        // return if reacted the end
         if (InstructionPtr >= Instructions.Length) {
+            double elapsed = stopwatch.Elapsed.TotalMilliseconds;
+            
+            Console.WriteLine($"{elapsed:N3}ms");
+
             return;
         }
-        
+
+        // the current instruction
         Instruction i = Instructions.Span[InstructionPtr];
 
+        // the horrors persist
+        // but so do i
         switch (i.Code) {
             // stack operations
 
@@ -215,7 +227,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.inci:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -247,7 +259,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-                
+
             case OperationCode.deci:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -279,7 +291,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.sswi:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -310,6 +322,72 @@ public sealed unsafe class ScriptExecutor(Script script) {
                         }
                     }
                 }
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+
+            case OperationCode.shfl:
+                fixed (byte* bytePtr = &Stack[StackPtr]) {
+                    int* ptr = (int*)bytePtr - 1;
+
+                    switch (i.TypeSize) {
+                        case 1: {
+                            *((byte*)ptr - 1) <<= *ptr;
+                            break;
+                        }
+                        case 2: {
+                            *((ushort*)ptr - 1) <<= *ptr;
+                            break;
+                        }
+                        case 4: {
+                            *((uint*)ptr - 1) <<= *ptr;
+                            break;
+                        }
+                        case 8: {
+                            *((ulong*)ptr - 1) <<= *ptr;
+                            break;
+                        }
+                        case 16: {
+                            *((UInt128*)ptr - 1) <<= *ptr;
+                            break;
+                        }
+                    }
+                }
+
+                StackPtr -= 4;
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+
+            case OperationCode.shfr:
+                fixed (byte* bytePtr = &Stack[StackPtr]) {
+                    int* ptr = (int*)bytePtr - 1;
+
+                    switch (i.TypeSize) {
+                        case 1: {
+                            *((byte*)ptr - 1) >>= *ptr;
+                            break;
+                        }
+                        case 2: {
+                            *((ushort*)ptr - 1) >>= *ptr;
+                            break;
+                        }
+                        case 4: {
+                            *((uint*)ptr - 1) >>= *ptr;
+                            break;
+                        }
+                        case 8: {
+                            *((ulong*)ptr - 1) >>= *ptr;
+                            break;
+                        }
+                        case 16: {
+                            *((UInt128*)ptr - 1) >>= *ptr;
+                            break;
+                        }
+                    }
+                }
+
+                StackPtr -= 4;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
@@ -445,7 +523,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.incf:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -469,7 +547,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.decf:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -493,7 +571,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.sswf:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -587,7 +665,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.xor:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -621,9 +699,17 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
+            case OperationCode.negb:
+                fixed (byte* ptr = &Stack[StackPtr]) {
+                    *(ptr - 1) = (byte)(~(*(ptr - 1)) & 1);
+                }
+
+                Console.WriteLine($"{i.Code}\n    {StackString}\n");
+                break;
+
             // comparison operations
-            
+
             case OperationCode.eq:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -657,7 +743,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
-            
+
             case OperationCode.neq:
                 fixed (byte* bytePtr = &Stack[StackPtr]) {
                     switch (i.TypeSize) {
@@ -1051,6 +1137,7 @@ public sealed unsafe class ScriptExecutor(Script script) {
                 throw new ArgumentException($"Interpreter could not execute instruction '{i.Code}'");
         }
 
+        // move to the next instruction
         InstructionPtr++;
         goto start;
     }

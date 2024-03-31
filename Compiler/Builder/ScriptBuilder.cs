@@ -44,7 +44,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     /// <summary>
     /// The collect of instructions.
     /// </summary>
-    private InstructionHandler Instructions { get; } = [];
+    private InstructionHandler InstructionHandler { get; } = [];
 
     /// <summary>
     /// Visit a syntax tree and transform it to an executable program.
@@ -52,32 +52,35 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     /// <param name="programContext">The root of the syntax tree.</param>
     /// <returns>The compiled program.</returns>
     public Script Build(ProgramContext programContext) {
-        // lexer or parser error before traversing tree
+        // lexer or parser error
         CancelIfHasErrors();
 
-        // create a preprocessor
+        // create the preprocessor
         Preprocessor preprocessor = new(IssueHandler, TypeHandler, DataHandler);
 
-        // traverse AST: 1st pass
+        // traverse syntax tree: 1st pass
         preprocessor.VisitProgram(programContext);
 
         // check for errors in 1st pass
         CancelIfHasErrors();
 
-        // traverse AST: 2nd pass
+        // traverse syntax tree: 2nd pass
         VisitProgram(programContext);
 
         // check for errors in 2nd pass
         CancelIfHasErrors();
 
+        // assemble program 
         byte[] data = DataHandler.ToBytes();
-        Instruction[] instructions = Instructions.ToArray();
+        Instruction[] instructions = InstructionHandler.ToArray();
+        Script script = new(data, instructions);
 
+        // warn if the program is empty
         if (instructions.Length == 0) {
             IssueHandler.Add(Issue.ProgramEmpty(programContext));
         }
 
-        return new Script(data, instructions);
+        return script;
     }
 
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
@@ -111,17 +114,17 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             OP_MULTIPLY => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.muli, OperationCode.mulf) : null,
             OP_DIVIDE => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.divi, OperationCode.divf) : null,
             OP_MODULUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.modi, OperationCode.modf) : null,
-            OP_SHIFT_LEFT => null,
-            OP_SHIFT_RIGHT => null,
-            OP_EQ => isPrimitiveType ? ComparisonOperation(left.Type, right.Type, OperationCode.eq) : null,
-            OP_NOT_EQ => isPrimitiveType ? ComparisonOperation(left.Type, right.Type, OperationCode.neq) : null,
+            OP_SHIFT_LEFT => isPrimitiveType ? BinaryShiftOperation(left.Type, right.Type, OperationCode.shfl) : null,
+            OP_SHIFT_RIGHT => isPrimitiveType ? BinaryShiftOperation(left.Type, right.Type, OperationCode.shfr) : null,
+            OP_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.eq) : null,
+            OP_NOT_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.neq) : null,
             OP_LESS => null,
             OP_GREATER => null,
             OP_LESS_EQ => null,
             OP_GREATER_EQ => null,
-            OP_AND => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
-            OP_OR => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
-            OP_XOR => isPrimitiveType ? BitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
+            OP_AND => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
+            OP_OR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
+            OP_XOR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
             OP_ASSIGN => null,
             OP_MULTIPLY_ASSIGN => null,
             OP_DIVIDE_ASSIGN => null,
@@ -150,7 +153,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         return CastExpression(context) ? new ExpressionResult(result.Address, context.FinalType) : null;
     }
 
-    private ExpressionResult? ResolveUnaryExpression(ExpressionContext _, ExpressionContext innerContext, int operatorType) {
+    private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
         // resolve the expression
         ExpressionResult? inner = VisitExpression(innerContext);
 
@@ -165,13 +168,19 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         // calculate results
         ExpressionResult? result = operatorType switch {
+            OP_NOT => isPrimitiveType ? UnaryBoolOperation(inner.Type, OperationCode.negb) : null,
             OP_PLUS => isPrimitiveType ? inner : null,
             OP_MINUS => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.sswi, OperationCode.sswf) : null,
-            OP_NOT => null,
             OP_INCREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.inci, OperationCode.incf) : null,
             OP_DECREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.deci, OperationCode.decf) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
+        
+        // operation invalid
+        if (result is null) {
+            IssueHandler.Add(Issue.InvalidUnaryOperation(context, inner.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+            return null;
+        }
 
         return result;
     }
@@ -187,7 +196,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
 
         // emit a cast instruction
-        bool success = Instructions.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
+        bool success = InstructionHandler.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
 
         // stop if failed
         if (!success) {
@@ -202,12 +211,22 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     private ExpressionResult? UnaryNumberOperation(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(type)) {
-            MemoryAddress address = Instructions.PrimitiveUnaryOperation(type.Size, integerCode);
+            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, integerCode);
             return new ExpressionResult(address, type);
         }
 
         if (TypeHandler.Casts.IsFloatType(type)) {
-            MemoryAddress address = Instructions.PrimitiveUnaryOperation(type.Size, floatCode);
+            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, floatCode);
+            return new ExpressionResult(address, type);
+        }
+
+        return null;
+    }
+    
+    private ExpressionResult? UnaryBoolOperation(TypeIdentifier type, OperationCode code) {
+        // must be bool
+        if (type == TypeHandler.CoreTypes.Bool) {
+            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, code);
             return new ExpressionResult(address, type);
         }
 
@@ -222,19 +241,19 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(leftType)) {
-            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, integerCode);
+            MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, integerCode);
             return new ExpressionResult(address, leftType);
         }
 
         if (TypeHandler.Casts.IsFloatType(leftType)) {
-            MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, floatCode);
+            MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, floatCode);
             return new ExpressionResult(address, leftType);
         }
 
         return null;
     }
 
-    private ExpressionResult? BitwiseOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private ExpressionResult? BinaryBitwiseOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -245,21 +264,39 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             return null;
         }
 
-        MemoryAddress address = Instructions.PrimitiveBinaryOperation(leftType.Size, code);
+        MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, code);
 
         return new ExpressionResult(address, leftType);
     }
 
-    private ExpressionResult? ComparisonOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private ExpressionResult? BinaryComparisonOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
         }
 
         // can be any type
-        MemoryAddress address = Instructions.PrimitiveComparisonOperation(leftType.Size, code);
+        MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
         return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
     }
+    
+    private ExpressionResult? BinaryShiftOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+        // left side must be an integer type
+        if (!TypeHandler.Casts.IsIntegerType(leftType)) {
+            return null;
+        }
+        
+        // right side must be i32
+        if (rightType != TypeHandler.CoreTypes.I32) {
+            return null;
+        }
+
+        // can be any type
+        MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
+    }
+    
+    
 
     #endregion
 }
