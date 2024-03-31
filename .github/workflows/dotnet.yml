@@ -19,7 +19,7 @@ jobs:
 
       - name: Build and publish with AOT compilation
         run: |
-          dotnet publish -c Release -r win-x64 /p:PublishReadyToRun=true
+          dotnet publish -c Release -r win-x64 /p:PublishReadyToRun=true -maxcpucount:1
 
       - name: Create Release
         id: create_release
