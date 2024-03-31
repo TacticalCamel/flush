@@ -21,23 +21,13 @@ jobs:
         run: |
           dotnet publish -c Release -r win-x64 /p:PublishReadyToRun=true -maxcpucount:1
 
-      - name: Create Release
-        uses: actions/create-release@v1.1.4
+      - name: Create release
+        uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          name: Dev release 0.1.${{ github.run_number }}
           tag_name: v0.1.${{ github.run_number }}-dev
-          release_name: Dev release 0.1.${{ github.run_number }}
-          
+          files: ${{ github.workspace }}/.out/bin/native/Scranton.exe
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}\.out\bin\native\Scranton.exe
-          asset_name: scranton-win-x64.exe
-          asset_content_type: application/octet-stream
