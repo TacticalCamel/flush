@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
         <OutputType>Exe</OutputType>
-        <ApplicationIcon>icon.ico</ApplicationIcon>
+        <ApplicationIcon>..\icon.ico</ApplicationIcon>
         <AssemblyName>Scranton</AssemblyName>
 
         <!-- publish options -->
@@ -30,7 +30,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="icon.ico"/>
         <None Update="CodeSamples\*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
