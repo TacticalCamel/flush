@@ -16,8 +16,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.100'
-          cache: true
-          cache-dependency-path: '**/package-lock.json'
 
       - name: Build and publish with AOT compilation
         run: |
