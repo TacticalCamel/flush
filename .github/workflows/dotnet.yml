@@ -30,7 +30,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
           draft: false
-          prerelease: false
+          prerelease: true
 
       - name: Upload Release Asset
         id: upload-release-asset
@@ -39,6 +39,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./.out/publish/*.exe
+          asset_path: ${{ github.workspace }}/.out/publish/*.exe
           asset_name: scranton-win-x64.exe
           asset_content_type: application/octet-stream
