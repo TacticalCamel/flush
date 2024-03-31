@@ -1,12 +1,11 @@
 ﻿// it's true that nothing prevents the stack allocated array from being returned
 // but we won't do that so it's okay
 
-using System.Runtime.CompilerServices;
-
 #pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
 
 namespace Interpreter;
 
+using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Serialization;
 using Bytecode;
@@ -24,21 +23,21 @@ public unsafe ref struct ScriptExecutor {
     /// The instructions of the program.
     /// </summary>
     private readonly ReadOnlySpan<Instruction> Instructions;
-    
+
     /// <summary>
-    /// The stack memory of the program. Default size is 256kb.
+    /// The stack memory of the program.
     /// </summary>
     private readonly Span<byte> Stack;
-    
+
     /// <summary>
     /// The index of the currently executed instruction.
     /// </summary>
-    private int InstructionPtr;
+    private int InstructionIndex;
 
     /// <summary>
-    /// The index of the first free byte in the stack, same as the current size of the stack.
+    /// The first free byte in the stack.
     /// </summary>
-    private int StackPtr;
+    private byte* StackPtr;
 
     /// <summary>
     /// Create a new script executor.
@@ -47,9 +46,12 @@ public unsafe ref struct ScriptExecutor {
     public ScriptExecutor(Script script) {
         Data = script.Data.Span;
         Instructions = script.Instructions.Span;
+        
+        // default stack size is 256kb
         Stack = stackalloc byte[1 << 18];
 
-        //StackPtr = (byte*)Unsafe.AsPointer(ref Stack[0]);
+        // stack allocated memory, doesn't have to be pinned
+        StackPtr = (byte*)Unsafe.AsPointer(ref Stack[0]);
     }
 
     /// <summary>
@@ -63,334 +65,264 @@ public unsafe ref struct ScriptExecutor {
         start:
 
         // return if reached the end
-        if (InstructionPtr >= Instructions.Length) {
+        if (InstructionIndex >= Instructions.Length) {
             Console.WriteLine($"executed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
             return;
         }
 
         // the current instruction
-        Instruction i = Instructions[InstructionPtr];
+        Instruction i = Instructions[InstructionIndex];
 
         // the horrors persist
         // but so do i
         switch (i.Code) {
             // stack operations
 
-            case OperationCode.pshd:
-                Data[i.DataAddress..(i.DataAddress + i.TypeSize)].CopyTo(Stack[StackPtr..]);
+            case OperationCode.pshd: {
+                fixed (byte* source = &Data[i.DataAddress]) {
+                    Unsafe.CopyBlockUnaligned(StackPtr, source, (uint)i.TypeSize);
+                }
+
                 StackPtr += i.TypeSize;
 
                 Console.WriteLine($"{i.Code} addr=0x{i.DataAddress:X} size={i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.pshz:
-                Stack[StackPtr..(StackPtr + i.TypeSize)].Clear();
+            case OperationCode.pshz: {
+                Unsafe.InitBlockUnaligned(StackPtr, 0, (uint)i.TypeSize);
                 StackPtr += i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.pop:
+            case OperationCode.pop: {
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
             // integer operations
 
-            case OperationCode.addi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) + *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) + *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.addi: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) += *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) += *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) += *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) += *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) += *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.subi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) - *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) - *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.subi: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) -= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) -= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) -= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) -= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) -= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.muli:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) * *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) * *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.muli: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) *= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) *= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) *= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) *= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) *= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.divi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) / *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) / *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.divi: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) /= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) /= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) /= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) /= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) /= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.modi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) % *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) % *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.modi: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) %= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) %= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) %= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) %= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) %= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.inci:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            (*(bytePtr - 1))++;
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                    }
+            case OperationCode.inci: {
+                switch (i.TypeSize) {
+                    case 1:
+                        (*(StackPtr - 1))++;
+                        break;
+                    case 2:
+                        (*((ushort*)StackPtr - 1))++;
+                        break;
+                    case 4:
+                        (*((uint*)StackPtr - 1))++;
+                        break;
+                    case 8:
+                        (*((ulong*)StackPtr - 1))++;
+                        break;
+                    case 16:
+                        (*((UInt128*)StackPtr - 1))++;
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.deci:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            (*(bytePtr - 1))--;
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                    }
+            case OperationCode.deci: {
+                switch (i.TypeSize) {
+                    case 1:
+                        (*(StackPtr - 1))--;
+                        break;
+                    case 2:
+                        (*((ushort*)StackPtr - 1))--;
+                        break;
+                    case 4:
+                        (*((uint*)StackPtr - 1))--;
+                        break;
+                    case 8:
+                        (*((ulong*)StackPtr - 1))--;
+                        break;
+                    case 16:
+                        (*((UInt128*)StackPtr - 1))--;
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.sswi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1: {
-                            sbyte* ptr = (sbyte*)bytePtr;
-                            *(ptr - 1) = (sbyte)-*(ptr - 1);
-                            break;
-                        }
-                        case 2: {
-                            short* ptr = (short*)bytePtr;
-                            *(ptr - 1) = (short)-*(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            int* ptr = (int*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            long* ptr = (long*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            Int128* ptr = (Int128*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.sswi: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *((sbyte*)StackPtr - 1) = (sbyte)-*((sbyte*)StackPtr - 1);
+                        break;
+                    case 2:
+                        *((short*)StackPtr - 1) = (short)-*((short*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((int*)StackPtr - 1) = -*((int*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((long*)StackPtr - 1) = -*((long*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 1) = -*((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.shfl:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    int* ptr = (int*)bytePtr - 1;
+            case OperationCode.shfl: {
+                int* ptr = (int*)StackPtr - 1;
 
-                    switch (i.TypeSize) {
-                        case 1: {
-                            *((byte*)ptr - 1) <<= *ptr;
-                            break;
-                        }
-                        case 2: {
-                            *((ushort*)ptr - 1) <<= *ptr;
-                            break;
-                        }
-                        case 4: {
-                            *((uint*)ptr - 1) <<= *ptr;
-                            break;
-                        }
-                        case 8: {
-                            *((ulong*)ptr - 1) <<= *ptr;
-                            break;
-                        }
-                        case 16: {
-                            *((UInt128*)ptr - 1) <<= *ptr;
-                            break;
-                        }
+                switch (i.TypeSize) {
+                    case 1: {
+                        *((byte*)ptr - 1) <<= *ptr;
+                        break;
+                    }
+                    case 2: {
+                        *((ushort*)ptr - 1) <<= *ptr;
+                        break;
+                    }
+                    case 4: {
+                        *((uint*)ptr - 1) <<= *ptr;
+                        break;
+                    }
+                    case 8: {
+                        *((ulong*)ptr - 1) <<= *ptr;
+                        break;
+                    }
+                    case 16: {
+                        *((UInt128*)ptr - 1) <<= *ptr;
+                        break;
                     }
                 }
 
@@ -398,499 +330,390 @@ public unsafe ref struct ScriptExecutor {
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.shfr:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    int* ptr = (int*)bytePtr - 1;
+            case OperationCode.shfr: {
+                int* ptr = (int*)StackPtr - 1;
 
-                    switch (i.TypeSize) {
-                        case 1: {
-                            *((byte*)ptr - 1) >>= *ptr;
-                            break;
-                        }
-                        case 2: {
-                            *((ushort*)ptr - 1) >>= *ptr;
-                            break;
-                        }
-                        case 4: {
-                            *((uint*)ptr - 1) >>= *ptr;
-                            break;
-                        }
-                        case 8: {
-                            *((ulong*)ptr - 1) >>= *ptr;
-                            break;
-                        }
-                        case 16: {
-                            *((UInt128*)ptr - 1) >>= *ptr;
-                            break;
-                        }
-                    }
+                switch (i.TypeSize) {
+                    case 1:
+                        *((byte*)ptr - 1) >>= *ptr;
+                        break;
+                    case 2:
+                        *((ushort*)ptr - 1) >>= *ptr;
+                        break;
+                    case 4:
+                        *((uint*)ptr - 1) >>= *ptr;
+                        break;
+                    case 8:
+                        *((ulong*)ptr - 1) >>= *ptr;
+                        break;
+                    case 16:
+                        *((UInt128*)ptr - 1) >>= *ptr;
+                        break;
                 }
 
                 StackPtr -= 4;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
             // float operations
 
-            case OperationCode.addf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 2)) += *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.addf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 2) += *((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 2)) += *((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 2)) += *((double*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.subf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 2)) -= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.subf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 2) -= *((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 2)) -= *((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 2)) -= *((double*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.mulf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 2)) *= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.mulf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 2) *= *((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 2)) *= *((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 2)) *= *((double*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.divf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 2)) /= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.divf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 2) /= *((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 2)) /= *((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 2)) /= *((double*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.modf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 2)) %= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.modf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 2) %= *((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 2)) %= *((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 2)) %= *((double*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.incf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 1))++;
-                            break;
-                        }
-                    }
+            case OperationCode.incf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        (*((Half*)StackPtr - 1))++;
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 1))++;
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 1))++;
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.decf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            (*(ptr - 1))--;
-                            break;
-                        }
-                    }
+            case OperationCode.decf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        (*((Half*)StackPtr - 1))--;
+                        break;
+                    case 4:
+                        (*((float*)StackPtr - 1))--;
+                        break;
+                    case 8:
+                        (*((double*)StackPtr - 1))--;
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.sswf:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            float* ptr = (float*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            double* ptr = (double*)bytePtr;
-                            *(ptr - 1) = -*(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.sswf: {
+                switch (i.TypeSize) {
+                    case 2:
+                        *((Half*)StackPtr - 1) = -*((Half*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((float*)StackPtr - 1) = -*((float*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((double*)StackPtr - 1) = -*((double*)StackPtr - 1);
+                        break;
                 }
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
             // bit operations
 
-            case OperationCode.and:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) & *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) & *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) &= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) &= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) &= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.and: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) &= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) &= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) &= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) &= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) &= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.or:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) | *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) | *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) |= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) |= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) |= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.or: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) |= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) |= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) |= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) |= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) |= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.xor:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bytePtr - 2) = (byte)(*(bytePtr - 2) ^ *(bytePtr - 1));
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(ptr - 2) = (ushort)(*(ptr - 2) ^ *(ptr - 1));
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            (*(ptr - 2)) ^= *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            (*(ptr - 2)) ^= *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            (*(ptr - 2)) ^= *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.xor: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(StackPtr - 2) ^= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *((ushort*)StackPtr - 2) ^= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *((uint*)StackPtr - 2) ^= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *((ulong*)StackPtr - 2) ^= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *((UInt128*)StackPtr - 2) ^= *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.negb:
-                fixed (byte* ptr = &Stack[StackPtr]) {
-                    *(ptr - 1) = (byte)(~(*(ptr - 1)) & 1);
-                }
+            case OperationCode.negb: {
+                *(StackPtr - 1) = (byte)(~(*(StackPtr - 1)) & 1);
 
                 Console.WriteLine($"{i.Code}\n    {StackString}\n");
                 break;
+            }
 
             // comparison operations
 
-            case OperationCode.eq:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bool*)(bytePtr - 2) = *(bytePtr - 2) == *(bytePtr - 1);
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) == *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) == *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) == *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) == *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.eq: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) == *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) == *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) == *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) == *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) == *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
-            case OperationCode.neq:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1:
-                            *(bool*)(bytePtr - 2) = *(bytePtr - 2) != *(bytePtr - 1);
-                            break;
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) != *(ptr - 1);
-                            break;
-                        }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) != *(ptr - 1);
-                            break;
-                        }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) != *(ptr - 1);
-                            break;
-                        }
-                        case 16: {
-                            UInt128* ptr = (UInt128*)bytePtr;
-                            *(bool*)(ptr - 2) = *(ptr - 2) != *(ptr - 1);
-                            break;
-                        }
-                    }
+            case OperationCode.neq: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) != *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) != *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) != *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) != *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) != *((UInt128*)StackPtr - 1);
+                        break;
                 }
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
+            }
 
             // casts
 
             case OperationCode.itof:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1: {
-                            sbyte* ptr = (sbyte*)bytePtr - 1;
+                switch (i.TypeSize) {
+                    case 1: {
+                        sbyte* ptr = (sbyte*)StackPtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = *ptr;
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
-
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = *ptr;
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 2: {
-                            short* ptr = (short*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 2: {
+                        short* ptr = (short*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 4: {
-                            int* ptr = (int*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 4: {
+                        int* ptr = (int*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 8: {
-                            long* ptr = (long*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 8: {
+                        long* ptr = (long*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
+
+                        break;
                     }
                 }
 
@@ -900,76 +723,74 @@ public unsafe ref struct ScriptExecutor {
                 break;
 
             case OperationCode.utof:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 1: {
-                            byte* ptr = bytePtr - 1;
+                switch (i.TypeSize) {
+                    case 1: {
+                        byte* ptr = StackPtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = *ptr;
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
-
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = *ptr;
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 2: {
-                            ushort* ptr = (ushort*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 2: {
+                        ushort* ptr = (ushort*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 4: {
-                            uint* ptr = (uint*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 4: {
+                        uint* ptr = (uint*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 8: {
-                            ulong* ptr = (ulong*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = *ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 8: {
+                        ulong* ptr = (ulong*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = *ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
+
+                        break;
                     }
                 }
 
@@ -979,50 +800,48 @@ public unsafe ref struct ScriptExecutor {
                 break;
 
             case OperationCode.ftof:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr - 1;
+                switch (i.TypeSize) {
+                    case 2: {
+                        Half* ptr = (Half*)StackPtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 4:
-                                    *(float*)ptr = (float)*ptr;
-                                    break;
-                                case 8:
-                                    *(double*)ptr = (double)*ptr;
-                                    break;
-                            }
-
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 4:
+                                *(float*)ptr = (float)*ptr;
+                                break;
+                            case 8:
+                                *(double*)ptr = (double)*ptr;
+                                break;
                         }
-                        case 4: {
-                            float* ptr = (float*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 8:
-                                    *(double*)ptr = *ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 4: {
+                        float* ptr = (float*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 8:
+                                *(double*)ptr = *ptr;
+                                break;
                         }
-                        case 8: {
-                            double* ptr = (double*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 2:
-                                    *(Half*)ptr = (Half)(*ptr);
-                                    break;
-                                case 4:
-                                    *(float*)ptr = (float)*ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 8: {
+                        double* ptr = (double*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 2:
+                                *(Half*)ptr = (Half)(*ptr);
+                                break;
+                            case 4:
+                                *(float*)ptr = (float)*ptr;
+                                break;
                         }
+
+                        break;
                     }
                 }
 
@@ -1032,68 +851,66 @@ public unsafe ref struct ScriptExecutor {
                 break;
 
             case OperationCode.ftoi:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr - 1;
+                switch (i.TypeSize) {
+                    case 2: {
+                        Half* ptr = (Half*)StackPtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(sbyte*)ptr = (sbyte)*ptr;
-                                    break;
-                                case 2:
-                                    *(short*)ptr = (short)*ptr;
-                                    break;
-                                case 4:
-                                    *(int*)ptr = (int)*ptr;
-                                    break;
-                                case 8:
-                                    *(long*)ptr = (long)*ptr;
-                                    break;
-                            }
-
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(sbyte*)ptr = (sbyte)*ptr;
+                                break;
+                            case 2:
+                                *(short*)ptr = (short)*ptr;
+                                break;
+                            case 4:
+                                *(int*)ptr = (int)*ptr;
+                                break;
+                            case 8:
+                                *(long*)ptr = (long)*ptr;
+                                break;
                         }
-                        case 4: {
-                            float* ptr = (float*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(sbyte*)ptr = (sbyte)*ptr;
-                                    break;
-                                case 2:
-                                    *(short*)ptr = (short)*ptr;
-                                    break;
-                                case 4:
-                                    *(int*)ptr = (int)*ptr;
-                                    break;
-                                case 8:
-                                    *(long*)ptr = (long)*ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 4: {
+                        float* ptr = (float*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(sbyte*)ptr = (sbyte)*ptr;
+                                break;
+                            case 2:
+                                *(short*)ptr = (short)*ptr;
+                                break;
+                            case 4:
+                                *(int*)ptr = (int)*ptr;
+                                break;
+                            case 8:
+                                *(long*)ptr = (long)*ptr;
+                                break;
                         }
-                        case 8: {
-                            double* ptr = (double*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(sbyte*)ptr = (sbyte)*ptr;
-                                    break;
-                                case 2:
-                                    *(short*)ptr = (short)*ptr;
-                                    break;
-                                case 4:
-                                    *(int*)ptr = (int)*ptr;
-                                    break;
-                                case 8:
-                                    *(long*)ptr = (long)*ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 8: {
+                        double* ptr = (double*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(sbyte*)ptr = (sbyte)*ptr;
+                                break;
+                            case 2:
+                                *(short*)ptr = (short)*ptr;
+                                break;
+                            case 4:
+                                *(int*)ptr = (int)*ptr;
+                                break;
+                            case 8:
+                                *(long*)ptr = (long)*ptr;
+                                break;
                         }
+
+                        break;
                     }
                 }
 
@@ -1103,68 +920,66 @@ public unsafe ref struct ScriptExecutor {
                 break;
 
             case OperationCode.ftou:
-                fixed (byte* bytePtr = &Stack[StackPtr]) {
-                    switch (i.TypeSize) {
-                        case 2: {
-                            Half* ptr = (Half*)bytePtr - 1;
+                switch (i.TypeSize) {
+                    case 2: {
+                        Half* ptr = (Half*)StackPtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(byte*)ptr = (byte)*ptr;
-                                    break;
-                                case 2:
-                                    *(ushort*)ptr = (ushort)*ptr;
-                                    break;
-                                case 4:
-                                    *(uint*)ptr = (uint)*ptr;
-                                    break;
-                                case 8:
-                                    *(ulong*)ptr = (ulong)*ptr;
-                                    break;
-                            }
-
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(byte*)ptr = (byte)*ptr;
+                                break;
+                            case 2:
+                                *(ushort*)ptr = (ushort)*ptr;
+                                break;
+                            case 4:
+                                *(uint*)ptr = (uint)*ptr;
+                                break;
+                            case 8:
+                                *(ulong*)ptr = (ulong)*ptr;
+                                break;
                         }
-                        case 4: {
-                            float* ptr = (float*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(byte*)ptr = (byte)*ptr;
-                                    break;
-                                case 2:
-                                    *(ushort*)ptr = (ushort)*ptr;
-                                    break;
-                                case 4:
-                                    *(uint*)ptr = (uint)*ptr;
-                                    break;
-                                case 8:
-                                    *(ulong*)ptr = (ulong)*ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 4: {
+                        float* ptr = (float*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(byte*)ptr = (byte)*ptr;
+                                break;
+                            case 2:
+                                *(ushort*)ptr = (ushort)*ptr;
+                                break;
+                            case 4:
+                                *(uint*)ptr = (uint)*ptr;
+                                break;
+                            case 8:
+                                *(ulong*)ptr = (ulong)*ptr;
+                                break;
                         }
-                        case 8: {
-                            double* ptr = (double*)bytePtr - 1;
 
-                            switch (i.SecondTypeSize) {
-                                case 1:
-                                    *(byte*)ptr = (byte)*ptr;
-                                    break;
-                                case 2:
-                                    *(ushort*)ptr = (ushort)*ptr;
-                                    break;
-                                case 4:
-                                    *(uint*)ptr = (uint)*ptr;
-                                    break;
-                                case 8:
-                                    *(ulong*)ptr = (ulong)*ptr;
-                                    break;
-                            }
+                        break;
+                    }
+                    case 8: {
+                        double* ptr = (double*)StackPtr - 1;
 
-                            break;
+                        switch (i.SecondTypeSize) {
+                            case 1:
+                                *(byte*)ptr = (byte)*ptr;
+                                break;
+                            case 2:
+                                *(ushort*)ptr = (ushort)*ptr;
+                                break;
+                            case 4:
+                                *(uint*)ptr = (uint)*ptr;
+                                break;
+                            case 8:
+                                *(ulong*)ptr = (ulong)*ptr;
+                                break;
                         }
+
+                        break;
                     }
                 }
 
@@ -1178,7 +993,7 @@ public unsafe ref struct ScriptExecutor {
         }
 
         // move to the next instruction
-        InstructionPtr++;
+        InstructionIndex++;
         goto start;
     }
 
@@ -1186,6 +1001,6 @@ public unsafe ref struct ScriptExecutor {
     /// Debug property: return the current state of the stack.
     /// </summary>
     private string StackString {
-        get { return $"stack: {string.Join(" ", Stack[..StackPtr].ToArray().Select(x => $"{x:X2}"))}"; }
+        get { return $"stack: {string.Join(' ', Stack[..(int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]))].ToArray().Select(x => $"{x:X2}"))}"; }
     }
 }
