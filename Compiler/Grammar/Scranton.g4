@@ -225,6 +225,7 @@ opAssignment
 	| OP_SHIFT_RIGHT_ASSIGN
 	| OP_AND_ASSIGN
 	| OP_OR_ASSIGN
+	| OP_XOR_ASSIGN
 	;
 
 variableWithType

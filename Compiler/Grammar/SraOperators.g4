@@ -4,10 +4,6 @@ OP_MEMBER_ACCESS
 	: '.'
 	;
 
-OP_POINTER
-	: '->'
-	;
-
 OP_NOT
 	: '!'
 	;
@@ -122,4 +118,8 @@ OP_AND_ASSIGN
 
 OP_OR_ASSIGN
  	: '|='
+ 	;
+
+OP_XOR_ASSIGN
+ 	: '^='
  	;
