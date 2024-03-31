@@ -45,7 +45,7 @@ internal static class Program {
                 string code = Encoding.UTF8.GetString(sourceFile.Contents);
 
                 // new CompilerService to compile code
-                CompilerService compilerService = new(compilerLogger, compilerOptions);
+                CompilerService compilerService = new(compilerOptions, compilerLogger);
 
                 // attempt to compile the program
                 Script? script = compilerService.Compile(code);

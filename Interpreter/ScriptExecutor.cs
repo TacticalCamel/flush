@@ -1,33 +1,75 @@
-﻿namespace Interpreter;
+﻿// it's true that nothing prevents the stack allocated array from being returned
+// but we won't do that so it's okay
+
+using System.Runtime.CompilerServices;
+
+#pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
+
+namespace Interpreter;
 
 using System.Diagnostics;
 using Serialization;
 using Bytecode;
 
-public sealed unsafe class ScriptExecutor(Script script) {
-    private readonly ReadOnlyMemory<byte> Data = script.Data;
-    private readonly ReadOnlyMemory<Instruction> Instructions = script.Instructions;
-    private readonly byte[] Stack = new byte[1 << 20];
+/// <summary>
+/// Implements a virtual processor that is capable of executing instructions. 
+/// </summary>
+public unsafe ref struct ScriptExecutor {
+    /// <summary>
+    /// The data section of the program.
+    /// </summary>
+    private readonly ReadOnlySpan<byte> Data;
+
+    /// <summary>
+    /// The instructions of the program.
+    /// </summary>
+    private readonly ReadOnlySpan<Instruction> Instructions;
+    
+    /// <summary>
+    /// The stack memory of the program. Default size is 256kb.
+    /// </summary>
+    private readonly Span<byte> Stack;
+    
+    /// <summary>
+    /// The index of the currently executed instruction.
+    /// </summary>
     private int InstructionPtr;
+
+    /// <summary>
+    /// The index of the first free byte in the stack, same as the current size of the stack.
+    /// </summary>
     private int StackPtr;
 
+    /// <summary>
+    /// Create a new script executor.
+    /// </summary>
+    /// <param name="script">The script to execute.</param>
+    public ScriptExecutor(Script script) {
+        Data = script.Data.Span;
+        Instructions = script.Instructions.Span;
+        Stack = stackalloc byte[1 << 18];
+
+        //StackPtr = (byte*)Unsafe.AsPointer(ref Stack[0]);
+    }
+
+    /// <summary>
+    /// Executes the program.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when an unknown instruction is encountered.</exception>
     public void Run() {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        
+
         // start label to jump back to
         start:
 
-        // return if reacted the end
+        // return if reached the end
         if (InstructionPtr >= Instructions.Length) {
-            double elapsed = stopwatch.Elapsed.TotalMilliseconds;
-            
-            Console.WriteLine($"{elapsed:N3}ms");
-
+            Console.WriteLine($"executed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
             return;
         }
 
         // the current instruction
-        Instruction i = Instructions.Span[InstructionPtr];
+        Instruction i = Instructions[InstructionPtr];
 
         // the horrors persist
         // but so do i
@@ -35,16 +77,14 @@ public sealed unsafe class ScriptExecutor(Script script) {
             // stack operations
 
             case OperationCode.pshd:
-                ReadOnlySpan<byte> data = Data.Span[i.DataAddress..(i.DataAddress + i.TypeSize)];
-
-                data.CopyTo(Stack.AsSpan(StackPtr));
+                Data[i.DataAddress..(i.DataAddress + i.TypeSize)].CopyTo(Stack[StackPtr..]);
                 StackPtr += i.TypeSize;
 
                 Console.WriteLine($"{i.Code} addr=0x{i.DataAddress:X} size={i.TypeSize}\n    {StackString}\n");
                 break;
 
             case OperationCode.pshz:
-                Stack.AsSpan(StackPtr..(StackPtr + i.TypeSize)).Clear();
+                Stack[StackPtr..(StackPtr + i.TypeSize)].Clear();
                 StackPtr += i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
@@ -1143,9 +1183,9 @@ public sealed unsafe class ScriptExecutor(Script script) {
     }
 
     /// <summary>
-    /// Debug property.
+    /// Debug property: return the current state of the stack.
     /// </summary>
     private string StackString {
-        get { return $"Stack: {string.Join(" ", Stack.AsSpan(..StackPtr).ToArray().Select(x => $"{x:X2}"))}"; }
+        get { return $"stack: {string.Join(" ", Stack[..StackPtr].ToArray().Select(x => $"{x:X2}"))}"; }
     }
 }

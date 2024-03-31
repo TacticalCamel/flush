@@ -17,18 +17,18 @@ using Microsoft.Extensions.Logging;
 /// This class is the public interface of the compiler.
 /// It is wrapper responsible for directing the compilation process.
 /// </summary>
-/// <param name="logger">The logger used by the compiler.</param>
 /// <param name="options">The settings of the compiler.</param>
-public sealed class CompilerService(ILogger logger, CompilerOptions options) {
-    /// <summary>
-    /// The logger used by the compiler.
-    /// </summary>
-    private ILogger Logger { get; } = logger;
-
+/// <param name="logger">The logger used by the compiler.</param>
+public sealed class CompilerService(CompilerOptions options, ILogger logger) {
     /// <summary>
     /// The settings of the compiler.
     /// </summary>
     private CompilerOptions Options { get; } = options;
+
+    /// <summary>
+    /// The logger used by the compiler.
+    /// </summary>
+    private ILogger Logger { get; } = logger;
 
     /// <summary>
     /// Transform the given source code to an executable.
