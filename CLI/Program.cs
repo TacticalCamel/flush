@@ -55,7 +55,7 @@ internal static class Program {
 
                 // display results
                 if (interfaceOptions.DisplayResults) {
-                    Console.WriteLine(script);
+                    script.WriteStringContentsToBuffer(Console.Out);
                 }
 
                 // run program
@@ -272,13 +272,15 @@ internal static class Program {
 
         // attempt to write to output file
         try {
+            FileStream fileStream = new(outputPath, FileMode.Create);
+            
             if (interfaceOptions.CompileToPlainText) {
-                string text = script.ToString();
-                File.WriteAllText(outputPath, text);
+                StreamWriter streamWriter = new(fileStream);
+                script.WriteStringContentsToBuffer(streamWriter);
             }
             else {
                 byte[] bytes = BinarySerializer.ScriptToBytes(script);
-                File.WriteAllBytes(outputPath, bytes);
+                fileStream.Write(bytes, 0, bytes.Length);
             }
 
             logger.FileWriteSuccess(outputPath);

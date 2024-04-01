@@ -32,41 +32,34 @@ importStatement
 	;
 
 programBody
-	: (functionDefinition | typeDefinition | statement)*
-	;
-
-functionDefinition
-	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	: (typeDefinition | statement)*
 	;
 
 typeDefinition
-	: Header=classHeader BLOCK_START Body=classBody BLOCK_END
+	: Modifiers=modifierList KW_CLASS TypeName=id BLOCK_START Body=typeBody BLOCK_END #ClassDefinition
+	| Modifiers=modifierList KW_STRUCT TypeName=id BLOCK_START Body=typeBody BLOCK_END #StructDefinition
 	;
 
-classHeader
-	: Modifiers=modifierList KW_CLASS Name=id (COLON inheritanceList)?
+typeBody
+	: typeMember*
 	;
 
-inheritanceList
-	: ((type PARAM_SEP)* type)?
-	;
-
-classBody
-	: classMember*
-	;
-
-classMember
-	: functionDefinition
-	| propertyDefinition
+typeMember
+	: fieldDefinition
+	| methodDefinition
 	| constructorDefinition
 	;
 
-propertyDefinition
+fieldDefinition
 	: Modifiers=modifierList Type=type Name=id STATEMENT_SEP
 	;
-	
+
+methodDefinition
+	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	;
+
 constructorDefinition
-	: KW_NEW HEAD_START ParameterList=parameterList HEAD_END Body=block
+	: Modifiers=modifierList TypeName=id HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 statement

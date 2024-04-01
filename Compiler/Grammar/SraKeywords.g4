@@ -64,6 +64,10 @@ KW_CLASS
 	: 'class'
 	;
 
+KW_STRUCT
+	: 'struct'
+	;
+
 KW_RETURN
 	: 'return'
 	;

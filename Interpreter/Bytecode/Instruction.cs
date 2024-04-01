@@ -5,22 +5,22 @@ public unsafe struct Instruction {
     // real fields
 
     [FieldOffset(0)]
-    public fixed byte Data[15];
+    public fixed byte Data[8];
 
-    [FieldOffset(15)]
+    [FieldOffset(7)]
     public OperationCode Code;
 
     // union fields
 
     [FieldOffset(0)]
     public int DataAddress;
-
-    [FieldOffset(4)]
-    public uint TypeSize;
-
-    [FieldOffset(8)]
-    public uint SecondTypeSize;
-
+    
     [FieldOffset(0)]
     public int ReturnCode;
+    
+    [FieldOffset(0)]
+    public ushort SecondTypeSize;
+
+    [FieldOffset(4)]
+    public ushort TypeSize;
 }

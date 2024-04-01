@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
-using Interpreter.Bytecode;
+using Interpreter;
 using Interpreter.Types;
 
 /// <summary>
@@ -52,7 +52,7 @@ internal sealed class TypeHandler {
     /// <summary>
     /// The list of currently visible types.
     /// </summary>
-    private List<TypeInfo> Types { get; set; } = [];
+    private List<TypeDefinition> Types { get; set; } = [];
 
     /// <summary>
     /// Gets the modules that should be visible from the current program.
@@ -76,7 +76,7 @@ internal sealed class TypeHandler {
     public void LoadTypes() {
         string[] visibleModules = GetVisibleModules();
 
-        Types = ClassLoader.LoadModules(visibleModules, AutoImportEnabled);
+        Types = ClassLoader.LoadNativeModules(visibleModules, AutoImportEnabled);
 
         CoreTypesBackingField = new CoreTypeHelper {
             I8 = GetFromType<Runtime.Core.I8>(),
@@ -95,7 +95,7 @@ internal sealed class TypeHandler {
             Bool = GetFromType<Runtime.Core.Bool>(),
             Char = GetFromType<Runtime.Core.Char>(),
             Str = GetFromType<Runtime.Core.Str>(),
-            Null = new TypeIdentifier(TypeInfo.Null, [])
+            Null = new TypeIdentifier(TypeDefinition.Null, [])
         };
 
         CastsBackingField = new CastHelper(CoreTypesBackingField);
@@ -135,7 +135,7 @@ internal sealed class TypeHandler {
     /// </summary>
     /// <param name="name">The name of the type.</param>
     /// <returns>The type if it was found, null otherwise.</returns>
-    public TypeInfo? TryGetByName(string name) {
+    public TypeDefinition? TryGetByName(string name) {
         return Types.FirstOrDefault(type => type.Name == name);
     }
 
@@ -153,9 +153,9 @@ internal sealed class TypeHandler {
 
         string name = ClassLoader.GetTypeName(type);
 
-        TypeInfo typeInfo = Types.First(x => x.Name == name);
+        TypeDefinition typeDefinition = Types.First(x => x.Name == name);
 
-        return new TypeIdentifier(typeInfo, []);
+        return new TypeIdentifier(typeDefinition, []);
     }
 
     /// <summary>

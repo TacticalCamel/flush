@@ -26,7 +26,7 @@ internal sealed partial class Preprocessor {
         string name = VisitId(context.Name);
 
         // search the type by name
-        TypeInfo? type = TypeHandler.TryGetByName(name);
+        TypeDefinition? type = TypeHandler.TryGetByName(name);
 
         // stop if the type does not exist
         if (type is null) {
@@ -47,7 +47,7 @@ internal sealed partial class Preprocessor {
         string name = VisitId(context.Name);
 
         // search the type by name
-        TypeInfo? type = TypeHandler.TryGetByName(name);
+        TypeDefinition? type = TypeHandler.TryGetByName(name);
 
         // stop if the type does not exist
         if (type is null) {

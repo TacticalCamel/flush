@@ -1,7 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿namespace Interpreter;
 
-namespace Interpreter.Types;
-
+using Types;
 using System.Reflection;
 using Runtime.Internal;
 using Runtime.Core;
@@ -12,12 +11,12 @@ public static class ClassLoader {
 
     public static Version BytecodeVersion => typeof(ClassLoader).Assembly.GetName().Version ?? new Version();
 
-    public static List<TypeInfo> LoadModules(string[] modules, bool auto) {
-        List<TypeInfo> types = [];
+    public static List<TypeDefinition> LoadNativeModules(string[] modules, bool auto) {
+        List<TypeDefinition> types = [];
 
         // iterate through every public type in the runtime assembly
         foreach (Type type in typeof(ScrantonObject).Assembly.ExportedTypes) {
-            // get module of the type
+            // get type module
             string? module = GetTypeModule(type);
 
             // invalid module
@@ -27,7 +26,7 @@ public static class ClassLoader {
             }
 
             // type excluded by force
-            if (DEFAULT_EXCLUDE.Any(excluded => module.StartsWith(excluded))) {
+            if (module.StartsWith(DEFAULT_EXCLUDE)) {
                 continue;
             }
 
@@ -39,28 +38,20 @@ public static class ClassLoader {
                 continue;
             }
 
-            // import type
+            // get type name
             string name = GetTypeName(type);
             
-            
-            TypeInfo typeInfo = new() {
+            // define type
+            TypeDefinition typeDefinition = new() {
                 Module = module,
                 Name = name,
-                Members = [],
-                Size = GetSize(type)
+                Fields = [],
+                Methods = [],
+                Size = GetSize(type),
+                IsReference = type.IsClass
             };
             
-            System.Reflection.MemberInfo[] members = type
-                .GetMembers(BindingFlags.Static | BindingFlags.Public)
-                .Where(x => x.Name == "op_Implicit" && x.GetCustomAttribute<InternalAttribute>() is null)
-                .ToArray();
-
-            foreach (System.Reflection.MemberInfo m in members) {
-                Console.WriteLine(m.ToString() ?? "null");
-            }
-
-
-            types.Add(typeInfo);
+            types.Add(typeDefinition);
         }
 
         return types;
@@ -79,7 +70,7 @@ public static class ClassLoader {
         return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
     }
 
-    private static byte GetSize(Type type) {
+    private static ushort GetSize(Type type) {
         if (type.IsClass) {
             return 8;
         }
@@ -94,7 +85,7 @@ public static class ClassLoader {
             return 1;
         }
 
-        return (byte)Marshal.SizeOf(type);
+        return (ushort)Marshal.SizeOf(type);
     }
 
     public static string GetTypeName(Type type) {

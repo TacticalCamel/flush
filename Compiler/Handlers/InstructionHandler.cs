@@ -16,7 +16,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return GetEnumerator();
     }
 
-    public void PushFromData(MemoryAddress address, byte size) {
+    public void PushFromData(MemoryAddress address, ushort size) {
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
             DataAddress = (int)address.Value,
@@ -26,7 +26,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         StackSize += size;
     }
 
-    public void Pop(byte size) {
+    public void Pop(ushort size) {
         Instructions.Add(new Instruction {
             Code = OperationCode.pop,
             TypeSize = size
@@ -42,7 +42,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         });
     }
 
-    public MemoryAddress PrimitiveBinaryOperation(byte size, OperationCode code) {
+    public MemoryAddress PrimitiveBinaryOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
             TypeSize = size
@@ -53,7 +53,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
     
-    public MemoryAddress PrimitiveUnaryOperation(byte size, OperationCode code) {
+    public MemoryAddress PrimitiveUnaryOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
             TypeSize = size
@@ -62,7 +62,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
     
-    public MemoryAddress PrimitiveComparisonOperation(byte size, OperationCode code) {
+    public MemoryAddress PrimitiveComparisonOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
             TypeSize = size
@@ -73,8 +73,8 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
 
-    public bool Cast(uint sourceSize, uint targetSize, PrimitiveCast cast) {
-        long difference = (long)targetSize - sourceSize;
+    public bool Cast(ushort sourceSize, ushort targetSize, PrimitiveCast cast) {
+        int difference = targetSize - sourceSize;
 
         if (difference < 0) {
             StackSize -= (uint)-difference;
@@ -95,7 +95,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
 
                 Instructions.Add(new Instruction {
                     Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    TypeSize = (uint)Math.Abs(difference)
+                    TypeSize = (ushort)Math.Abs(difference)
                 });
 
                 return true;

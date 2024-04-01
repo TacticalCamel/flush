@@ -1,7 +1,5 @@
 ﻿namespace Interpreter.Serialization;
 
-using Types;
-using System.Text;
 using Bytecode;
 
 public sealed class Script {
@@ -28,56 +26,56 @@ public sealed class Script {
         };
     }
 
-    public override unsafe string ToString() {
-        StringBuilder sb = new();
+    public override string ToString() {
+        return $"script(data[{Data.Length}], instructions[{Instructions.Length}])";
+    }
 
+    public unsafe void WriteStringContentsToBuffer(TextWriter stream) {
         // meta section
-        sb.AppendLine(".meta");
-        sb.AppendLine($"    header           0x{Meta.Header:X16}");
-        sb.AppendLine($"    version          {BinarySerializer.U64ToVersion(Meta.Version)}");
-        sb.AppendLine($"    compiled         {Meta.CompilationTime.ToString("O")}");
-        sb.AppendLine($"    data-offset      0x{Meta.DataOffset:X8}");
-        sb.AppendLine($"    code-offset      0x{Meta.CodeOffset:X8}");
-        sb.AppendLine();
+        stream.WriteLine(".meta");
+        stream.WriteLine($"    header           0x{Meta.Header:X16}");
+        stream.WriteLine($"    version          {BinarySerializer.U64ToVersion(Meta.Version)}");
+        stream.WriteLine($"    compiled         {Meta.CompilationTime:O}");
+        stream.WriteLine($"    data-offset      0x{Meta.DataOffset:X8}");
+        stream.WriteLine($"    code-offset      0x{Meta.CodeOffset:X8}");
+        stream.WriteLine();
 
         // data section
-        sb.AppendLine(".data");
+        stream.WriteLine(".data");
 
         for (int i = 0; i < Data.Length; i += 16) {
             int end = Math.Min(i + 16, Data.Length);
 
             ReadOnlySpan<byte> row = Data.Span[i..end];
 
-            sb.Append($"    0x{i:X8}           ");
+            stream.Write($"    0x{i:X8}      ");
 
             for (int j = 0; j < row.Length; j++) {
                 byte b = row[j];
-                sb.Append($"{(j % 2 == 0 ? ' ' : "")}{b.ToString("X2")}");
+                stream.Write($"{(j % 2 == 0 ? ' ' : string.Empty)}{b:X2}");
             }
 
-            sb.AppendLine();
+            stream.WriteLine();
         }
 
-        sb.AppendLine();
+        stream.WriteLine();
 
         // code section
-        int instructionSize = Marshal.SizeOf<Instruction>();
+        int instructionSize = sizeof(Instruction);
 
-
-        sb.AppendLine(".code");
+        stream.WriteLine(".code");
+        
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
 
-            sb.Append($"    0x{instructionSize * i:X8}       {name,-4}");
+            stream.Write($"    0x{instructionSize * i:X8}       {name,-4}");
 
-            for (int j = 0; j < 16; j++) {
-                sb.Append($"{(j % 2 == 0 ? ' ' : "")}{instruction.Data[j].ToString("X2")}");
+            for (int j = 0; j < instructionSize; j++) {
+                stream.Write($"{(j % 2 == 0 ? ' ' : string.Empty)}{instruction.Data[j]:X2}");
             }
 
-            sb.AppendLine();
+            stream.WriteLine();
         }
-
-        return sb.ToString();
     }
 }
