@@ -33,4 +33,4 @@ jobs:
           tag_name: v0.1.${{ github.run_number }}-dev
           files: .out/bin/native/Scranton.exe
           draft: false
-          prerelease: true
+          prerelease: false
