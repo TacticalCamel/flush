@@ -1,7 +1,10 @@
-name: Publish win-x64-aot
+name: Publish release with Windows x64 AOT executable
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
