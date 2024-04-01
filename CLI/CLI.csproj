@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="CodeSamples\*">
+        <None Update="SampleCode\*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

@@ -34,6 +34,13 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
 
         StackSize -= size;
     }
+    
+    public void Exit(int code) {
+        Instructions.Add(new Instruction {
+            Code = OperationCode.exit,
+            ReturnCode = code
+        });
+    }
 
     public MemoryAddress PrimitiveBinaryOperation(byte size, OperationCode code) {
         Instructions.Add(new Instruction {
@@ -66,8 +73,8 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
     }
 
-    public bool Cast(int sourceSize, int targetSize, PrimitiveCast cast) {
-        int difference = targetSize - sourceSize;
+    public bool Cast(uint sourceSize, uint targetSize, PrimitiveCast cast) {
+        long difference = (long)targetSize - sourceSize;
 
         if (difference < 0) {
             StackSize -= (uint)-difference;
@@ -88,7 +95,7 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
 
                 Instructions.Add(new Instruction {
                     Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    TypeSize = Math.Abs(difference)
+                    TypeSize = (uint)Math.Abs(difference)
                 });
 
                 return true;

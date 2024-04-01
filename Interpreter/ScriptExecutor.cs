@@ -1,14 +1,14 @@
 ﻿// it's true that nothing prevents the stack allocated array from being returned
 // but we won't do that so it's okay
 
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Interpreter.Bytecode;
+using Interpreter.Serialization;
+
 #pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
 
 namespace Interpreter;
-
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using Serialization;
-using Bytecode;
 
 /// <summary>
 /// Implements a virtual processor that is capable of executing instructions. 
@@ -25,14 +25,14 @@ public unsafe ref struct ScriptExecutor {
     private readonly ReadOnlySpan<Instruction> Instructions;
 
     /// <summary>
-    /// The stack memory of the program.
-    /// </summary>
-    private readonly Span<byte> Stack;
-
-    /// <summary>
     /// The index of the currently executed instruction.
     /// </summary>
     private int InstructionIndex;
+
+    /// <summary>
+    /// The stack memory of the program.
+    /// </summary>
+    private readonly Span<byte> Stack;
 
     /// <summary>
     /// The first free byte in the stack.
@@ -63,24 +63,22 @@ public unsafe ref struct ScriptExecutor {
 
         // start label to jump back to
         start:
-
-        // return if reached the end
-        if (InstructionIndex >= Instructions.Length) {
-            Console.WriteLine($"executed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
-            return;
-        }
-
+        
         // the current instruction
         Instruction i = Instructions[InstructionIndex];
 
         // the horrors persist
         // but so do i
         switch (i.Code) {
+            case OperationCode.exit:
+                Console.WriteLine($"executed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
+                return;
+            
             // stack operations
 
             case OperationCode.pshd: {
                 fixed (byte* source = &Data[i.DataAddress]) {
-                    Unsafe.CopyBlockUnaligned(StackPtr, source, (uint)i.TypeSize);
+                    Unsafe.CopyBlockUnaligned(StackPtr, source, i.TypeSize);
                 }
 
                 StackPtr += i.TypeSize;
@@ -90,7 +88,7 @@ public unsafe ref struct ScriptExecutor {
             }
 
             case OperationCode.pshz: {
-                Unsafe.InitBlockUnaligned(StackPtr, 0, (uint)i.TypeSize);
+                Unsafe.InitBlockUnaligned(StackPtr, 0, i.TypeSize);
                 StackPtr += i.TypeSize;
 
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
@@ -634,6 +632,106 @@ public unsafe ref struct ScriptExecutor {
                         break;
                     case 16:
                         *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) != *((UInt128*)StackPtr - 1);
+                        break;
+                }
+
+                StackPtr -= 2 * i.TypeSize - 1;
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+            }
+            
+            case OperationCode.lt: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) < *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) < *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) < *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) < *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) < *((UInt128*)StackPtr - 1);
+                        break;
+                }
+
+                StackPtr -= 2 * i.TypeSize - 1;
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+            }
+            
+            case OperationCode.lte: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) <= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) <= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) <= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) <= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) <= *((UInt128*)StackPtr - 1);
+                        break;
+                }
+
+                StackPtr -= 2 * i.TypeSize - 1;
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+            }
+            
+            case OperationCode.gt: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) > *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) > *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) > *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) > *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) > *((UInt128*)StackPtr - 1);
+                        break;
+                }
+
+                StackPtr -= 2 * i.TypeSize - 1;
+
+                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                break;
+            }
+            
+            case OperationCode.gte: {
+                switch (i.TypeSize) {
+                    case 1:
+                        *(bool*)(StackPtr - 2) = *(StackPtr - 2) >= *(StackPtr - 1);
+                        break;
+                    case 2:
+                        *(bool*)((ushort*)StackPtr - 2) = *((ushort*)StackPtr - 2) >= *((ushort*)StackPtr - 1);
+                        break;
+                    case 4:
+                        *(bool*)((uint*)StackPtr - 2) = *((uint*)StackPtr - 2) >= *((uint*)StackPtr - 1);
+                        break;
+                    case 8:
+                        *(bool*)((ulong*)StackPtr - 2) = *((ulong*)StackPtr - 2) >= *((ulong*)StackPtr - 1);
+                        break;
+                    case 16:
+                        *(bool*)((UInt128*)StackPtr - 2) = *((UInt128*)StackPtr - 2) >= *((UInt128*)StackPtr - 1);
                         break;
                 }
 

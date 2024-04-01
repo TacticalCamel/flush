@@ -7,6 +7,10 @@ namespace Interpreter.Bytecode;
 /// Represents an identifier for the operation type of an instruction.
 /// </summary>
 public enum OperationCode : byte {
+    /// <summary>Stop the program execution.</summary>
+    /// <remarks>opcode:1 return-code:4</remarks>
+    exit,
+
     /// <summary>Push bytes from the data section to the stack.</summary>
     /// <remarks>opcode:1 size:4 data-address:4</remarks>
     pshd,
@@ -39,98 +43,114 @@ public enum OperationCode : byte {
     /// <remarks>opcode:1 float-size:1 int-size:1</remarks>
     ftoi,
 
-    /// <summary>Adds the 2 top elements of the stack as integers.</summary>
+    /// <summary>Add the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     addi,
 
-    /// <summary>Adds the 2 top elements of the stack as floats.</summary>
+    /// <summary>Add the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     addf,
 
-    /// <summary>Subtracts the 2 top elements of the stack as integers.</summary>
+    /// <summary>Subtract the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     subi,
 
-    /// <summary>Subtracts the 2 top elements of the stack as floats.</summary>
+    /// <summary>Subtract the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     subf,
 
-    /// <summary>Multiplies the 2 top elements of the stack as integers.</summary>
+    /// <summary>Multiply the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     muli,
 
-    /// <summary>Multiplies the 2 top elements of the stack as floats.</summary>
+    /// <summary>Multiply the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     mulf,
 
-    /// <summary>Divides the 2 top elements of the stack as integers.</summary>
+    /// <summary>Divide the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     divi,
 
-    /// <summary>Divides the 2 top elements of the stack as floats.</summary>
+    /// <summary>Divide the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     divf,
-    
-    /// <summary>Takes the modulus of the 2 top elements of the stack as integers.</summary>
+
+    /// <summary>Take the modulus of the 2 top elements of the stack as integers.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     modi,
-    
-    /// <summary>Takes the modulus of the 2 top elements of the stack as floats.</summary>
+
+    /// <summary>Take the modulus of the 2 top elements of the stack as floats.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     modf,
-    
-    /// <summary>Shifts the bits of a value to the left.</summary>
+
+    /// <summary>Shift the bits of a value to the left.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     shfl,
-    
-    /// <summary>Shifts the bits of a value to the right.</summary>
+
+    /// <summary>Shift the bits of a value to the right.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     shfr,
-    
-    /// <summary>Takes the bitwise 'and' result of the 2 top elements of the stack.</summary>
+
+    /// <summary>Perform the bitwise 'and' operation on the 2 top elements of the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     and,
-    
-    /// <summary>Takes the bitwise 'or' result of the 2 top elements of the stack.</summary>
+
+    /// <summary>Perform the bitwise 'or' operation on the 2 top elements of the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     or,
-    
-    /// <summary>Takes the bitwise 'xor' result of the 2 top elements of the stack.</summary>
+
+    /// <summary>Perform the bitwise 'xor' operation on the 2 top elements of the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     xor,
-    
-    /// <summary>Compares the equality 2 top elements of the stack and replaces them with them with the resulting bool value.</summary>
+
+    /// <summary>Perform the 'equal' comparison on the 2 top elements of the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     eq,
-    
-    /// <summary>Compares the inequality 2 top elements of the stack and replaces them with them with the resulting bool value.</summary>
+
+    /// <summary>Perform the 'not equal' comparison on the 2 top elements of the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     neq,
-    
+
+    /// <summary>Perform the 'less' comparison on the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    lt,
+
+    /// <summary>Perform the 'less or equal' comparison on the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    lte,
+
+    /// <summary>Perform the 'greater than' comparison on the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    gt,
+
+    /// <summary>Perform the 'greater or equal' comparison on the 2 top elements of the stack.</summary>
+    /// <remarks>opcode:1 size:1</remarks>
+    gte,
+
     /// <summary>Increment the top element of the stack as an integer.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     inci,
-    
+
     /// <summary>Increment the top element of the stack as an float.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     incf,
-    
+
     /// <summary>Decrement the top element of the stack as an integer.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     deci,
-    
+
     /// <summary>Decrement the top element of the stack as an float.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     decf,
-    
+
     /// <summary>Swaps the sign of the top element of the stack as an integer.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     sswi,
-    
+
     /// <summary>Swaps the sign of the top element of the stack as an float.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     sswf,
-    
+
     /// <summary>Negates the top element of the stack as a bool.</summary>
     /// <remarks>opcode:1</remarks>
     negb,
