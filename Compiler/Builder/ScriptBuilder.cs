@@ -70,15 +70,17 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         // check for errors in 2nd pass
         CancelIfHasErrors();
 
+        // warn if the program is empty
+        if (!InstructionHandler.Any()) {
+            IssueHandler.Add(Issue.ProgramEmpty(programContext));
+        }
+
+        InstructionHandler.Exit(0);
+
         // assemble program 
         byte[] data = DataHandler.ToBytes();
         Instruction[] instructions = InstructionHandler.ToArray();
         Script script = new(data, instructions);
-
-        // warn if the program is empty
-        if (instructions.Length == 0) {
-            IssueHandler.Add(Issue.ProgramEmpty(programContext));
-        }
 
         return script;
     }
@@ -118,10 +120,10 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             OP_SHIFT_RIGHT => isPrimitiveType ? BinaryShiftOperation(left.Type, right.Type, OperationCode.shfr) : null,
             OP_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.eq) : null,
             OP_NOT_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.neq) : null,
-            OP_LESS => null,
-            OP_GREATER => null,
-            OP_LESS_EQ => null,
-            OP_GREATER_EQ => null,
+            OP_LESS => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.lt) : null,
+            OP_GREATER => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.gt) : null,
+            OP_LESS_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.lte) : null,
+            OP_GREATER_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.gte) : null,
             OP_AND => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
             OP_OR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
             OP_XOR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
@@ -175,7 +177,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             OP_DECREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.deci, OperationCode.decf) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
-        
+
         // operation invalid
         if (result is null) {
             IssueHandler.Add(Issue.InvalidUnaryOperation(context, inner.Type, DefaultVocabulary.GetDisplayName(operatorType)));
@@ -222,7 +224,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         return null;
     }
-    
+
     private ExpressionResult? UnaryBoolOperation(TypeIdentifier type, OperationCode code) {
         // must be bool
         if (type == TypeHandler.CoreTypes.Bool) {
@@ -279,13 +281,13 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
         return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
     }
-    
+
     private ExpressionResult? BinaryShiftOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // left side must be an integer type
         if (!TypeHandler.Casts.IsIntegerType(leftType)) {
             return null;
         }
-        
+
         // right side must be i32
         if (rightType != TypeHandler.CoreTypes.I32) {
             return null;
@@ -295,8 +297,6 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
         return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
     }
-    
-    
 
     #endregion
 }

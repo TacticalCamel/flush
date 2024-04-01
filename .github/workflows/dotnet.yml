@@ -1,7 +1,10 @@
-name: Publish win-x64-aot
+name: Publish release with Windows x64 AOT executable
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -10,10 +13,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.1
 
       - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v4.0.0
         with:
           dotnet-version: '8.0.100'
 
@@ -26,7 +29,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Dev release 0.1.${{ github.run_number }}
+          name: v0.1.${{ github.run_number }}-dev
           tag_name: v0.1.${{ github.run_number }}-dev
           files: .out/bin/native/Scranton.exe
           draft: false
