@@ -5,7 +5,6 @@ using Handlers;
 using Data;
 using Grammar;
 using Analysis;
-using Interpreter.Serialization;
 using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
@@ -75,7 +74,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             IssueHandler.Add(Issue.ProgramEmpty(programContext));
         }
 
-        InstructionHandler.Exit(0);
+        InstructionHandler.Exit();
 
         // assemble program 
         byte[] data = DataHandler.ToBytes();

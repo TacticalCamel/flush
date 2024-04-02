@@ -2,10 +2,10 @@
 
 [Alias("bool")]
 public struct Bool {
-    private readonly bool Value;
+    private readonly byte Value;
 
     private Bool(bool value) {
-        Value = value;
+        Value = value ? (byte)1 : (byte)0;
     }
 
     [Internal]

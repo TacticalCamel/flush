@@ -2,4 +2,5 @@
 
 [Flags]
 public enum Modifier {
+    None
 }

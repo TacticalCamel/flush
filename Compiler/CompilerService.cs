@@ -10,7 +10,7 @@ using Grammar;
 using Builder;
 using Analysis;
 using Antlr4.Runtime;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
 /// <summary>

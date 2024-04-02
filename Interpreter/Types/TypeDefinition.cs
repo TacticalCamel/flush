@@ -1,19 +1,23 @@
 ﻿namespace Interpreter.Types;
 
-public sealed class TypeDefinition {
+using System.Numerics;
+
+public sealed class TypeDefinition: IEqualityOperators<TypeDefinition, TypeDefinition, bool> {
     public required string Module { get; init; }
     public required string Name { get; init; }
+    public required Modifier Modifiers { get; init; }
     public required FieldDefinition[] Fields { get; init; }
     public required MethodDefinition[] Methods { get; init; }
-    public required ushort Size { get; init; }
+    public required ushort StackSize { get; init; }
     public required bool IsReference { get; init; }
     
     public static TypeDefinition Null { get; } = new() {
         Module = "core",
         Name = "null",
+        Modifiers = Modifier.None,
         Fields = [],
         Methods = [],
-        Size = 8,
+        StackSize = 8,
         IsReference = true
     };
 
@@ -21,11 +25,11 @@ public sealed class TypeDefinition {
         return $"{Module}.{Name}";
     }
 
-    public static bool operator ==(TypeDefinition x, TypeDefinition y) {
-        return x.Name == y.Name && x.Module == y.Module;
+    public static bool operator ==(TypeDefinition? x, TypeDefinition? y) {
+        return x?.Name == y?.Name && x?.Module == y?.Module;
     }
 
-    public static bool operator !=(TypeDefinition x, TypeDefinition y) {
+    public static bool operator !=(TypeDefinition? x, TypeDefinition? y) {
         return !(x == y);
     }
 

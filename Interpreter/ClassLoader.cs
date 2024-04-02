@@ -40,17 +40,20 @@ public static class ClassLoader {
 
             // get type name
             string name = GetTypeName(type);
-            
+
             // define type
             TypeDefinition typeDefinition = new() {
                 Module = module,
                 Name = name,
+                Modifiers = Modifier.None,
                 Fields = [],
                 Methods = [],
-                Size = GetSize(type),
+                StackSize = GetTypeSize(type),
                 IsReference = type.IsClass
             };
             
+            Console.WriteLine($"{typeDefinition} {typeDefinition.StackSize}");
+
             types.Add(typeDefinition);
         }
 
@@ -70,21 +73,12 @@ public static class ClassLoader {
         return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
     }
 
-    private static ushort GetSize(Type type) {
+    private static ushort GetTypeSize(Type type) {
+        // reference size
         if (type.IsClass) {
             return 8;
         }
-
-        // stupid thinks a char is 1 byte
-        if (type == typeof(Char)) {
-            return 2;
-        }
         
-        // but booleans are 4 bytes because why not
-        if (type == typeof(Bool)) {
-            return 1;
-        }
-
         return (ushort)Marshal.SizeOf(type);
     }
 

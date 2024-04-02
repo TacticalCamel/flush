@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Interpreter.Bytecode;
-using Interpreter.Serialization;
 
 #pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
 

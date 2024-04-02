@@ -2,7 +2,7 @@
 
 [Alias("char")]
 public struct Char {
-    private readonly char Value;
+    private readonly ushort Value;
 
     private Char(char value) {
         Value = value;

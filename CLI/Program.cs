@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Options;
 
 /// <summary>
@@ -55,7 +55,7 @@ internal static class Program {
 
                 // display results
                 if (interfaceOptions.DisplayResults) {
-                    script.WriteStringContentsToBuffer(Console.Out);
+                    script.WriteStringContents(Console.Out);
                 }
 
                 // run program
@@ -276,7 +276,7 @@ internal static class Program {
             
             if (interfaceOptions.CompileToPlainText) {
                 StreamWriter streamWriter = new(fileStream);
-                script.WriteStringContentsToBuffer(streamWriter);
+                script.WriteStringContents(streamWriter);
             }
             else {
                 byte[] bytes = BinarySerializer.ScriptToBytes(script);

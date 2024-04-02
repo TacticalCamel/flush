@@ -35,10 +35,9 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
         StackSize -= size;
     }
     
-    public void Exit(int code) {
+    public void Exit() {
         Instructions.Add(new Instruction {
-            Code = OperationCode.exit,
-            ReturnCode = code
+            Code = OperationCode.exit
         });
     }
 

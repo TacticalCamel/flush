@@ -23,7 +23,7 @@ internal sealed class TypeIdentifier(TypeDefinition baseType, TypeIdentifier[] g
     /// The size of the type in bytes.
     /// TODO has incorrect value for non-primitive types
     /// </summary>
-    public ushort Size => BaseType.Size;
+    public ushort Size => BaseType.StackSize;
 
     /// <summary>
     /// True if the type has at least 1 generic parameter, false otherwise.
