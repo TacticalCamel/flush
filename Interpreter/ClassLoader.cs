@@ -52,8 +52,6 @@ public static class ClassLoader {
                 IsReference = type.IsClass
             };
             
-            Console.WriteLine($"{typeDefinition} {typeDefinition.StackSize}");
-
             types.Add(typeDefinition);
         }
 

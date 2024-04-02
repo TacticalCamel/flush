@@ -8,12 +8,12 @@ public sealed unsafe class Script {
     /// The header of the program.
     /// </summary>
     public readonly FileHeader Header;
-    
+
     /// <summary>
     /// The data section of the program.
     /// </summary>
     public readonly ReadOnlyMemory<byte> Data;
-    
+
     /// <summary>
     /// The instructions of the program.
     /// </summary>
@@ -43,7 +43,7 @@ public sealed unsafe class Script {
             Version = BinarySerializer.VersionToU64(ClassLoader.BytecodeVersion),
             CompilationTime = DateTime.Now,
             DataStart = sizeof(FileHeader),
-            CodeStart = sizeof(FileHeader) + Data.Length
+            CodeStart = sizeof(FileHeader) + data.Length
         };
 
         // assign array fields
@@ -57,12 +57,12 @@ public sealed unsafe class Script {
     /// <param name="stream">The text writer to write to.</param>
     public void WriteStringContents(TextWriter stream) {
         // header
-        stream.WriteLine(".meta");
-        stream.WriteLine($"    header           0x{Header.Signature:X16}");
-        stream.WriteLine($"    version          {BinarySerializer.U64ToVersion(Header.Version)}");
-        stream.WriteLine($"    compiled         {Header.CompilationTime:O}");
-        stream.WriteLine($"    data-offset      0x{Header.DataStart:X8}");
-        stream.WriteLine($"    code-offset      0x{Header.CodeStart:X8}");
+        stream.WriteLine(".header");
+        stream.WriteLine($"    signature     0x{Header.Signature:X16}");
+        stream.WriteLine($"    version       {BinarySerializer.U64ToVersion(Header.Version)}");
+        stream.WriteLine($"    compiled      {Header.CompilationTime:O}");
+        stream.WriteLine($"    data-start    0x{Header.DataStart:X8}");
+        stream.WriteLine($"    code-start    0x{Header.CodeStart:X8}");
         stream.WriteLine();
 
         // data section
@@ -73,7 +73,7 @@ public sealed unsafe class Script {
 
             ReadOnlySpan<byte> row = Data.Span[i..end];
 
-            stream.Write($"    0x{i:X8}      ");
+            stream.Write($"    0x{i:X8}   ");
 
             for (int j = 0; j < row.Length; j++) {
                 byte b = row[j];
@@ -89,12 +89,12 @@ public sealed unsafe class Script {
         int instructionSize = sizeof(Instruction);
 
         stream.WriteLine(".code");
-        
+
         for (int i = 0; i < Instructions.Span.Length; i++) {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
 
-            stream.Write($"    0x{instructionSize * i:X8}       {name,-4}");
+            stream.Write($"    0x{instructionSize * i:X8}    {name,-4}");
 
             for (int j = 0; j < instructionSize; j++) {
                 stream.Write($"{(j % 2 == 0 ? ' ' : string.Empty)}{instruction.Bytes[j]:X2}");

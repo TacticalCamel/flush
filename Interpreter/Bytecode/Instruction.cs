@@ -28,7 +28,7 @@ public unsafe struct Instruction {
     /// </summary>
     [FieldOffset(0)]
     public int DataAddress;
-    
+
     /// <summary>
     /// The size of a second type in bytes.
     /// Used for primitive casts.
