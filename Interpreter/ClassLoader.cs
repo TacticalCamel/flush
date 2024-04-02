@@ -6,11 +6,21 @@ using Runtime.Internal;
 using Runtime.Core;
 
 public static class ClassLoader {
+    /// <summary>
+    /// The namespace which is included by force.
+    /// Contains core types that should always be available.
+    /// </summary>
     private const string DEFAULT_INCLUDE = "core";
+    
+    /// <summary>
+    /// The namespace which is excluded by force.
+    /// Contains internal types that should not be used.
+    /// </summary>
     private const string DEFAULT_EXCLUDE = "internal";
 
+    // TODO not here?
     public static Version BytecodeVersion => typeof(ClassLoader).Assembly.GetName().Version ?? new Version();
-
+    
     public static List<TypeDefinition> LoadNativeModules(string[] modules, bool auto) {
         List<TypeDefinition> types = [];
 
@@ -20,7 +30,6 @@ public static class ClassLoader {
             string? module = GetTypeModule(type);
 
             // invalid module
-            // every type should be in a folder inside the runtime namespace
             if (module is null) {
                 continue;
             }
@@ -43,7 +52,6 @@ public static class ClassLoader {
 
             // define type
             TypeDefinition typeDefinition = new() {
-                Module = module,
                 Name = name,
                 Modifiers = Modifier.None,
                 Fields = [],
@@ -58,28 +66,50 @@ public static class ClassLoader {
         return types;
     }
 
+    /// <summary>
+    /// Get the module of a type.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The module of the type if successful, null otherwise.</returns>
     private static string? GetTypeModule(Type type) {
         const string RUNTIME_ROOT_NAMESPACE = "Runtime.";
 
-        string? name = type.Namespace;
-
         // invalid namespace
-        if (name is null || !name.StartsWith(RUNTIME_ROOT_NAMESPACE)) {
+        // every type should be in a folder inside the runtime namespace
+        if (type.Namespace is null || !type.Namespace.StartsWith(RUNTIME_ROOT_NAMESPACE)) {
             return null;
         }
 
-        return name[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
+        // convert to lower case variant
+        return type.Namespace[RUNTIME_ROOT_NAMESPACE.Length..].ToLower();
     }
 
+    /// <summary>
+    /// Get the size of a native type in bytes.
+    /// Must not be a generic struct.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The size of the type if successful, 0 otherwise.</returns>
     private static ushort GetTypeSize(Type type) {
         // reference size
         if (type.IsClass) {
-            return 8;
+            return sizeof(ulong);
+        }
+
+        // generic struct
+        if (type.IsGenericType) {
+            return 0;
         }
         
+        // direct size of the type
         return (ushort)Marshal.SizeOf(type);
     }
 
+    /// <summary>
+    /// Get the name of a native type.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The name of the type.</returns>
     public static string GetTypeName(Type type) {
         return type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name;
     }

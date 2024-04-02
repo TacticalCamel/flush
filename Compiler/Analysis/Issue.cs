@@ -167,6 +167,18 @@ internal sealed class Issue {
         Severity = Severity.Warning,
         Message = "The compiled program contains no instructions"
     };
+    
+    public static Issue InvalidModifier(ParserRuleContext context, string name) => new(context) {
+        Id = 216,
+        Severity = Severity.Error,
+        Message = $"'{name}' is not a valid modifier"
+    };
+    
+    public static Issue DuplicateModifier(ParserRuleContext context, string name) => new(context) {
+        Id = 217,
+        Severity = Severity.Error,
+        Message = $"Modifier '{name}' is already present"
+    };
 
     #endregion
 }

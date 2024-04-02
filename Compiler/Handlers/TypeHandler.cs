@@ -95,7 +95,22 @@ internal sealed class TypeHandler {
             Bool = GetFromType<Runtime.Core.Bool>(),
             Char = GetFromType<Runtime.Core.Char>(),
             Str = GetFromType<Runtime.Core.Str>(),
-            Null = new TypeIdentifier(TypeDefinition.Null, [])
+            Null = new TypeIdentifier(new TypeDefinition {
+                Name = "null",
+                Modifiers = default,
+                Fields = [],
+                Methods = [],
+                StackSize = 8,
+                IsReference = true
+            }, []),
+            Void = new TypeIdentifier(new TypeDefinition {
+                Name = "void",
+                Modifiers = default,
+                Fields = [],
+                Methods = [],
+                StackSize = 0,
+                IsReference = false
+            }, [])
         };
 
         CastsBackingField = new CastHelper(CoreTypesBackingField);
@@ -162,11 +177,6 @@ internal sealed class TypeHandler {
     /// Collection of properties that represent all types constants can have.
     /// </summary>
     public sealed class CoreTypeHelper {
-        /// <summary>
-        /// Identifier for null references.
-        /// </summary>
-        public required TypeIdentifier Null { get; init; }
-
         /// <summary>
         /// Identifier for 8-bit signed integers.
         /// </summary>
@@ -246,6 +256,16 @@ internal sealed class TypeHandler {
         /// Identifier for strings.
         /// </summary>
         public required TypeIdentifier Str { get; init; }
+        
+        /// <summary>
+        /// Identifier for null references.
+        /// </summary>
+        public required TypeIdentifier Null { get; init; }
+
+        /// <summary>
+        /// Identifier for a return type that does not exist.
+        /// </summary>
+        public required TypeIdentifier Void { get; init; }
     }
 
     // TODO comment

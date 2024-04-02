@@ -61,7 +61,7 @@ internal sealed class TypeIdentifier(TypeDefinition baseType, TypeIdentifier[] g
     }
 
     public override string ToString() {
-        return IsGeneric ? $"{BaseType}<{string.Join(',', (IEnumerable<TypeIdentifier>)GenericParameters)}>" : BaseType.ToString();
+        return IsGeneric ? $"{BaseType}<{string.Join(',', (IEnumerable<TypeIdentifier>)GenericParameters)}>" : BaseType.Name;
     }
 
     public override int GetHashCode() {

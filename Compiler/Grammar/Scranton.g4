@@ -41,25 +41,19 @@ typeDefinition
 	;
 
 typeBody
-	: typeMember*
-	;
-
-typeMember
-	: fieldDefinition
-	| methodDefinition
-	| constructorDefinition
+	: (fieldDefinition | constructorDefinition | methodDefinition)*
 	;
 
 fieldDefinition
 	: Modifiers=modifierList Type=type Name=id STATEMENT_SEP
 	;
 
-methodDefinition
-	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
-	;
-
 constructorDefinition
 	: Modifiers=modifierList TypeName=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	;
+
+methodDefinition
+	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
 	;
 
 statement
@@ -231,8 +225,8 @@ type
 	;
 
 returnType
-	: type
-	| KW_VOID
+	: Type=type
+	| Void=KW_VOID
 	;
 
 parameterList
@@ -244,8 +238,7 @@ modifierList
 	;
 
 modifier
-	: KW_PUBLIC
-	| KW_PRIVATE
+	: KW_PRIVATE
 	;
 
 id
@@ -258,6 +251,5 @@ contextualKeyword
 	| KW_IMPORT
 	| KW_IN
 	| KW_CLASS
-	| KW_PUBLIC
 	| KW_PRIVATE
 	;
