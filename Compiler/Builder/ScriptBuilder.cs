@@ -79,7 +79,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         // assemble program 
         byte[] data = DataHandler.ToBytes();
         Instruction[] instructions = InstructionHandler.ToArray();
-        Script script = new(data, instructions);
+        Script script = new(data, instructions, TypeHandler.ModuleNameAddress);
 
         return script;
     }

@@ -1,6 +1,7 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
+using Types;
 using Interpreter;
 using Interpreter.Types;
 
@@ -9,6 +10,21 @@ using Interpreter.Types;
 /// To avoid naming conflicts, not all modules are visible by default.
 /// </summary>
 internal sealed class TypeHandler {
+    /// <summary>
+    /// The module of the current program.
+    /// Stored as a key-value pair where the key is the address of the stored string.
+    /// </summary>
+    /// <remarks>
+    /// Code within the same module is visible by default.
+    /// Can be null, in which case the code can not be imported to other programs.
+    /// </remarks>
+    private KeyValuePair<int, string>? ProgramModule { get; set; }
+
+    /// <summary>
+    /// Get the address of the program module. Return -1 if it does not exist.
+    /// </summary>
+    public int ModuleNameAddress => ProgramModule?.Key ?? -1;
+    
     /// <summary>
     /// Backing field for the core type helper so the public property can have a non-nullable type.
     /// </summary>
@@ -32,13 +48,6 @@ internal sealed class TypeHandler {
     public CastHelper Casts => CastsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
 
     /// <summary>
-    /// The module of the current program.
-    /// Code within the same module is visible by default.
-    /// Can be null, in which case the code can not be imported to other programs.
-    /// </summary>
-    private string? ProgramModule { get; set; }
-
-    /// <summary>
     /// Whether all runtime code should be visible by default.
     /// </summary>
     private bool AutoImportEnabled { get; set; }
@@ -55,6 +64,11 @@ internal sealed class TypeHandler {
     private List<TypeDefinition> Types { get; set; } = [];
 
     /// <summary>
+    /// The list of type that are being loaded in the current program.
+    /// </summary>
+    public List<TypeDraft> TypeDrafts { get; } = [];
+
+    /// <summary>
     /// Gets the modules that should be visible from the current program.
     /// </summary>
     /// <returns></returns>
@@ -63,8 +77,8 @@ internal sealed class TypeHandler {
         IEnumerable<string> results = Imports;
 
         // the current module is also visible
-        if (ProgramModule is not null && !Imports.Contains(ProgramModule)) {
-            results = results.Append(ProgramModule);
+        if (ProgramModule is not null && !Imports.Contains(ProgramModule.Value.Value)) {
+            results = results.Append(ProgramModule.Value.Value);
         }
 
         return results.ToArray();
@@ -121,7 +135,7 @@ internal sealed class TypeHandler {
     /// </summary>
     /// <param name="name">The module to import.</param>
     /// <returns>True if successful, false if the imported module was already present.</returns>
-    public bool Add(string name) {
+    public bool AddImport(string name) {
         return Imports.Add(name);
     }
 
@@ -140,9 +154,10 @@ internal sealed class TypeHandler {
     /// <summary>
     /// Set the module of the program.
     /// </summary>
+    /// <param name="address">The address of the string in the data section.</param>
     /// <param name="name">The module to use.</param>
-    public void SetModule(string name) {
-        ProgramModule = name;
+    public void SetModule(int address, string name) {
+        ProgramModule = new KeyValuePair<int, string>(address, name);
     }
 
     /// <summary>
@@ -158,7 +173,7 @@ internal sealed class TypeHandler {
     /// Retrieve a non-generic type directly.
     /// </summary>
     /// <typeparam name="T">The the type to retrieve.</typeparam>
-    /// <returns>The identifier pf the type.</returns>
+    /// <returns>The identifier of the type.</returns>
     private TypeIdentifier GetFromType<T>() {
         Type type = typeof(T);
 
@@ -173,6 +188,14 @@ internal sealed class TypeHandler {
         return new TypeIdentifier(typeDefinition, []);
     }
 
+    public void AddDraft(TypeDraft draft) {
+        TypeDrafts.Add(draft);
+    }
+
+   /* public TypeDraft GetDraft(string name) {
+        
+    }
+*/
     /// <summary>
     /// Collection of properties that represent all types constants can have.
     /// </summary>
@@ -268,7 +291,9 @@ internal sealed class TypeHandler {
         public required TypeIdentifier Void { get; init; }
     }
 
-    // TODO comment
+    /// <summary>
+    /// Helper class for type conversions.
+    /// </summary>
     public sealed class CastHelper {
         /// <summary>
         /// A collection of all primitive types.

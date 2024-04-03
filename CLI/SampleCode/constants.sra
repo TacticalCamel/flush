@@ -1,3 +1,5 @@
+module test.mod
+
 import auto
 
 /*
@@ -16,4 +18,9 @@ struct v2{
 	private f32 length(){
 		
 	}
+}
+
+struct v4{
+	v2 a;
+	v2 b;
 }

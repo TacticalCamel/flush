@@ -36,8 +36,7 @@ programBody
 	;
 
 typeDefinition
-	: Modifiers=modifierList KW_CLASS TypeName=id BLOCK_START Body=typeBody BLOCK_END #ClassDefinition
-	| Modifiers=modifierList KW_STRUCT TypeName=id BLOCK_START Body=typeBody BLOCK_END #StructDefinition
+	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id BLOCK_START Body=typeBody BLOCK_END
 	;
 
 typeBody

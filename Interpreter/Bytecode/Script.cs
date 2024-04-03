@@ -36,14 +36,16 @@ public sealed unsafe class Script {
     /// </summary>
     /// <param name="data">The data array.</param>
     /// <param name="instructions">The instruction array.</param>
-    public Script(byte[] data, Instruction[] instructions) {
+    /// <param name="moduleNameAddress">The address of the module name.</param>
+    public Script(byte[] data, Instruction[] instructions, int moduleNameAddress) {
         // create a new header
         Header = new FileHeader {
             Signature = FileHeader.VALID_SIGNATURE,
             Version = BinarySerializer.VersionToU64(ClassLoader.BytecodeVersion),
             CompilationTime = DateTime.Now,
             DataStart = sizeof(FileHeader),
-            CodeStart = sizeof(FileHeader) + data.Length
+            CodeStart = sizeof(FileHeader) + data.Length,
+            ModuleNameAddress = moduleNameAddress
         };
 
         // assign array fields
@@ -63,6 +65,20 @@ public sealed unsafe class Script {
         stream.WriteLine($"    compiled      {Header.CompilationTime:O}");
         stream.WriteLine($"    data-start    0x{Header.DataStart:X8}");
         stream.WriteLine($"    code-start    0x{Header.CodeStart:X8}");
+        stream.Write("    module        ");
+        
+        if (Header.ModuleNameAddress >= 0) {
+            fixed (byte* ptr = &Data.Span[Header.ModuleNameAddress]) {
+                int length = *(int*)ptr;
+                string value = new((char*)(ptr + 4), 0, length);
+                
+                stream.WriteLine(value);
+            }
+        }
+        else {
+            stream.WriteLine("null");
+        }
+        
         stream.WriteLine();
 
         // data section

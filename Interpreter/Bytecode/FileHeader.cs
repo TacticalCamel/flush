@@ -35,4 +35,10 @@ public readonly struct FileHeader {
     /// The index of the first byte of the program instructions.
     /// </summary>
     public required int CodeStart { get; init; }
+    
+    /// <summary>
+    /// The address of the module name of the program.
+    /// Negative values mean no module name was specified.
+    /// </summary>
+    public required int ModuleNameAddress { get; init; }
 }
