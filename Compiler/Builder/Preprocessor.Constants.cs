@@ -10,9 +10,9 @@ internal sealed partial class Preprocessor {
     /// Visits a constant.
     /// </summary>
     /// <param name="context">The node to visit.</param>
-    /// <returns>A constant result if successful, null otherwise.</returns>
-    public override ConstantResult? VisitConstant(ConstantContext context) {
-        return (ConstantResult?)Visit(context);
+    /// <returns>The expression result if successful, null otherwise.</returns>
+    public override ExpressionResult? VisitConstant(ConstantContext context) {
+        return (ExpressionResult?)Visit(context);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ internal sealed partial class Preprocessor {
         }
 
         // store the number
-        MemoryAddress address = DataHandler.F16.Add(value);
+        int address = DataHandler.F16.Add(value);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.F16);
     }
@@ -140,7 +140,7 @@ internal sealed partial class Preprocessor {
         }
 
         // store the number
-        MemoryAddress address = DataHandler.F32.Add(value);
+        int address = DataHandler.F32.Add(value);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.F32);
     }
@@ -169,7 +169,7 @@ internal sealed partial class Preprocessor {
         }
 
         // store the number
-        MemoryAddress address = DataHandler.F64.Add(value);
+        int address = DataHandler.F64.Add(value);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.F64);
     }
@@ -194,7 +194,7 @@ internal sealed partial class Preprocessor {
         }
 
         // store the character as a 16-bit integer
-        MemoryAddress address = DataHandler.I16.Add((short)result.Value);
+        int address = DataHandler.I16.Add((short)result.Value);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.Char);
     }
@@ -229,7 +229,7 @@ internal sealed partial class Preprocessor {
         string result = string.Concat(characters);
 
         // store the string
-        MemoryAddress address = DataHandler.Str.Add(result);
+        int address = DataHandler.Str.Add(result);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.Str);
     }
@@ -241,7 +241,7 @@ internal sealed partial class Preprocessor {
     /// <returns>A constant result with the type of bool.</returns>
     public override ConstantResult VisitTrueKeyword(TrueKeywordContext context) {
         // store the value
-        MemoryAddress address = DataHandler.Bool.Add(true);
+        int address = DataHandler.Bool.Add(true);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.Bool);
     }
@@ -253,7 +253,7 @@ internal sealed partial class Preprocessor {
     /// <returns>A constant result with the type of bool.</returns>
     public override ConstantResult VisitFalseKeyword(FalseKeywordContext context) {
         // store the value
-        MemoryAddress address = DataHandler.Bool.Add(false);
+        int address = DataHandler.Bool.Add(false);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.Bool);
     }
@@ -262,8 +262,8 @@ internal sealed partial class Preprocessor {
     /// Visits the null keyword.
     /// </summary>
     /// <param name="context">The node to visit.</param>
-    /// <returns>A constant result with the type of null.</returns>
-    public override ConstantResult VisitNullKeyword(NullKeywordContext context) {
-        return new ConstantResult(MemoryAddress.Null, TypeHandler.CoreTypes.Null);
+    /// <returns>An expression result with the type of void.</returns>
+    public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
+        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
     }
 }

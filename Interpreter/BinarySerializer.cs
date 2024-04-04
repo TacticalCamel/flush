@@ -8,6 +8,11 @@ using System.Buffers;
 /// </summary>
 public static class BinarySerializer {
     /// <summary>
+    /// Get the current version of the interpreter assembly.
+    /// </summary>
+    public static Version BytecodeVersion => typeof(BinarySerializer).Assembly.GetName().Version ?? new Version();
+
+    /// <summary>
     /// Convert a version to an unsigned 64-bit integer.
     /// </summary>
     /// <remarks>
@@ -76,12 +81,11 @@ public static class BinarySerializer {
             return null;
         }
 
-        Version currentVersion = ClassLoader.BytecodeVersion;
         Version targetVersion = U64ToVersion(meta.Version);
 
         // bytecode version is different
-        if (currentVersion != targetVersion) {
-            logger.BytecodeVersionMismatch(targetVersion, currentVersion);
+        if (BytecodeVersion != targetVersion) {
+            logger.BytecodeVersionMismatch(targetVersion, BytecodeVersion);
             return null;
         }
 

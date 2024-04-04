@@ -1,20 +1,16 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
-using System.Collections;
 using Interpreter.Bytecode;
 
-internal sealed class InstructionHandler : IEnumerable<Instruction> {
+internal sealed class CodeHandler {
+    /// <summary>
+    /// The list of instructions that will be the code section of the program.
+    /// </summary>
     private List<Instruction> Instructions { get; } = [];
+    
+    
     private uint StackSize { get; set; }
-
-    public IEnumerator<Instruction> GetEnumerator() {
-        return Instructions.GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() {
-        return GetEnumerator();
-    }
 
     public void PushFromData(MemoryAddress address, ushort size) {
         Instructions.Add(new Instruction {
@@ -147,5 +143,45 @@ internal sealed class InstructionHandler : IEnumerable<Instruction> {
             default:
                 return false;
         }
+    }
+
+    public int InstructionCount => Instructions.Count;
+
+    public Instruction[] GetInstructionArray() {
+        return Instructions.ToArray();
+    }
+
+    private List<Variable> Variables { get; } = [];
+    private List<(int stackLength, int stackBytes)> ScopeBoundaries { get; } = [];
+    
+    private class Variable(string name, ExpressionResult expressionResult) {
+        public string Name { get; } = name;
+        public ExpressionResult ExpressionResult { get; } = expressionResult;
+    }
+
+    public void EnterScope() {
+        Console.WriteLine($"+scope {Variables.Count}");
+        ScopeBoundaries.Add((Variables.Count, 0));
+    }
+
+    public int ExitScope() {
+        (int stackLength, int stackBytes) index = ScopeBoundaries[^1];
+        
+        Console.WriteLine($"-scope {index}");
+        
+        ScopeBoundaries.RemoveAt(ScopeBoundaries.Count - 1);
+        Variables.RemoveRange(index.stackLength, Variables.Count - 1 - index.stackLength);
+
+        return 0;
+    }
+
+    public void DefineVariable(string name, ExpressionResult address) {
+        Console.WriteLine($"Define {name} {address}");
+        
+        Variables.Add(new Variable(name, address));
+    }
+
+    public ExpressionResult? GetVariableAddress(string name) {
+        return Variables.FirstOrDefault(x => x.Name == name)?.ExpressionResult;
     }
 }

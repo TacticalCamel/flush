@@ -3,29 +3,48 @@
 using Types;
 using System.Reflection;
 using Runtime.Internal;
-using Runtime.Core;
 
+/// <summary>
+/// This class is responsible for loading defined types.
+/// </summary>
 public static class ClassLoader {
     /// <summary>
     /// The namespace which is included by force.
     /// Contains core types that should always be available.
     /// </summary>
     private const string DEFAULT_INCLUDE = "core";
-    
+
     /// <summary>
     /// The namespace which is excluded by force.
     /// Contains internal types that should not be used.
     /// </summary>
     private const string DEFAULT_EXCLUDE = "internal";
 
-    // TODO not here?
-    public static Version BytecodeVersion => typeof(ClassLoader).Assembly.GetName().Version ?? new Version();
-    
-    public static List<TypeDefinition> LoadNativeModules(string[] modules, bool auto) {
-        List<TypeDefinition> types = [];
+    /// <summary>
+    /// All the types available in the runtime.
+    /// </summary>
+    private static Type[] RuntimeTypes { get; } = typeof(Runtime.Core.ScrantonObject).Assembly.GetExportedTypes();
 
-        // iterate through every public type in the runtime assembly
-        foreach (Type type in typeof(ScrantonObject).Assembly.ExportedTypes) {
+    /// <summary>
+    /// Load the initially included types from the runtime.
+    /// </summary>
+    /// <param name="imports">The initially imported modules.</param>
+    /// <param name="types">The initially imported types.</param>
+    public static void LoadRuntimeInitial(out HashSet<string> imports, out List<TypeDefinition> types) {
+        imports = [DEFAULT_INCLUDE];
+        types = [];
+
+        LoadRuntime(false, imports, types);
+    }
+
+    /// <summary>
+    /// Loads the specified modules from the runtime
+    /// </summary>
+    /// <param name="auto">Whether auto import is enabled.</param>
+    /// <param name="imports">The imported modules.</param>
+    /// <param name="types">The list that types will be added to.</param>
+    public static void LoadRuntime(bool auto, HashSet<string> imports, List<TypeDefinition> types) {
+        foreach (Type type in RuntimeTypes) {
             // get type module
             string? module = GetTypeModule(type);
 
@@ -35,35 +54,49 @@ public static class ClassLoader {
             }
 
             // type excluded by force
-            if (module.StartsWith(DEFAULT_EXCLUDE)) {
+            if (module == DEFAULT_EXCLUDE) {
                 continue;
             }
 
             // type was not imported and should not be visible, because
             // 1. auto import is disabled
             // 2. is not explicitly imported
-            // 3. is not visible by default
-            if (!auto && !modules.Contains(module) && !DEFAULT_INCLUDE.Any(included => module.StartsWith(included))) {
+            if (!auto && !imports.Contains(module)) {
                 continue;
             }
 
             // get type name
             string name = GetTypeName(type);
 
-            // define type
+            // already loaded
+            if (types.Any(x => x.Name == name)) {
+                continue;
+            }
+
+            // load type
             TypeDefinition typeDefinition = new() {
+                Modifiers = default,
+                IsReference = type.IsClass,
                 Name = name,
-                Modifiers = Modifier.None,
+                GenericParameterCount = 0,
                 Fields = [],
                 Methods = [],
-                StackSize = GetTypeSize(type),
-                IsReference = type.IsClass
+                GenericIndex = -1,
+                StackSize = GetTypeSize(type)
             };
-            
+
+            // add type to the list
             types.Add(typeDefinition);
         }
+    }
 
-        return types;
+    /// <summary>
+    /// Get the name of a native type.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The name of the type.</returns>
+    public static string GetTypeName(Type type) {
+        return type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name;
     }
 
     /// <summary>
@@ -100,17 +133,8 @@ public static class ClassLoader {
         if (type.IsGenericType) {
             return 0;
         }
-        
+
         // direct size of the type
         return (ushort)Marshal.SizeOf(type);
-    }
-
-    /// <summary>
-    /// Get the name of a native type.
-    /// </summary>
-    /// <param name="type">The type.</param>
-    /// <returns>The name of the type.</returns>
-    public static string GetTypeName(Type type) {
-        return type.GetCustomAttribute<AliasAttribute>()?.Name ?? type.Name;
     }
 }

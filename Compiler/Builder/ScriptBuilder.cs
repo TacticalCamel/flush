@@ -30,21 +30,10 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     /// </summary>
     private IssueHandler IssueHandler { get; } = [];
 
-    /// <summary>
-    /// The type handler to manage loaded types.
-    /// </summary>
-    private TypeHandler TypeHandler { get; } = new();
-
-    /// <summary>
-    /// The data handler to keep track of constants.
-    /// </summary>
     private DataHandler DataHandler { get; } = new();
-
-    /// <summary>
-    /// The collect of instructions.
-    /// </summary>
-    private InstructionHandler InstructionHandler { get; } = [];
-
+    private TypeHandler TypeHandler { get; } = new();
+    private CodeHandler CodeHandler { get; } = new();
+    
     /// <summary>
     /// Visit a syntax tree and transform it to an executable program.
     /// </summary>
@@ -70,15 +59,15 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         CancelIfHasErrors();
 
         // warn if the program is empty
-        if (!InstructionHandler.Any()) {
+        if (CodeHandler.InstructionCount == 0) {
             IssueHandler.Add(Issue.ProgramEmpty(programContext));
         }
 
-        InstructionHandler.Exit();
+        CodeHandler.Exit();
 
         // assemble program 
-        byte[] data = DataHandler.ToBytes();
-        Instruction[] instructions = InstructionHandler.ToArray();
+        byte[] data = DataHandler.GetByteArray();
+        Instruction[] instructions = CodeHandler.GetInstructionArray();
         Script script = new(data, instructions, TypeHandler.ModuleNameAddress);
 
         return script;
@@ -197,7 +186,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
 
         // emit a cast instruction
-        bool success = InstructionHandler.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
+        bool success = CodeHandler.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
 
         // stop if failed
         if (!success) {
@@ -212,12 +201,12 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     private ExpressionResult? UnaryNumberOperation(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(type)) {
-            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, integerCode);
+            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, integerCode);
             return new ExpressionResult(address, type);
         }
 
         if (TypeHandler.Casts.IsFloatType(type)) {
-            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, floatCode);
+            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, floatCode);
             return new ExpressionResult(address, type);
         }
 
@@ -227,7 +216,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
     private ExpressionResult? UnaryBoolOperation(TypeIdentifier type, OperationCode code) {
         // must be bool
         if (type == TypeHandler.CoreTypes.Bool) {
-            MemoryAddress address = InstructionHandler.PrimitiveUnaryOperation(type.Size, code);
+            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, code);
             return new ExpressionResult(address, type);
         }
 
@@ -242,12 +231,12 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
 
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(leftType)) {
-            MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, integerCode);
+            MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, integerCode);
             return new ExpressionResult(address, leftType);
         }
 
         if (TypeHandler.Casts.IsFloatType(leftType)) {
-            MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, floatCode);
+            MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, floatCode);
             return new ExpressionResult(address, leftType);
         }
 
@@ -265,7 +254,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
             return null;
         }
 
-        MemoryAddress address = InstructionHandler.PrimitiveBinaryOperation(leftType.Size, code);
+        MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, code);
 
         return new ExpressionResult(address, leftType);
     }
@@ -277,7 +266,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         }
 
         // can be any type
-        MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        MemoryAddress address = CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
         return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
     }
 
@@ -293,8 +282,8 @@ internal sealed partial class ScriptBuilder(CompilerOptions options, ILogger log
         }
 
         // can be any type
-        MemoryAddress address = InstructionHandler.PrimitiveComparisonOperation(leftType.Size, code);
-        return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
+        MemoryAddress address = CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        return new ExpressionResult(address, leftType);
     }
 
     #endregion

@@ -14,7 +14,7 @@ public enum OperationCode : byte {
     /// <summary>Push bytes from the data section to the stack.</summary>
     /// <remarks>opcode:1 size:4 data-address:4</remarks>
     pshd,
-
+    
     /// <summary>Push a number of 0 bytes to the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     pshz,

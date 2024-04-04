@@ -18,9 +18,4 @@ public sealed class FieldDefinition {
     /// The type of the field.
     /// </summary>
     public required TypeDefinition Type { get; init; }
-    
-    /// <summary>
-    /// The offset of the first byte of the field from the first byte of the type.
-    /// </summary>
-    public required ushort Offset { get; init; }
 }

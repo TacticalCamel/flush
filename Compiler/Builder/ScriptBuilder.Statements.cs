@@ -4,22 +4,38 @@ using Data;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
+    public override object? VisitProgramBody(ProgramBodyContext context) {
+        StatementContext[] statements = context.statement();
+        TypeDefinitionContext[] typeDefinitions = context.typeDefinition();
+
+        // visit type definitions
+        foreach (TypeDefinitionContext typeDefinition in typeDefinitions) {
+            VisitTypeDefinition(typeDefinition);
+        }
+        
+        CodeHandler.EnterScope();
+        
+        // visit statements
+        foreach (StatementContext statement in statements) {
+            VisitStatement(statement);
+        }
+        
+        CodeHandler.ExitScope();
+
+        return null;
+    }
+
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
         ExpressionResult? result = VisitExpression(context.Expression);
+        string name = VisitId(context.VariableWithType.Name);
 
         if (result is null) {
             return null;
         }
 
-        InstructionHandler.Pop(result.Type.Size);
-        
-        /*VariableIdentifier? variable = VisitVariableWithType(context.VariableWithType);
-
-        if (variable is null) {
-            return null;
-        }
-
-        Logger.Debug($"{variable} = {result?.ToString() ?? "null"}");*/
+        // do not pop result
+        // it is stored on the stack until the variable is out of scope
+        CodeHandler.DefineVariable(name, result);
 
         return null;
     }
@@ -49,7 +65,7 @@ internal sealed partial class ScriptBuilder {
                 return null;
             }
 
-            InstructionHandler.Pop(result.Type.Size);
+            CodeHandler.Pop(result.Type.Size);
         }
         else {
             VisitChildren(context);

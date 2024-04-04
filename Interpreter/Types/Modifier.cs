@@ -5,6 +5,7 @@
 /// </summary>
 [Flags]
 public enum Modifier {
-    None = 0,
-    Private = 1
+    Private = 1 << 0,
+    Internal = 1 << 1,
+    Readonly = 1 << 2,
 }

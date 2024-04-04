@@ -17,7 +17,7 @@ public sealed class MethodDefinition {
     public required string Name { get; init; }
     
     /// <summary>
-    /// The return type of the method. Null when the return type is void.
+    /// The return type of the method.
     /// </summary>
     public required TypeDefinition? ReturnType { get; init; }
     

@@ -179,6 +179,12 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Modifier '{name}' is already present"
     };
+    
+    public static Issue UnknownVariable(ParserRuleContext context, string name) => new(context) {
+        Id = 218,
+        Severity = Severity.Error,
+        Message = $"Variable '{name}' does not exist in the current context"
+    };
 
     #endregion
 }

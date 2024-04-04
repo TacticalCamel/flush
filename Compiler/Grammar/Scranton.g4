@@ -36,7 +36,7 @@ programBody
 	;
 
 typeDefinition
-	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id BLOCK_START Body=typeBody BLOCK_END
+	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id GenericParameters=genericParameters? BLOCK_START Body=typeBody BLOCK_END
 	;
 
 typeBody
@@ -53,6 +53,10 @@ constructorDefinition
 
 methodDefinition
 	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	;
+
+genericParameters
+	: OP_LESS (type PARAM_SEP)* type OP_GREATER
 	;
 
 statement

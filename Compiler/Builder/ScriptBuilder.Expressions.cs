@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Data;
-using Interpreter.Bytecode;
+using Analysis;
 using static Grammar.ScrantonParser;
 
 internal sealed partial class ScriptBuilder {
@@ -31,7 +31,7 @@ internal sealed partial class ScriptBuilder {
 
         // push the constant to the stack if it's stored in the data section
         if (context.Address.Value.Location == MemoryLocation.Data) {
-            InstructionHandler.PushFromData(context.Address.Value, context.OriginalType.Size);
+            CodeHandler.PushFromData(context.Address.Value, context.OriginalType.Size);
         }
 
         bool success = CastExpression(context);
@@ -40,14 +40,16 @@ internal sealed partial class ScriptBuilder {
     }
 
     public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
-        throw new NotImplementedException();
-
-        /*
         string name = VisitId(context.Identifier);
 
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
-        return null;
-        */
+        ExpressionResult? expressionResult = CodeHandler.GetVariableAddress(name);
+
+        if (expressionResult is null) {
+            IssueHandler.Add(Issue.UnknownVariable(context, name));
+            return null;
+        }
+
+        return expressionResult;
     }
 
     public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {

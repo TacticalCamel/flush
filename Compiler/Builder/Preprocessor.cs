@@ -34,6 +34,8 @@ internal sealed partial class Preprocessor(IssueHandler issueHandler, TypeHandle
     /// The data handler to use.
     /// </summary>
     private DataHandler DataHandler { get; } = dataHandler;
+    
+    private CodeHandler CodeHandler { get; } = new();
 
     /// <summary>
     /// Convert a span of characters into an integer and store it in the smallest possible byte width.

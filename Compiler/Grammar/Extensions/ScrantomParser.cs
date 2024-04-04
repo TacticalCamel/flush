@@ -56,7 +56,6 @@ public partial class ScrantonParser {
         internal bool? LoadingState { get; set; }
     }
     
-    
     public partial class FieldDefinitionContext {
         internal FieldDraft? FieldDraft { get; set; }
     }

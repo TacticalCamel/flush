@@ -22,13 +22,21 @@ internal sealed partial class Preprocessor {
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
     public override object? VisitConstantExpression(ConstantExpressionContext context) {
-        // get constant result
-        ConstantResult? result = VisitConstant(context.Constant);
+        // get expression result
+        ExpressionResult? result = VisitConstant(context.Constant);
+
+        if (result is null) {
+            return null;
+        }
 
         // assign address and type
-        context.Address = result?.Address;
-        context.OriginalType = result?.Type;
-        context.AlternativeType = result?.SecondaryType;
+        context.Address = result.Address;
+        context.OriginalType = result.Type;
+
+        // assign secondary type if it's a constant result
+        if (result is ConstantResult constantResult) {
+            context.AlternativeType = constantResult.SecondaryType;
+        }
 
         return null;
     }
@@ -38,21 +46,19 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object VisitIdentifierExpression(IdentifierExpressionContext context) {
-        throw new NotImplementedException();
-
-        /*
-        // we have no way of knowing the actual meaning of this identifier
-        // it could be a variable or a member access
-
-        // assume it is a variable and handle other cases elsewhere
-        // since this node should not be visited in other cases,
-        // we can throw an error if the variable was not found
-
+    public override object? VisitIdentifierExpression(IdentifierExpressionContext context) {
+        // get identifier name
         string name = VisitId(context.Identifier);
 
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
-        return null;*/
+        ExpressionResult? expressionResult = CodeHandler.GetVariableAddress(name);
+
+        if (expressionResult is null) {
+            return null;
+        }
+        
+        context.OriginalType = expressionResult.Type;
+        
+        return null;
     }
 
     /// <summary>

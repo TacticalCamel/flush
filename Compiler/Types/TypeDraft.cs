@@ -1,10 +1,8 @@
 ﻿namespace Compiler.Types;
 
-using static Grammar.ScrantonParser;
+using Interpreter.Types;
 
-internal sealed class TypeDraft: ILoadedType {
-    public required TypeDefinitionContext Context { get; init; }
-    
+internal sealed class TypeDraft {
     public required Modifier Modifiers { get; init; }
     public required bool IsReference { get; init; }
     public required string Name { get; init; }

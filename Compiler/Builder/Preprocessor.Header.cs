@@ -1,7 +1,6 @@
 ﻿namespace Compiler.Builder;
 
 using Analysis;
-using Data;
 using static Grammar.ScrantonParser;
 
 internal partial class Preprocessor {
@@ -26,9 +25,9 @@ internal partial class Preprocessor {
     public override object? VisitModuleStatement(ModuleStatementContext context) {
         string name = VisitNamespace(context.Name);
 
-        MemoryAddress address = DataHandler.Str.Add(name);
+        int address = DataHandler.Str.Add(name);
         
-        TypeHandler.SetModule((int)address.Value, name);
+        TypeHandler.SetModule(address, name);
 
         return null;
     }
