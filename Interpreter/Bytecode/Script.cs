@@ -118,5 +118,7 @@ public sealed unsafe class Script {
 
             stream.WriteLine();
         }
+        
+        stream.WriteLine();
     }
 }

@@ -28,7 +28,7 @@ internal sealed class CodeHandler {
     /// Enter a new scope.
     /// </summary>
     public void EnterScope() {
-        Console.WriteLine($"enter scope");
+        //Console.WriteLine($"enter scope");
 
         Scope scope = new(StackSize);
 
@@ -40,7 +40,7 @@ internal sealed class CodeHandler {
     /// Set the stack size back to the value it had before entering the scope.
     /// </summary>
     public void ExitScope() {
-        Console.WriteLine($"exit scope");
+        //Console.WriteLine($"exit scope");
 
         Scope scope = StackScopes.Pop();
 
@@ -55,7 +55,7 @@ internal sealed class CodeHandler {
         Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)StackSize, MemoryLocation.Stack), type));
         Scope scope = StackScopes.Peek();
         
-        Console.WriteLine($"define {name} {variable.ExpressionResult}");
+        //Console.WriteLine($"define {name} {variable.ExpressionResult}");
         
         scope.DeclaredVariables.Add(variable);
 
