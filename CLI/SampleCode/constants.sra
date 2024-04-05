@@ -2,9 +2,12 @@ module test.mod
 
 import auto
 
-i32 i = 7;
+i32 i = 3;
 
 /*
+i32 i = 7;
+f64 f = 3.214334434;
+
 i = 9;
 i += 3;
 i *= 2;*/

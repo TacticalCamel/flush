@@ -95,9 +95,9 @@ public unsafe ref struct ScriptExecutor {
             }
 
             case OperationCode.pop: {
-                StackPtr -= i.TypeSize;
+                StackPtr -= i.Count;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                Console.WriteLine($"{i.Code} {i.Count}\n    {StackString}\n");
                 break;
             }
 

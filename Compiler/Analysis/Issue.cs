@@ -185,6 +185,12 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Variable '{name}' does not exist in the current context"
     };
+    
+    public static Issue GenericParameterCountMismatch(ParserRuleContext context, string typeName, int expected, int actual) => new(context) {
+        Id = 219,
+        Severity = Severity.Error,
+        Message = $"{typeName} expects {expected} generic parameters, but got {actual}"
+    };
 
     #endregion
 }

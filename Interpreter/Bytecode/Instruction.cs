@@ -28,6 +28,9 @@ public unsafe struct Instruction {
     /// </summary>
     [FieldOffset(0)]
     public int DataAddress;
+    
+    [FieldOffset(0)]
+    public int Count;
 
     /// <summary>
     /// The size of a second type in bytes.

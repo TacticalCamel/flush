@@ -3,7 +3,6 @@
 namespace Compiler.Grammar;
 
 using Data;
-using Types;
 
 public partial class ScrantonParser {
     public partial class ExpressionContext {
@@ -38,6 +37,7 @@ public partial class ScrantonParser {
         internal TypeIdentifier? AlternativeType { get; set; }
     }
 
+   /*
     public partial class TypeDefinitionContext {
         /// <summary>
         /// The draft of the type definition.
@@ -58,5 +58,5 @@ public partial class ScrantonParser {
     
     public partial class FieldDefinitionContext {
         internal FieldDraft? FieldDraft { get; set; }
-    }
+    }*/
 }

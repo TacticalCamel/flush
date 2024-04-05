@@ -3,6 +3,7 @@
 using Antlr4.Runtime;
 using Analysis;
 
+// ScriptBuilder.Analysis: methods related to error handling and issues
 internal partial class ScriptBuilder {
     /// <summary>
     /// Binds the instance to listen for lexer errors.

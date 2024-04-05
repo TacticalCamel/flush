@@ -1,14 +1,15 @@
 ﻿namespace Compiler.Builder;
 
-using Data;
-using Types;
 using Analysis;
+using Data;
 using Interpreter.Types;
 using static Grammar.ScrantonParser;
 
-internal sealed partial class Preprocessor {
+// ScriptBuilder.Types: methods related to visiting type definitions and type names
+internal sealed partial class ScriptBuilder {
     private void ProcessTypeDefinitions(TypeDefinitionContext[] typeDefinitions) {
-        // create array for type drafts
+        // TODO implement
+        /*// create array for type drafts
         TypeDraft[] drafts = new TypeDraft[typeDefinitions.Length];
 
         // create type drafts 
@@ -26,9 +27,10 @@ internal sealed partial class Preprocessor {
 
         foreach (TypeDraft draft in drafts) {
             Console.WriteLine($"{draft.Name} {draft.Size?.ToString() ?? "null"}");
-        }
+        }*/
     }
 
+    /*
     private TypeDraft? CreateTypeDraft(TypeDefinitionContext context) {
         // the modifiers of the type
         if (VisitModifierList(context.Modifiers) is not Modifier modifiers) {
@@ -49,10 +51,12 @@ internal sealed partial class Preprocessor {
         };
         
         return draft;
-    }
+    }*/
 
     private bool ProcessTypeDefinition(TypeDefinitionContext context) {
-        // loading finished
+        return true;
+
+        /*// loading finished
         if (context.LoadingState is not null) {
             return true;
         }
@@ -93,9 +97,8 @@ internal sealed partial class Preprocessor {
         // issue: struct layouts can have circles in them
         // solution: explore the dependencies of a type recursively and detect circles
 
-        return true;
+        return true;*/
     }
-    
 
     /// <summary>
     /// Visit a type definition body.
@@ -118,14 +121,6 @@ internal sealed partial class Preprocessor {
         if (VisitModifierList(context.Modifiers) is not Modifier modifiers) return null;
 
         return null;
-    }
-
-    public override object? VisitMethodDefinition(MethodDefinitionContext context) {
-        return base.VisitMethodDefinition(context);
-    }
-
-    public override object? VisitConstructorDefinition(ConstructorDefinitionContext context) {
-        return base.VisitConstructorDefinition(context);
     }
 
     /// <summary>
@@ -177,5 +172,88 @@ internal sealed partial class Preprocessor {
         }
 
         return result;
+    }
+    
+    /// <summary>
+    /// Visit a type name.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>The type if it exists, null otherwise.</returns>
+    public override TypeIdentifier? VisitType(TypeContext context) {
+        return (TypeIdentifier?)Visit(context);
+    }
+
+    /// <summary>
+    /// Visit a non-generic type.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>The identifier of the type if it exists, null otherwise.</returns>
+    public override TypeIdentifier? VisitSimpleType(SimpleTypeContext context) {
+        // get the name of the type
+        string name = VisitId(context.Name);
+
+        // search the type by name
+        TypeDefinition? type = TypeHandler.GetTypeByName(name);
+        
+        // stop if the type does not exist
+        if (type is null) {
+            IssueHandler.Add(Issue.UnrecognizedType(context, name));
+            return null;
+        }
+        
+        // generic parameter count doesn't match
+        if (type.GenericParameterCount != 0) {
+            IssueHandler.Add(Issue.GenericParameterCountMismatch(context, type.Name, type.GenericParameterCount, 0));
+            return null;
+        }
+
+        return new TypeIdentifier(type, []);
+    }
+
+    /// <summary>
+    /// Visit a generic type.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>The identifier of the type if it exists, null otherwise.</returns>
+    public override TypeIdentifier? VisitGenericType(GenericTypeContext context) {
+        // get the name of the type
+        string name = VisitId(context.Name);
+
+        // search the type by name
+        TypeDefinition? type = TypeHandler.GetTypeByName(name);
+
+        // stop if the type does not exist
+        if (type is null) {
+            IssueHandler.Add(Issue.UnrecognizedType(context, name));
+            return null;
+        }
+
+        // get generic parameter nodes
+        TypeContext[] typeContexts = context.type();
+
+        // generic parameter count doesn't match
+        if (type.GenericParameterCount != typeContexts.Length) {
+            IssueHandler.Add(Issue.GenericParameterCountMismatch(context, type.Name, type.GenericParameterCount, typeContexts.Length));
+            return null;
+        }
+
+        // create an array for results
+        TypeIdentifier[] genericParameters = new TypeIdentifier[typeContexts.Length];
+
+        // for every generic parameter
+        for (int i = 0; i < typeContexts.Length; i++) {
+            // get the type identifier
+            TypeIdentifier? typeIdentifier = VisitType(typeContexts[i]);
+
+            // stop if the type does not exist
+            if (typeIdentifier is null) {
+                return null;
+            }
+
+            // assign array element
+            genericParameters[i] = typeIdentifier;
+        }
+
+        return new TypeIdentifier(type, genericParameters);
     }
 }

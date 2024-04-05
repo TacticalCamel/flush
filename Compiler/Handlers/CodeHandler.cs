@@ -8,33 +8,104 @@ internal sealed class CodeHandler {
     /// The list of instructions that will be the code section of the program.
     /// </summary>
     private List<Instruction> Instructions { get; } = [];
-    
-    
-    private uint StackSize { get; set; }
 
-    public void PushFromData(MemoryAddress address, ushort size) {
+    /// <summary>
+    /// The current scopes in the program.
+    /// </summary>
+    private Stack<Scope> StackScopes { get; } = [];
+
+    /// <summary>
+    /// The current size of the stack in bytes.
+    /// </summary>
+    private int StackSize { get; set; }
+
+    /// <summary>
+    /// Whether the program contains any instructions.
+    /// </summary>
+    public bool HasInstructions => Instructions.Count > 0;
+
+    /// <summary>
+    /// Enter a new scope.
+    /// </summary>
+    public void EnterScope() {
+        Console.WriteLine($"enter scope");
+
+        Scope scope = new(StackSize);
+
+        StackScopes.Push(scope);
+    }
+
+    /// <summary>
+    /// Exit from the innermost scope.
+    /// Set the stack size back to the value it had before entering the scope.
+    /// </summary>
+    public void ExitScope() {
+        Console.WriteLine($"exit scope");
+
+        Scope scope = StackScopes.Pop();
+
+        PopBytes(StackSize - scope.StackSizeBefore);
+    }
+
+    public bool DefineVariable(string name, TypeIdentifier type) {
+        if (StackScopes.Any(scope => scope.DeclaredVariables.Any(x => x.Name == name))) {
+            return false;
+        }
+
+        Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)StackSize, MemoryLocation.Stack), type));
+        Scope scope = StackScopes.Peek();
+        
+        Console.WriteLine($"define {name} {variable.ExpressionResult}");
+        
+        scope.DeclaredVariables.Add(variable);
+
+        return true;
+    }
+
+    public ExpressionResult? GetVariable(string name) {
+        return StackScopes
+            .Select(scope => scope.DeclaredVariables.FirstOrDefault(x => x.Name == name)?.ExpressionResult)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Push bytes from the data section to the top of the stack.
+    /// Increase the stack size.
+    /// </summary>
+    /// <param name="address">The address in the data section.</param>
+    /// <param name="size">The number of bytes.</param>
+    public void PushBytesFromData(int address, ushort size) {
+        // do not emit when size is 0
+        if (size == 0) {
+            return;
+        }
+        
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
-            DataAddress = (int)address.Value,
+            DataAddress = address,
             TypeSize = size
         });
 
         StackSize += size;
     }
 
-    public void Pop(ushort size) {
+    /// <summary>
+    /// Pop bytes from the top of the stack.
+    /// Decrease the stack size.
+    /// </summary>
+    /// <param name="count">The number of bytes.</param>
+    public void PopBytes(int count) {
+        // do not emit when count is 0 or negative
+        if (count <= 0) {
+            return;
+        }
+        
         Instructions.Add(new Instruction {
             Code = OperationCode.pop,
-            TypeSize = size
+            Count = count
         });
 
-        StackSize -= size;
-    }
-    
-    public void Exit() {
-        Instructions.Add(new Instruction {
-            Code = OperationCode.exit
-        });
+        StackSize -= count;
     }
 
     public MemoryAddress PrimitiveBinaryOperation(ushort size, OperationCode code) {
@@ -45,38 +116,33 @@ internal sealed class CodeHandler {
 
         StackSize -= size;
 
-        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
+        return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
-    
+
     public MemoryAddress PrimitiveUnaryOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
             TypeSize = size
         });
-        
-        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
+
+        return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
-    
+
     public MemoryAddress PrimitiveComparisonOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
             TypeSize = size
         });
 
-        StackSize -= (uint)(2 * size - 1);
+        StackSize -= 2 * size - 1;
 
-        return new MemoryAddress(StackSize - size, MemoryLocation.Stack);
+        return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
     public bool Cast(ushort sourceSize, ushort targetSize, PrimitiveCast cast) {
         int difference = targetSize - sourceSize;
 
-        if (difference < 0) {
-            StackSize -= (uint)-difference;
-        }
-        else {
-            StackSize += (uint)difference;
-        }
+        StackSize += difference;
 
         switch (cast) {
             case PrimitiveCast.NotRequired:
@@ -144,44 +210,20 @@ internal sealed class CodeHandler {
                 return false;
         }
     }
-
-    public int InstructionCount => Instructions.Count;
-
+    
     public Instruction[] GetInstructionArray() {
-        return Instructions.ToArray();
+        return Instructions
+            .Append(new Instruction{Code = OperationCode.exit})
+            .ToArray();
     }
 
-    private List<Variable> Variables { get; } = [];
-    private List<(int stackLength, int stackBytes)> ScopeBoundaries { get; } = [];
-    
-    private class Variable(string name, ExpressionResult expressionResult) {
+    private sealed class Variable(string name, ExpressionResult expressionResult) {
         public string Name { get; } = name;
         public ExpressionResult ExpressionResult { get; } = expressionResult;
     }
 
-    public void EnterScope() {
-        Console.WriteLine($"+scope {Variables.Count}");
-        ScopeBoundaries.Add((Variables.Count, 0));
-    }
-
-    public int ExitScope() {
-        (int stackLength, int stackBytes) index = ScopeBoundaries[^1];
-        
-        Console.WriteLine($"-scope {index}");
-        
-        ScopeBoundaries.RemoveAt(ScopeBoundaries.Count - 1);
-        Variables.RemoveRange(index.stackLength, Variables.Count - 1 - index.stackLength);
-
-        return 0;
-    }
-
-    public void DefineVariable(string name, ExpressionResult address) {
-        Console.WriteLine($"Define {name} {address}");
-        
-        Variables.Add(new Variable(name, address));
-    }
-
-    public ExpressionResult? GetVariableAddress(string name) {
-        return Variables.FirstOrDefault(x => x.Name == name)?.ExpressionResult;
+    private sealed class Scope(int stackSizeBefore) {
+        public int StackSizeBefore { get; } = stackSizeBefore;
+        public List<Variable> DeclaredVariables { get; } = [];
     }
 }
