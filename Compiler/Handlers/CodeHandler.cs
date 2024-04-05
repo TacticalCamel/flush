@@ -44,6 +44,8 @@ internal sealed class CodeHandler {
 
         Scope scope = StackScopes.Pop();
 
+        Console.WriteLine($"{StackSize} {scope.StackSizeBefore}");
+        
         PopBytes(StackSize - scope.StackSizeBefore);
     }
 
@@ -99,7 +101,7 @@ internal sealed class CodeHandler {
         if (count <= 0) {
             return;
         }
-        
+
         Instructions.Add(new Instruction {
             Code = OperationCode.pop,
             Count = count
@@ -134,8 +136,8 @@ internal sealed class CodeHandler {
             TypeSize = size
         });
 
-        StackSize -= 2 * size - 1;
-
+        StackSize -= 4;
+        
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
