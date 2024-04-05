@@ -3,7 +3,8 @@
 using Analysis;
 using static Grammar.ScrantonParser;
 
-internal partial class Preprocessor {
+// ScriptBuilder.Header: methods related to visiting the program header
+internal partial class ScriptBuilder {
     /// <summary>
     /// Visits the program header and loads available types before returning.
     /// </summary>
@@ -25,13 +26,15 @@ internal partial class Preprocessor {
     public override object? VisitModuleStatement(ModuleStatementContext context) {
         string name = VisitNamespace(context.Name);
 
-        TypeHandler.SetModule(name);
+        int address = DataHandler.Str.Add(name);
+
+        TypeHandler.SetModule(address, name);
 
         return null;
     }
 
     /// <summary>
-    /// Visits the subtype of an import statement.
+    /// Visits an import statement.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
@@ -50,7 +53,7 @@ internal partial class Preprocessor {
     public override object? VisitManualImport(ManualImportContext context) {
         string name = VisitNamespace(context.Name);
 
-        bool success = TypeHandler.Add(name);
+        bool success = TypeHandler.AddImport(name);
 
         if (!success) {
             IssueHandler.Add(Issue.ModuleAlreadyImported(context, name));

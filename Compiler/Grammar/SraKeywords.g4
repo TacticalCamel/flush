@@ -64,22 +64,22 @@ KW_CLASS
 	: 'class'
 	;
 
+KW_STRUCT
+	: 'struct'
+	;
+
 KW_RETURN
 	: 'return'
 	;
-	
-KW_PUBLIC
-	: 'public'
-	;
-	
+
 KW_PRIVATE
     : 'private'
     ;
-	
+
 KW_VOID
 	: 'void'
 	;
-	
+
 KW_NEW
 	: 'new'
 	;

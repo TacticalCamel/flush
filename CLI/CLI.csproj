@@ -7,6 +7,7 @@
         <OutputType>Exe</OutputType>
         <ApplicationIcon>..\icon.ico</ApplicationIcon>
         <AssemblyName>Scranton</AssemblyName>
+        <AssemblyVersion>0.1.17</AssemblyVersion>
 
         <!-- publish options -->
         <PublishAot>true</PublishAot>

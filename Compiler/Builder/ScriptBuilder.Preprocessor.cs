@@ -1,34 +1,35 @@
 ﻿namespace Compiler.Builder;
 
-using static Grammar.ScrantonParser;
 using Analysis;
 using Data;
+using static Grammar.ScrantonParser;
 
-internal sealed partial class Preprocessor {
-    /// <summary>
-    /// Visit an expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitExpression(ExpressionContext context) {
-        Visit(context);
+// ScriptBuilder.Preprocessor: methods related to preprocessing expressions
+internal sealed partial class ScriptBuilder {
+    
 
-        return null;
-    }
-
+    
     /// <summary>
     /// Visits a constant and assigns the result to the visited expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitConstantExpression(ConstantExpressionContext context) {
-        // get constant result
-        ConstantResult? result = VisitConstant(context.Constant);
+    public object? PreprocessConstantExpression(ConstantExpressionContext context) {
+        // get expression result
+        ExpressionResult? result = VisitConstant(context.Constant);
+
+        if (result is null) {
+            return null;
+        }
 
         // assign address and type
-        context.Address = result?.Address;
-        context.OriginalType = result?.Type;
-        context.AlternativeType = result?.SecondaryType;
+        context.Address = result.Address;
+        context.OriginalType = result.Type;
+
+        // assign secondary type if it's a constant result
+        if (result is ConstantResult constantResult) {
+            context.AlternativeType = constantResult.SecondaryType;
+        }
 
         return null;
     }
@@ -38,21 +39,19 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object VisitIdentifierExpression(IdentifierExpressionContext context) {
-        throw new NotImplementedException();
-
-        /*
-        // we have no way of knowing the actual meaning of this identifier
-        // it could be a variable or a member access
-
-        // assume it is a variable and handle other cases elsewhere
-        // since this node should not be visited in other cases,
-        // we can throw an error if the variable was not found
-
+    public object? PreprocessIdentifierExpression(IdentifierExpressionContext context) {
+        // get identifier name
         string name = VisitId(context.Identifier);
 
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "identifier expression"));
-        return null;*/
+        ExpressionResult? expressionResult = CodeHandler.GetVariable(name);
+
+        if (expressionResult is null) {
+            return null;
+        }
+        
+        context.OriginalType = expressionResult.Type;
+        
+        return null;
     }
 
     /// <summary>
@@ -60,10 +59,10 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
+    public object PreprocessMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
         throw new NotImplementedException();
 
-        /*ExpressionResult? left = VisitExpression(context.Type);
+        ExpressionResult? left = VisitExpression(context.Type);
 
         if (left is null) {
             return null;
@@ -72,7 +71,7 @@ internal sealed partial class Preprocessor {
         string name = VisitId(context.Member);
 
         IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
-        return null;*/
+        return null;
     }
 
     /// <summary>
@@ -80,7 +79,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitCastExpression(CastExpressionContext context) {
+    public object? PreprocessCastExpression(CastExpressionContext context) {
         // get the target type
         TypeIdentifier? targetType = VisitType(context.Type);
 
@@ -122,7 +121,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitNestedExpression(NestedExpressionContext context) {
+    public object? PreprocessNestedExpression(NestedExpressionContext context) {
         VisitExpression(context.Body);
 
         // assign types
@@ -137,10 +136,10 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object VisitFunctionCallExpression(FunctionCallExpressionContext context) {
+    public object PreprocessFunctionCallExpression(FunctionCallExpressionContext context) {
         throw new NotImplementedException();
 
-        /*ExpressionResult? callerExpression = VisitExpression(context.Caller);
+        ExpressionResult? callerExpression = VisitExpression(context.Caller);
 
         // get parameter expressions
         ExpressionContext[] expressions = context.ExpressionList.expression();
@@ -160,7 +159,7 @@ internal sealed partial class Preprocessor {
         }
 
         IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
-        return null;*/
+        return null;
     }
 
     /// <summary>
@@ -168,7 +167,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
+    public object? PreprocessLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
         ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
 
         return null;
@@ -179,7 +178,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitRightUnaryOperatorExpression(RightUnaryOperatorExpressionContext context) {
+    public object? PreprocessRightUnaryOperatorExpression(RightUnaryOperatorExpressionContext context) {
         ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
 
         return null;
@@ -190,7 +189,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitMultiplicativeOperatorExpression(MultiplicativeOperatorExpressionContext context) {
+    public object? PreprocessMultiplicativeOperatorExpression(MultiplicativeOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;
@@ -201,7 +200,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
+    public object? PreprocessAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;
@@ -212,7 +211,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitShiftOperatorExpression(ShiftOperatorExpressionContext context) {
+    public object? PreprocessShiftOperatorExpression(ShiftOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;
@@ -223,7 +222,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitComparisonOperatorExpression(ComparisonOperatorExpressionContext context) {
+    public object? PreprocessComparisonOperatorExpression(ComparisonOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;
@@ -234,7 +233,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitLogicalOperatorExpression(LogicalOperatorExpressionContext context) {
+    public object? PreprocessLogicalOperatorExpression(LogicalOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;
@@ -245,7 +244,7 @@ internal sealed partial class Preprocessor {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
-    public override object? VisitAssigmentOperatorExpression(AssigmentOperatorExpressionContext context) {
+    public object? PreprocessAssigmentOperatorExpression(AssigmentOperatorExpressionContext context) {
         ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
 
         return null;

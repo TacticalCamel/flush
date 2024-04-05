@@ -167,6 +167,30 @@ internal sealed class Issue {
         Severity = Severity.Warning,
         Message = "The compiled program contains no instructions"
     };
+    
+    public static Issue InvalidModifier(ParserRuleContext context, string name) => new(context) {
+        Id = 216,
+        Severity = Severity.Error,
+        Message = $"'{name}' is not a valid modifier"
+    };
+    
+    public static Issue DuplicateModifier(ParserRuleContext context, string name) => new(context) {
+        Id = 217,
+        Severity = Severity.Error,
+        Message = $"Modifier '{name}' is already present"
+    };
+    
+    public static Issue UnknownVariable(ParserRuleContext context, string name) => new(context) {
+        Id = 218,
+        Severity = Severity.Error,
+        Message = $"Variable '{name}' does not exist in the current context"
+    };
+    
+    public static Issue GenericParameterCountMismatch(ParserRuleContext context, string typeName, int expected, int actual) => new(context) {
+        Id = 219,
+        Severity = Severity.Error,
+        Message = $"{typeName} expects {expected} generic parameters, but got {actual}"
+    };
 
     #endregion
 }

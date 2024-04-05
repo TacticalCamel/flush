@@ -1,12 +1,11 @@
 ﻿// it's true that nothing prevents the stack allocated array from being returned
 // but we won't do that so it's okay
 
+#pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
+
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Interpreter.Bytecode;
-using Interpreter.Serialization;
-
-#pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
 
 namespace Interpreter;
 
@@ -46,7 +45,7 @@ public unsafe ref struct ScriptExecutor {
     public ScriptExecutor(Script script) {
         Data = script.Data.Span;
         Instructions = script.Instructions.Span;
-        
+
         // default stack size is 256kb
         Stack = stackalloc byte[1 << 18];
 
@@ -63,7 +62,7 @@ public unsafe ref struct ScriptExecutor {
 
         // start label to jump back to
         start:
-        
+
         // the current instruction
         Instruction i = Instructions[InstructionIndex];
 
@@ -71,9 +70,9 @@ public unsafe ref struct ScriptExecutor {
         // but so do i
         switch (i.Code) {
             case OperationCode.exit:
-                Console.WriteLine($"executed in {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
+                Console.WriteLine($"exit\n    {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
                 return;
-            
+
             // stack operations
 
             case OperationCode.pshd: {
@@ -96,9 +95,9 @@ public unsafe ref struct ScriptExecutor {
             }
 
             case OperationCode.pop: {
-                StackPtr -= i.TypeSize;
+                StackPtr -= i.Count;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                Console.WriteLine($"{i.Code} {i.Count}\n    {StackString}\n");
                 break;
             }
 
@@ -640,7 +639,7 @@ public unsafe ref struct ScriptExecutor {
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
             }
-            
+
             case OperationCode.lt: {
                 switch (i.TypeSize) {
                     case 1:
@@ -665,7 +664,7 @@ public unsafe ref struct ScriptExecutor {
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
             }
-            
+
             case OperationCode.lte: {
                 switch (i.TypeSize) {
                     case 1:
@@ -690,7 +689,7 @@ public unsafe ref struct ScriptExecutor {
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
             }
-            
+
             case OperationCode.gt: {
                 switch (i.TypeSize) {
                     case 1:
@@ -715,7 +714,7 @@ public unsafe ref struct ScriptExecutor {
                 Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
                 break;
             }
-            
+
             case OperationCode.gte: {
                 switch (i.TypeSize) {
                     case 1:

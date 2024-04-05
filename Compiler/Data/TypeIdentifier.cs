@@ -7,11 +7,11 @@ using Interpreter.Types;
 /// </summary>
 /// <param name="baseType">The base type of the identifier.</param>
 /// <param name="genericParameters">An array of types which are used as generic parameters.</param>
-internal sealed class TypeIdentifier(TypeInfo baseType, TypeIdentifier[] genericParameters) : IEquatable<TypeIdentifier> {
+internal sealed class TypeIdentifier(TypeDefinition baseType, TypeIdentifier[] genericParameters) : IEquatable<TypeIdentifier> {
     /// <summary>
     /// The corresponding base type of the identifier.
     /// </summary>
-    private TypeInfo BaseType { get; } = baseType;
+    private TypeDefinition BaseType { get; } = baseType;
 
     /// <summary>
     /// An array of types which are used as generic parameters.
@@ -23,7 +23,7 @@ internal sealed class TypeIdentifier(TypeInfo baseType, TypeIdentifier[] generic
     /// The size of the type in bytes.
     /// TODO has incorrect value for non-primitive types
     /// </summary>
-    public byte Size => BaseType.Size;
+    public ushort Size => BaseType.StackSize;
 
     /// <summary>
     /// True if the type has at least 1 generic parameter, false otherwise.
@@ -61,7 +61,7 @@ internal sealed class TypeIdentifier(TypeInfo baseType, TypeIdentifier[] generic
     }
 
     public override string ToString() {
-        return IsGeneric ? $"{BaseType}<{string.Join(',', (IEnumerable<TypeIdentifier>)GenericParameters)}>" : BaseType.ToString();
+        return IsGeneric ? $"{BaseType}<{string.Join(',', (IEnumerable<TypeIdentifier>)GenericParameters)}>" : BaseType.Name;
     }
 
     public override int GetHashCode() {

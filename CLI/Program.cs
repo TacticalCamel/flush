@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Options;
 
 /// <summary>
@@ -55,7 +55,7 @@ internal static class Program {
 
                 // display results
                 if (interfaceOptions.DisplayResults) {
-                    Console.WriteLine(script);
+                    script.WriteStringContents(Console.Out);
                 }
 
                 // run program
@@ -267,21 +267,34 @@ internal static class Program {
     /// <param name="script">The compiled program.</param>
     /// <param name="sourceFile">The source file that the program was compiled from.</param>
     private static void TryWriteResult(ILogger logger, InterfaceOptions interfaceOptions, Script script, SourceFile sourceFile) {
-        // if no custom output path is provided, put the file to the same directory as the input
-        string outputPath = interfaceOptions.OutputPath ?? Path.ChangeExtension(sourceFile.FullPath, interfaceOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION);
-
-        // attempt to write to output file
         try {
+            // if no custom output path is provided, put the file to the same directory as the input
+            string filePath = interfaceOptions.OutputPath ?? sourceFile.FullPath;
+
+            // get file extension
+            string fileExtension = interfaceOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION;
+
+            // change path extension
+            filePath = Path.ChangeExtension(filePath, fileExtension);
+
+            // attempt to create file
+            FileStream fileStream = new(filePath, FileMode.Create);
+
+            // write plain text
             if (interfaceOptions.CompileToPlainText) {
-                string text = script.ToString();
-                File.WriteAllText(outputPath, text);
+                StreamWriter streamWriter = new(fileStream, Encoding.UTF8);
+                script.WriteStringContents(streamWriter);
+                streamWriter.Flush();
             }
+
+            // write binary
             else {
                 byte[] bytes = BinarySerializer.ScriptToBytes(script);
-                File.WriteAllBytes(outputPath, bytes);
+                fileStream.Write(bytes, 0, bytes.Length);
+                fileStream.Flush();
             }
 
-            logger.FileWriteSuccess(outputPath);
+            logger.FileWriteSuccess(filePath);
         }
         // catch any IO error
         catch (Exception e) {

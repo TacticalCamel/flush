@@ -7,7 +7,7 @@
         <BaseIntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
 
         <!-- build output directory -->
-        <OutputPath>$(SolutionDir).out\bin\$(AssemblyName)\</OutputPath>
+        <OutputPath>$(SolutionDir).out\bin\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
 
         <!-- other -->

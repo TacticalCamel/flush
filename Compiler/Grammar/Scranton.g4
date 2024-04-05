@@ -32,41 +32,31 @@ importStatement
 	;
 
 programBody
-	: (functionDefinition | typeDefinition | statement)*
-	;
-
-functionDefinition
-	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	: (typeDefinition | statement)*
 	;
 
 typeDefinition
-	: Header=classHeader BLOCK_START Body=classBody BLOCK_END
+	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id GenericParameters=genericParameters? BLOCK_START Body=typeBody BLOCK_END
 	;
 
-classHeader
-	: Modifiers=modifierList KW_CLASS Name=id (COLON inheritanceList)?
+typeBody
+	: (fieldDefinition | constructorDefinition | methodDefinition)*
 	;
 
-inheritanceList
-	: ((type PARAM_SEP)* type)?
-	;
-
-classBody
-	: classMember*
-	;
-
-classMember
-	: functionDefinition
-	| propertyDefinition
-	| constructorDefinition
-	;
-
-propertyDefinition
+fieldDefinition
 	: Modifiers=modifierList Type=type Name=id STATEMENT_SEP
 	;
-	
+
 constructorDefinition
-	: KW_NEW HEAD_START ParameterList=parameterList HEAD_END Body=block
+	: Modifiers=modifierList TypeName=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	;
+
+methodDefinition
+	: Modifiers=modifierList ReturnType=returnType Name=id HEAD_START ParameterList=parameterList HEAD_END Body=block
+	;
+
+genericParameters
+	: OP_LESS (type PARAM_SEP)* type OP_GREATER
 	;
 
 statement
@@ -238,8 +228,8 @@ type
 	;
 
 returnType
-	: type
-	| KW_VOID
+	: Type=type
+	| Void=KW_VOID
 	;
 
 parameterList
@@ -251,8 +241,7 @@ modifierList
 	;
 
 modifier
-	: KW_PUBLIC
-	| KW_PRIVATE
+	: KW_PRIVATE
 	;
 
 id
@@ -265,6 +254,5 @@ contextualKeyword
 	| KW_IMPORT
 	| KW_IN
 	| KW_CLASS
-	| KW_PUBLIC
 	| KW_PRIVATE
 	;

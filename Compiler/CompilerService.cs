@@ -10,7 +10,7 @@ using Grammar;
 using Builder;
 using Analysis;
 using Antlr4.Runtime;
-using Interpreter.Serialization;
+using Interpreter.Bytecode;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -37,7 +37,7 @@ public sealed class CompilerService(CompilerOptions options, ILogger logger) {
     /// <returns>An executable script if successful, null otherwise.</returns>
     public Script? Compile(string code) {
         // create a new builder
-        ScriptBuilder scriptBuilder = new(Options, Logger);
+        ScriptBuilder scriptBuilder = new(Options);
 
         // create lexer and listen to errors
         AntlrInputStream inputStream = new(code);

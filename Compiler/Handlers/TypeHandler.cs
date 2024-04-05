@@ -1,43 +1,13 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
-using Interpreter.Bytecode;
+using Interpreter;
 using Interpreter.Types;
 
 /// <summary>
 /// This class manages the imported types the program sees.
-/// To avoid naming conflicts, not all modules are visible by default.
 /// </summary>
 internal sealed class TypeHandler {
-    /// <summary>
-    /// Backing field for the core type helper so the public property can have a non-nullable type.
-    /// </summary>
-    private CoreTypeHelper? CoreTypesBackingField;
-
-    /// <summary>
-    /// Helper to retrieve type identifiers for core types.
-    /// </summary>
-    /// <exception cref="Exception">Thrown when the property is accessed before loading types.</exception>
-    public CoreTypeHelper CoreTypes => CoreTypesBackingField ?? throw new Exception("Core type helper accessed before loading types");
-
-    /// <summary>
-    /// Backing field for the cast helper so the public property can have a non-nullable type.
-    /// </summary>
-    private CastHelper? CastsBackingField;
-
-    /// <summary>
-    /// Helper for type conversions.
-    /// </summary>
-    /// <exception cref="Exception">Thrown when the property is accessed before loading types.</exception>
-    public CastHelper Casts => CastsBackingField ?? throw new Exception("Conversion helper accessed before loading types");
-
-    /// <summary>
-    /// The module of the current program.
-    /// Code within the same module is visible by default.
-    /// Can be null, in which case the code can not be imported to other programs.
-    /// </summary>
-    private string? ProgramModule { get; set; }
-
     /// <summary>
     /// Whether all runtime code should be visible by default.
     /// </summary>
@@ -45,75 +15,81 @@ internal sealed class TypeHandler {
 
     /// <summary>
     /// The imported modules of the program.
-    /// Use a hashset to avoid duplicates.
     /// </summary>
-    private HashSet<string> Imports { get; } = [];
+    private HashSet<string> Imports { get; }
 
     /// <summary>
     /// The list of currently visible types.
     /// </summary>
-    private List<TypeInfo> Types { get; set; } = [];
+    private List<TypeDefinition> Types { get; }
 
     /// <summary>
-    /// Gets the modules that should be visible from the current program.
+    /// The module of the current program.
     /// </summary>
-    /// <returns></returns>
-    private string[] GetVisibleModules() {
-        // imports are visible
-        IEnumerable<string> results = Imports;
+    private string? ProgramModule { get; set; }
 
-        // the current module is also visible
-        if (ProgramModule is not null && !Imports.Contains(ProgramModule)) {
-            results = results.Append(ProgramModule);
+    /// <summary>
+    /// The address of the program module name in the data section.
+    /// </summary>
+    public int ModuleNameAddress { get; private set; } = -1;
+
+    /// <summary>
+    /// Helper to retrieve type identifiers for core types.
+    /// </summary>
+    public CoreTypeHelper CoreTypes { get; }
+
+    /// <summary>
+    /// Helper for type conversions.
+    /// </summary>
+    public CastHelper Casts { get; }
+
+    /// <summary>
+    /// Create a new type handler.
+    /// </summary>
+    public TypeHandler() {
+        // load initial types
+        ClassLoader.LoadRuntimeInitial(out HashSet<string> imports, out List<TypeDefinition> types);
+
+        // assign properties
+        Imports = imports;
+        Types = types;
+        CoreTypes = new CoreTypeHelper(Types);
+        Casts = new CastHelper(CoreTypes);
+    }
+
+    /// <summary>
+    /// Set the module of the program.
+    /// </summary>
+    /// <param name="address">The address of the string in the data section.</param>
+    /// <param name="name">The module to use.</param>
+    public void SetModule(int address, string name) {
+        // already set
+        if (ProgramModule is not null) {
+            return;
         }
 
-        return results.ToArray();
+        // set address and name
+        ModuleNameAddress = address;
+        ProgramModule = name;
+
+        // add module to imports
+        // do not emit a warning if it's a duplicate
+        AddImport(ProgramModule);
     }
 
     /// <summary>
-    /// Load all visible types.
+    /// Import a module.
     /// </summary>
-    public void LoadTypes() {
-        string[] visibleModules = GetVisibleModules();
-
-        Types = ClassLoader.LoadModules(visibleModules, AutoImportEnabled);
-
-        CoreTypesBackingField = new CoreTypeHelper {
-            I8 = GetFromType<Runtime.Core.I8>(),
-            I16 = GetFromType<Runtime.Core.I16>(),
-            I32 = GetFromType<Runtime.Core.I32>(),
-            I64 = GetFromType<Runtime.Core.I64>(),
-            I128 = GetFromType<Runtime.Core.I128>(),
-            U8 = GetFromType<Runtime.Core.U8>(),
-            U16 = GetFromType<Runtime.Core.U16>(),
-            U32 = GetFromType<Runtime.Core.U32>(),
-            U64 = GetFromType<Runtime.Core.U64>(),
-            U128 = GetFromType<Runtime.Core.U128>(),
-            F16 = GetFromType<Runtime.Core.F16>(),
-            F32 = GetFromType<Runtime.Core.F32>(),
-            F64 = GetFromType<Runtime.Core.F64>(),
-            Bool = GetFromType<Runtime.Core.Bool>(),
-            Char = GetFromType<Runtime.Core.Char>(),
-            Str = GetFromType<Runtime.Core.Str>(),
-            Null = new TypeIdentifier(TypeInfo.Null, [])
-        };
-
-        CastsBackingField = new CastHelper(CoreTypesBackingField);
-    }
-
-    /// <summary>
-    /// Add a new import.
-    /// </summary>
-    /// <param name="name">The module to import.</param>
-    /// <returns>True if successful, false if the imported module was already present.</returns>
-    public bool Add(string name) {
+    /// <param name="name">The name of the module.</param>
+    /// <returns>False if the module was already imported, true otherwise.</returns>
+    public bool AddImport(string name) {
         return Imports.Add(name);
     }
 
     /// <summary>
-    /// Enable auto import.
+    /// Enable auto imports.
     /// </summary>
-    /// <returns>True if successful, false if auto import was already enabled.</returns>
+    /// <returns>False if it was already enabled, true otherwise.</returns>
     public bool EnableAutoImport() {
         bool success = !AutoImportEnabled;
 
@@ -123,11 +99,10 @@ internal sealed class TypeHandler {
     }
 
     /// <summary>
-    /// Set the module of the program.
+    /// Load all currently visible types.
     /// </summary>
-    /// <param name="name">The module to use.</param>
-    public void SetModule(string name) {
-        ProgramModule = name;
+    public void LoadTypes() {
+        ClassLoader.LoadRuntime(AutoImportEnabled, Imports, Types);
     }
 
     /// <summary>
@@ -135,121 +110,148 @@ internal sealed class TypeHandler {
     /// </summary>
     /// <param name="name">The name of the type.</param>
     /// <returns>The type if it was found, null otherwise.</returns>
-    public TypeInfo? TryGetByName(string name) {
+    public TypeDefinition? GetTypeByName(string name) {
         return Types.FirstOrDefault(type => type.Name == name);
-    }
-
-    /// <summary>
-    /// Retrieve a non-generic type directly.
-    /// </summary>
-    /// <typeparam name="T">The the type to retrieve.</typeparam>
-    /// <returns>The identifier pf the type.</returns>
-    private TypeIdentifier GetFromType<T>() {
-        Type type = typeof(T);
-
-        if (type.IsGenericType) {
-            throw new ArgumentException("Type cannot be generic");
-        }
-
-        string name = ClassLoader.GetTypeName(type);
-
-        TypeInfo typeInfo = Types.First(x => x.Name == name);
-
-        return new TypeIdentifier(typeInfo, []);
     }
 
     /// <summary>
     /// Collection of properties that represent all types constants can have.
     /// </summary>
-    public sealed class CoreTypeHelper {
-        /// <summary>
-        /// Identifier for null references.
-        /// </summary>
-        public required TypeIdentifier Null { get; init; }
-
+    internal sealed class CoreTypeHelper {
         /// <summary>
         /// Identifier for 8-bit signed integers.
         /// </summary>
-        public required TypeIdentifier I8 { get; init; }
+        public TypeIdentifier I8 { get; }
 
         /// <summary>
         /// Identifier for 16-bit signed integers.
         /// </summary>
-        public required TypeIdentifier I16 { get; init; }
+        public TypeIdentifier I16 { get; }
 
         /// <summary>
         /// Identifier for 32-bit signed integers.
         /// </summary>
-        public required TypeIdentifier I32 { get; init; }
+        public TypeIdentifier I32 { get; }
 
         /// <summary>
         /// Identifier for 64-bit signed integers.
         /// </summary>
-        public required TypeIdentifier I64 { get; init; }
+        public TypeIdentifier I64 { get; }
 
         /// <summary>
         /// Identifier for 128-bit signed integers.
         /// </summary>
-        public required TypeIdentifier I128 { get; init; }
+        public TypeIdentifier I128 { get; }
 
         /// <summary>
         /// Identifier for 8-bit unsigned integers.
         /// </summary>
-        public required TypeIdentifier U8 { get; init; }
+        public TypeIdentifier U8 { get; }
 
         /// <summary>
         /// Identifier for 16-bit unsigned integers.
         /// </summary>
-        public required TypeIdentifier U16 { get; init; }
+        public TypeIdentifier U16 { get; }
 
         /// <summary>
         /// Identifier for 32-bit unsigned integers.
         /// </summary>
-        public required TypeIdentifier U32 { get; init; }
+        public TypeIdentifier U32 { get; }
 
         /// <summary>
         /// Identifier for 64-bit unsigned integers.
         /// </summary>
-        public required TypeIdentifier U64 { get; init; }
+        public TypeIdentifier U64 { get; }
 
         /// <summary>
         /// Identifier for 128-bit unsigned integers.
         /// </summary>
-        public required TypeIdentifier U128 { get; init; }
+        public TypeIdentifier U128 { get; }
 
         /// <summary>
         /// Identifier for 16-bit floats.
         /// </summary>
-        public required TypeIdentifier F16 { get; init; }
+        public TypeIdentifier F16 { get; }
 
         /// <summary>
         /// Identifier for 32-bit floats.
         /// </summary>
-        public required TypeIdentifier F32 { get; init; }
+        public TypeIdentifier F32 { get; }
 
         /// <summary>
         /// Identifier for 64-bit floats.
         /// </summary>
-        public required TypeIdentifier F64 { get; init; }
+        public TypeIdentifier F64 { get; }
 
         /// <summary>
         /// Identifier for booleans.
         /// </summary>
-        public required TypeIdentifier Bool { get; init; }
+        public TypeIdentifier Bool { get; }
 
         /// <summary>
         /// Identifier for characters.
         /// </summary>
-        public required TypeIdentifier Char { get; init; }
+        public TypeIdentifier Char { get; }
 
         /// <summary>
         /// Identifier for strings.
         /// </summary>
-        public required TypeIdentifier Str { get; init; }
+        public TypeIdentifier Str { get; }
+
+        /// <summary>
+        /// Identifier for a return type that does not exist.
+        /// </summary>
+        public TypeIdentifier Void { get; }
+
+        /// <summary>
+        /// Create a new core type helper.
+        /// </summary>
+        /// <param name="types">A list of type definitions that contain all the core types.</param>
+        public CoreTypeHelper(List<TypeDefinition> types) {
+            I8 = GetCoreType<Runtime.Core.I8>();
+            I16 = GetCoreType<Runtime.Core.I16>();
+            I32 = GetCoreType<Runtime.Core.I32>();
+            I64 = GetCoreType<Runtime.Core.I64>();
+            I128 = GetCoreType<Runtime.Core.I128>();
+            U8 = GetCoreType<Runtime.Core.U8>();
+            U16 = GetCoreType<Runtime.Core.U16>();
+            U32 = GetCoreType<Runtime.Core.U32>();
+            U64 = GetCoreType<Runtime.Core.U64>();
+            U128 = GetCoreType<Runtime.Core.U128>();
+            F16 = GetCoreType<Runtime.Core.F16>();
+            F32 = GetCoreType<Runtime.Core.F32>();
+            F64 = GetCoreType<Runtime.Core.F64>();
+            Bool = GetCoreType<Runtime.Core.Bool>();
+            Char = GetCoreType<Runtime.Core.Char>();
+            Str = GetCoreType<Runtime.Core.Str>();
+
+            Void = new TypeIdentifier(new TypeDefinition {
+                Modifiers = default,
+                IsReference = false,
+                Name = "void",
+                GenericIndex = -1,
+                Fields = [],
+                Methods = [],
+                GenericParameterCount = 0,
+                StackSize = 0
+            }, []);
+
+            return;
+
+            TypeIdentifier GetCoreType<T>() {
+                string name = ClassLoader.GetTypeName(typeof(T));
+
+                TypeDefinition typeDefinition = types.First(x => x.Name == name);
+
+                return new TypeIdentifier(typeDefinition, []);
+            }
+        }
     }
 
-    // TODO comment
-    public sealed class CastHelper {
+    /// <summary>
+    /// Helper class for type conversions.
+    /// </summary>
+    internal sealed class CastHelper {
         /// <summary>
         /// A collection of all primitive types.
         /// </summary>

@@ -2,7 +2,6 @@
 
 using System.Runtime.InteropServices;
 using Runtime.Core;
-using Data;
 
 /// <summary>
 /// This class manages the memory space of the program data section at compile time.
@@ -166,7 +165,7 @@ internal sealed unsafe class DataHandler {
     /// Create a byte array containing all objects stored by this data handler.
     /// </summary>
     /// <returns>The created byte array.</returns>
-    public byte[] ToBytes() {
+    public byte[] GetByteArray() {
         int length = RoundUp(DataLength, 16);
         byte[] bytes = new byte[length];
 
@@ -205,7 +204,7 @@ internal sealed unsafe class DataHandler {
         /// </summary>
         /// <param name="value">The object to store.</param>
         /// <returns>The address of the object in the data section.</returns>
-        public MemoryAddress Add(T value);
+        public int Add(T value);
 
         /// <summary>
         /// Write all stored objects to a byte array using their memory addresses.
@@ -231,13 +230,13 @@ internal sealed unsafe class DataHandler {
         /// </summary>
         private Dictionary<T, int> Objects { get; } = [];
 
-        public MemoryAddress Add(T value) {
+        public int Add(T value) {
             // check if the object is already stored
             bool contains = Objects.TryGetValue(value, out int address);
 
             // return the stored address of duplicates
             if (contains) {
-                return new MemoryAddress((ulong)address, MemoryLocation.Data);
+                return address;
             }
 
             // determine object address
@@ -247,7 +246,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return new MemoryAddress((ulong)address, MemoryLocation.Data);
+            return address;
         }
 
         public void WriteContents(byte[] bytes) {
@@ -278,7 +277,7 @@ internal sealed unsafe class DataHandler {
         /// </summary>
         private Dictionary<string, int> Objects { get; } = [];
 
-        public MemoryAddress Add(string value) {
+        public int Add(string value) {
             // check if the object is already stored
             bool contains = Objects.TryGetValue(value, out int address);
 
@@ -286,7 +285,7 @@ internal sealed unsafe class DataHandler {
             // the way strings are stored in memory only allows the optimisation for duplicates,
             // if the 2 strings are exactly the same
             if (contains) {
-                return new MemoryAddress((ulong)address, MemoryLocation.Data);
+                return address;
             }
 
             // determine object address
@@ -296,7 +295,7 @@ internal sealed unsafe class DataHandler {
             // store the object
             Objects.Add(value, address);
 
-            return new MemoryAddress((ulong)address, MemoryLocation.Data);
+            return address;
         }
 
         public void WriteContents(byte[] bytes) {
@@ -323,7 +322,6 @@ internal sealed unsafe class DataHandler {
     /// </summary>
     /// <param name="address">The starting memory address.</param>
     /// <param name="size">The size in bytes.</param>
-    [StructLayout(LayoutKind.Sequential)]
     private readonly struct Hole(int address, int size) {
         /// <summary>
         /// The starting memory address.
