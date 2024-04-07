@@ -87,13 +87,14 @@ public unsafe ref struct ScriptExecutor {
             case OperationCode.cjmp:
                 DebugState($"addr=0x{i.Address:X}");
                 
-                if (!*((bool*)StackPtr - 1)) {
+                StackPtr--;
+                
+                if (*StackPtr == 0) {
                     InstructionIndex = i.Address;
+                    goto start;
                 }
 
-                StackPtr--;
-
-                goto start;
+                break;
 
             // stack operations
 
