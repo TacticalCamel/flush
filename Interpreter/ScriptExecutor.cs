@@ -85,9 +85,9 @@ public unsafe ref struct ScriptExecutor {
                 goto start;
 
             case OperationCode.cjmp:
-                DebugState($"addr=0x{i.Address:X}");
-                
                 StackPtr--;
+                
+                DebugState($"addr=0x{i.Address:X}");
                 
                 if (*StackPtr == 0) {
                     InstructionIndex = i.Address;
