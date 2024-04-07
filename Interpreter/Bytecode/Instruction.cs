@@ -27,7 +27,7 @@ public unsafe struct Instruction {
     /// Used when copying from the data section.
     /// </summary>
     [FieldOffset(0)]
-    public int DataAddress;
+    public int Address;
     
     [FieldOffset(0)]
     public int Count;

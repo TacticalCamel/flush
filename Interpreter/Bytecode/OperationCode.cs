@@ -10,6 +10,14 @@ public enum OperationCode : byte {
     /// <summary>Stop the program execution.</summary>
     /// <remarks>opcode:1 return-code:4</remarks>
     exit,
+    
+    /// <summary>Set the instruction pointer.</summary>
+    /// <remarks>opcode:1 value:4</remarks>
+    jump,
+    
+    /// <summary>Set the instruction pointer if the top byte of the stack evaluates to true. Removes the byte.</summary>
+    /// <remarks>opcode:1 value:4</remarks>
+    cjmp,
 
     /// <summary>Push bytes from the data section to the stack.</summary>
     /// <remarks>opcode:1 size:4 data-address:4</remarks>

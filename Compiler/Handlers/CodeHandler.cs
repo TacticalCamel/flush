@@ -50,14 +50,13 @@ internal sealed class CodeHandler {
     }
 
     public bool DefineVariable(string name, TypeIdentifier type) {
+        // variable already declared
         if (StackScopes.Any(scope => scope.DeclaredVariables.Any(x => x.Name == name))) {
             return false;
         }
 
         Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)StackSize, MemoryLocation.Stack), type));
         Scope scope = StackScopes.Peek();
-        
-        //Console.WriteLine($"define {name} {variable.ExpressionResult}");
         
         scope.DeclaredVariables.Add(variable);
 
@@ -68,6 +67,28 @@ internal sealed class CodeHandler {
         return StackScopes
             .Select(scope => scope.DeclaredVariables.FirstOrDefault(x => x.Name == name)?.ExpressionResult)
             .FirstOrDefault();
+    }
+
+    public JumpHandle CreateJumpPlaceholder() {
+        Instructions.Add(new Instruction());
+
+        return new JumpHandle(Instructions.Count - 1);
+    }
+
+    public void ConditionalJump(JumpHandle handle) {
+        Instructions[handle.Index] = new Instruction {
+            Code = OperationCode.cjmp,
+            Address = Instructions.Count - 1
+        };
+
+        StackSize--;
+    }
+    
+    public void Jump(JumpHandle handle) {
+        Instructions[handle.Index] = new Instruction {
+            Code = OperationCode.jump,
+            Address = Instructions.Count - 1
+        };
     }
 
     /// <summary>
@@ -84,7 +105,7 @@ internal sealed class CodeHandler {
         
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
-            DataAddress = address,
+            Address = address,
             TypeSize = size
         });
 

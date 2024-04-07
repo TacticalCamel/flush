@@ -69,6 +69,24 @@ public unsafe ref struct ScriptExecutor {
         // the horrors persist
         // but so do i
         switch (i.Code) {
+            // logical operations
+            
+            case OperationCode.jump:
+                InstructionIndex = i.Address;
+                
+                Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
+                break;
+            
+            case OperationCode.cjmp:
+                if (!*((bool*)StackPtr - 1)) {
+                    InstructionIndex = i.Address;
+                }
+                
+                StackPtr--;
+                
+                Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
+                break;
+            
             case OperationCode.exit:
                 Console.WriteLine($"exit\n    {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
                 return;
@@ -76,13 +94,13 @@ public unsafe ref struct ScriptExecutor {
             // stack operations
 
             case OperationCode.pshd: {
-                fixed (byte* source = &Data[i.DataAddress]) {
+                fixed (byte* source = &Data[i.Address]) {
                     Unsafe.CopyBlockUnaligned(StackPtr, source, i.TypeSize);
                 }
 
                 StackPtr += i.TypeSize;
 
-                Console.WriteLine($"{i.Code} addr=0x{i.DataAddress:X} size={i.TypeSize}\n    {StackString}\n");
+                Console.WriteLine($"{i.Code} addr=0x{i.Address:X} size={i.TypeSize}\n    {StackString}\n");
                 break;
             }
 

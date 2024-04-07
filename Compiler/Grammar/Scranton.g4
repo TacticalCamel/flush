@@ -94,7 +94,11 @@ block
 	;
 
 ifBlock
-	: KW_IF HEAD_START expression HEAD_END statement (KW_ELSE KW_IF HEAD_START expression HEAD_END statement)* (KW_ELSE statement)?
+	: ifBlockBody (KW_ELSE ifBlockBody)* (KW_ELSE ElseStatement=statement)?
+	;
+
+ifBlockBody
+	: KW_IF HEAD_START Condition=expression HEAD_END Statement=statement
 	;
 
 forBlock
