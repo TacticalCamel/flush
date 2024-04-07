@@ -78,7 +78,7 @@ internal sealed class CodeHandler {
     public void ConditionalJump(JumpHandle handle) {
         Instructions[handle.Index] = new Instruction {
             Code = OperationCode.cjmp,
-            Address = Instructions.Count - 1
+            Address = Instructions.Count
         };
 
         StackSize--;
@@ -87,7 +87,7 @@ internal sealed class CodeHandler {
     public void Jump(JumpHandle handle) {
         Instructions[handle.Index] = new Instruction {
             Code = OperationCode.jump,
-            Address = Instructions.Count - 1
+            Address = Instructions.Count
         };
     }
 

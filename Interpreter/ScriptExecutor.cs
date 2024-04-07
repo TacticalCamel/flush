@@ -75,7 +75,7 @@ public unsafe ref struct ScriptExecutor {
                 InstructionIndex = i.Address;
                 
                 Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
-                break;
+                goto start;
             
             case OperationCode.cjmp:
                 if (!*((bool*)StackPtr - 1)) {
@@ -85,7 +85,7 @@ public unsafe ref struct ScriptExecutor {
                 StackPtr--;
                 
                 Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
-                break;
+                goto start;
             
             case OperationCode.exit:
                 Console.WriteLine($"exit\n    {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
