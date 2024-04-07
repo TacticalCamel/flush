@@ -58,6 +58,8 @@ public unsafe ref struct ScriptExecutor {
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when an unknown instruction is encountered.</exception>
     public void Run() {
+        Console.WriteLine();
+        
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         // start label to jump back to
@@ -70,26 +72,28 @@ public unsafe ref struct ScriptExecutor {
         // but so do i
         switch (i.Code) {
             // logical operations
-            
+
+            case OperationCode.exit:
+                DebugState($"{stopwatch.Elapsed.TotalMilliseconds:N3}ms");
+                return;
+
             case OperationCode.jump:
-                InstructionIndex = i.Address;
+                DebugState($"addr=0x{i.Address:X}");
                 
-                Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
+                InstructionIndex = i.Address;
+
                 goto start;
-            
+
             case OperationCode.cjmp:
+                DebugState($"addr=0x{i.Address:X}");
+                
                 if (!*((bool*)StackPtr - 1)) {
                     InstructionIndex = i.Address;
                 }
-                
+
                 StackPtr--;
-                
-                Console.WriteLine($"{i.Code} addr=0x{i.Address + 1:X}\n    {StackString}\n");
+
                 goto start;
-            
-            case OperationCode.exit:
-                Console.WriteLine($"exit\n    {stopwatch.Elapsed.TotalMilliseconds:N3}ms");
-                return;
 
             // stack operations
 
@@ -100,7 +104,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.TypeSize;
 
-                Console.WriteLine($"{i.Code} addr=0x{i.Address:X} size={i.TypeSize}\n    {StackString}\n");
+                DebugState($"addr=0x{i.Address:X} size={i.TypeSize}");
                 break;
             }
 
@@ -108,14 +112,14 @@ public unsafe ref struct ScriptExecutor {
                 Unsafe.InitBlockUnaligned(StackPtr, 0, i.TypeSize);
                 StackPtr += i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
             case OperationCode.pop: {
                 StackPtr -= i.Count;
 
-                Console.WriteLine($"{i.Code} {i.Count}\n    {StackString}\n");
+                DebugState($"{i.Count}");
                 break;
             }
 
@@ -142,7 +146,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -167,7 +171,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -192,7 +196,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -217,7 +221,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -242,7 +246,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -265,7 +269,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -288,7 +292,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -311,7 +315,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -343,7 +347,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 4;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -370,7 +374,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 4;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -391,7 +395,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -410,7 +414,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -429,7 +433,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -448,7 +452,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -467,7 +471,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -484,7 +488,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -501,7 +505,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -518,7 +522,7 @@ public unsafe ref struct ScriptExecutor {
                         break;
                 }
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -545,7 +549,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -570,7 +574,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -595,14 +599,14 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
             case OperationCode.negb: {
                 *(StackPtr - 1) = (byte)(~(*(StackPtr - 1)) & 1);
 
-                Console.WriteLine($"{i.Code}\n    {StackString}\n");
+                DebugState($"{i.Code}");
                 break;
             }
 
@@ -629,7 +633,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -654,7 +658,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -679,7 +683,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -704,7 +708,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -729,7 +733,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -754,7 +758,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr -= 2 * i.TypeSize - 1;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize}");
                 break;
             }
 
@@ -834,7 +838,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.SecondTypeSize - i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize} {i.SecondTypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize} {i.SecondTypeSize}");
                 break;
 
             case OperationCode.utof:
@@ -911,7 +915,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.SecondTypeSize - i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize} {i.SecondTypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize} {i.SecondTypeSize}");
                 break;
 
             case OperationCode.ftof:
@@ -962,7 +966,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.SecondTypeSize - i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize} {i.SecondTypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize} {i.SecondTypeSize}");
                 break;
 
             case OperationCode.ftoi:
@@ -1031,7 +1035,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.SecondTypeSize - i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize} {i.SecondTypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize} {i.SecondTypeSize}");
                 break;
 
             case OperationCode.ftou:
@@ -1100,7 +1104,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.SecondTypeSize - i.TypeSize;
 
-                Console.WriteLine($"{i.Code} {i.TypeSize} {i.SecondTypeSize}\n    {StackString}\n");
+                DebugState($"{i.TypeSize} {i.SecondTypeSize}");
                 break;
 
             default:
@@ -1116,6 +1120,10 @@ public unsafe ref struct ScriptExecutor {
     /// Debug property: return the current state of the stack.
     /// </summary>
     private string StackString {
-        get { return $"stack: {string.Join(' ', Stack[..(int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]))].ToArray().Select(x => $"{x:X2}"))}"; }
+        get { return $"{string.Join(' ', Stack[..(int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]))].ToArray().Select(x => $"{x:X2}"))}"; }
+    }
+
+    private void DebugState(string message) {
+        Console.WriteLine($"0x{InstructionIndex:X4} | {Instructions[InstructionIndex].Code,-4} {message,-20} | {StackString}");
     }
 }

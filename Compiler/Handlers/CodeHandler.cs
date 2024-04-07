@@ -28,8 +28,6 @@ internal sealed class CodeHandler {
     /// Enter a new scope.
     /// </summary>
     public void EnterScope() {
-        //Console.WriteLine($"enter scope");
-
         Scope scope = new(StackSize);
 
         StackScopes.Push(scope);
@@ -40,12 +38,8 @@ internal sealed class CodeHandler {
     /// Set the stack size back to the value it had before entering the scope.
     /// </summary>
     public void ExitScope() {
-        //Console.WriteLine($"exit scope");
-
         Scope scope = StackScopes.Pop();
 
-        Console.WriteLine($"{StackSize} {scope.StackSizeBefore}");
-        
         PopBytes(StackSize - scope.StackSizeBefore);
     }
 
