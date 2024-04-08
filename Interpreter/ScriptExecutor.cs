@@ -1125,6 +1125,8 @@ public unsafe ref struct ScriptExecutor {
     }
 
     private void DebugState(string message) {
-        Console.WriteLine($"0x{InstructionIndex:X4} | {Instructions[InstructionIndex].Code,-4} {message,-20} | {StackString}");
+        int length = (Math.ILogB(Instructions.Length) + 3) / 4;
+        
+        Console.WriteLine($"0x{InstructionIndex.ToString("X").PadRight(length, '0')} | {Instructions[InstructionIndex].Code,-4} {message,-20} | {StackString}");
     }
 }
