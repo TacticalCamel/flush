@@ -151,7 +151,7 @@ internal sealed class CodeHandler {
             TypeSize = size
         });
 
-        StackSize -= 4;
+        StackSize -= size * 2 - 1;
         
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
