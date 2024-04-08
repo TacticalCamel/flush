@@ -4,6 +4,8 @@ import auto
 
 //i32 i = 4;
 
+(i32)16 + 3 - 77777 * 3 / 7.7777 == 3 << 1;
+
 if(false){
 	0xffffff++;
 }

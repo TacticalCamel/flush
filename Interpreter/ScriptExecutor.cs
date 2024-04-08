@@ -51,6 +51,10 @@ public unsafe ref struct ScriptExecutor {
 
         // stack allocated memory, doesn't have to be pinned
         StackPtr = (byte*)Unsafe.AsPointer(ref Stack[0]);
+
+        // debug info
+        HexLength = Math.Max(2, Instructions.Length.ToString("X").Length);
+        StrLength = HexLength + 5;
     }
 
     /// <summary>
@@ -59,7 +63,7 @@ public unsafe ref struct ScriptExecutor {
     /// <exception cref="ArgumentException">Thrown when an unknown instruction is encountered.</exception>
     public void Run() {
         Console.WriteLine();
-        
+
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         // start label to jump back to
@@ -78,17 +82,17 @@ public unsafe ref struct ScriptExecutor {
                 return;
 
             case OperationCode.jump:
-                DebugState($"addr=0x{i.Address:X}");
-                
+                DebugState($"0x{i.Address:X}");
+
                 InstructionIndex = i.Address;
 
                 goto start;
 
             case OperationCode.cjmp:
                 StackPtr--;
-                
-                DebugState($"addr=0x{i.Address:X}");
-                
+
+                DebugState($"0x{i.Address:X}");
+
                 if (*StackPtr == 0) {
                     InstructionIndex = i.Address;
                     goto start;
@@ -105,7 +109,7 @@ public unsafe ref struct ScriptExecutor {
 
                 StackPtr += i.TypeSize;
 
-                DebugState($"addr=0x{i.Address:X} size={i.TypeSize}");
+                DebugState($"0x{i.Address:X} {i.TypeSize}");
                 break;
             }
 
@@ -1117,16 +1121,17 @@ public unsafe ref struct ScriptExecutor {
         goto start;
     }
 
-    /// <summary>
-    /// Debug property: return the current state of the stack.
-    /// </summary>
-    private string StackString {
-        get { return $"{string.Join(' ', Stack[..(int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]))].ToArray().Select(x => $"{x:X2}"))}"; }
-    }
+    #region Debug information
+
+    private readonly int HexLength;
+    private readonly int StrLength;
 
     private void DebugState(string message) {
-        int length = (Math.ILogB(Instructions.Length) + 3) / 4;
-        
-        Console.WriteLine($"0x{InstructionIndex.ToString("X").PadRight(length, '0')} | {Instructions[InstructionIndex].Code,-4} {message,-20} | {StackString}");
+        int index = (int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]));
+        string stack = string.Join(' ', Stack[..index].ToArray().Select(x => x.ToString("X2")));
+
+        Console.WriteLine($"0x{InstructionIndex.ToString("X").PadRight(HexLength, '0')} | {Instructions[InstructionIndex].Code,-4} {message.PadRight(StrLength)} | {stack}");
     }
+
+    #endregion
 }
