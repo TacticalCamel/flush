@@ -1130,7 +1130,7 @@ public unsafe ref struct ScriptExecutor {
         int index = (int)(StackPtr - (byte*)Unsafe.AsPointer(ref Stack[0]));
         string stack = string.Join(' ', Stack[..index].ToArray().Select(x => x.ToString("X2")));
 
-        Console.WriteLine($"0x{InstructionIndex.ToString("X").PadRight(HexLength, '0')} | {Instructions[InstructionIndex].Code,-4} {message.PadRight(StrLength)} | {stack}");
+        Console.WriteLine($"0x{InstructionIndex.ToString("X").PadLeft(HexLength, '0')} | {Instructions[InstructionIndex].Code,-4} {message.PadRight(StrLength)} | {stack}");
     }
 
     #endregion
