@@ -153,7 +153,7 @@ internal sealed class Issue {
     public static Issue InvalidCast(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
         Id = 213,
         Severity = Severity.Error,
-        Message = $"Type '{source}' cannot be cast to '{target}'"
+        Message = $"Cannot cast '{source}' to '{target}'"
     };
     
     public static Issue ExplicitCastRedundant(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
@@ -190,6 +190,12 @@ internal sealed class Issue {
         Id = 219,
         Severity = Severity.Error,
         Message = $"{typeName} expects {expected} generic parameters, but got {actual}"
+    };
+    
+    public static Issue VariableAlreadyDeclared(ParserRuleContext context, string name) => new(context) {
+        Id = 220,
+        Severity = Severity.Error,
+        Message = $"Variable '{name}' is already declared."
     };
 
     #endregion

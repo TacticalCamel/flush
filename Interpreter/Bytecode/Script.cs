@@ -110,7 +110,7 @@ public sealed unsafe class Script {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
 
-            stream.Write($"    0x{instructionSize * i:X8}    {name,-4}");
+            stream.Write($"    0x{i:X8}    {name,-4}");
 
             for (int j = 0; j < instructionSize; j++) {
                 stream.Write($"{(j % 2 == 0 ? ' ' : string.Empty)}{instruction.Bytes[j]:X2}");

@@ -28,8 +28,6 @@ internal sealed class CodeHandler {
     /// Enter a new scope.
     /// </summary>
     public void EnterScope() {
-        //Console.WriteLine($"enter scope");
-
         Scope scope = new(StackSize);
 
         StackScopes.Push(scope);
@@ -40,22 +38,19 @@ internal sealed class CodeHandler {
     /// Set the stack size back to the value it had before entering the scope.
     /// </summary>
     public void ExitScope() {
-        //Console.WriteLine($"exit scope");
-
         Scope scope = StackScopes.Pop();
 
         PopBytes(StackSize - scope.StackSizeBefore);
     }
 
     public bool DefineVariable(string name, TypeIdentifier type) {
+        // variable already declared
         if (StackScopes.Any(scope => scope.DeclaredVariables.Any(x => x.Name == name))) {
             return false;
         }
 
         Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)StackSize, MemoryLocation.Stack), type));
         Scope scope = StackScopes.Peek();
-        
-        //Console.WriteLine($"define {name} {variable.ExpressionResult}");
         
         scope.DeclaredVariables.Add(variable);
 
@@ -66,6 +61,28 @@ internal sealed class CodeHandler {
         return StackScopes
             .Select(scope => scope.DeclaredVariables.FirstOrDefault(x => x.Name == name)?.ExpressionResult)
             .FirstOrDefault();
+    }
+
+    public JumpHandle CreateJumpPlaceholder() {
+        Instructions.Add(new Instruction());
+
+        return new JumpHandle(Instructions.Count - 1);
+    }
+
+    public void ConditionalJump(JumpHandle handle) {
+        Instructions[handle.Index] = new Instruction {
+            Code = OperationCode.cjmp,
+            Address = Instructions.Count
+        };
+
+        StackSize--;
+    }
+    
+    public void Jump(JumpHandle handle) {
+        Instructions[handle.Index] = new Instruction {
+            Code = OperationCode.jump,
+            Address = Instructions.Count
+        };
     }
 
     /// <summary>
@@ -82,7 +99,7 @@ internal sealed class CodeHandler {
         
         Instructions.Add(new Instruction {
             Code = OperationCode.pshd,
-            DataAddress = address,
+            Address = address,
             TypeSize = size
         });
 
@@ -99,7 +116,7 @@ internal sealed class CodeHandler {
         if (count <= 0) {
             return;
         }
-        
+
         Instructions.Add(new Instruction {
             Code = OperationCode.pop,
             Count = count
@@ -134,8 +151,8 @@ internal sealed class CodeHandler {
             TypeSize = size
         });
 
-        StackSize -= 2 * size - 1;
-
+        StackSize -= 4;
+        
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
