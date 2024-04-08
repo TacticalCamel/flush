@@ -588,7 +588,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // can be any type
-        MemoryAddress address = CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        MemoryAddress address = CodeHandler.PrimitiveShiftOperation(leftType.Size, code);
         return new ExpressionResult(address, leftType);
     }
     

@@ -145,6 +145,17 @@ internal sealed class CodeHandler {
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
+    public MemoryAddress PrimitiveShiftOperation(ushort size, OperationCode code) {
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
+        });
+
+        StackSize -= 4;
+        
+        return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
+    }
+    
     public MemoryAddress PrimitiveComparisonOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
