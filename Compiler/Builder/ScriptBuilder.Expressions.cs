@@ -27,7 +27,9 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitNullExpression(NullExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessNull(context);
+            // assign the null type
+            context.OriginalType = TypeHandler.CoreTypes.Null;
+
             return null;
         }
 
@@ -44,7 +46,19 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessConstant(context);
+            // store the constant
+            ConstantResult? result = VisitConstant(context.Constant);
+
+            // error in the format of the constant
+            if (result is null) {
+                return null;
+            }
+
+            // assign address and types
+            context.Address = result.Address;
+            context.OriginalType = result.Type;
+            context.AlternativeType = result.AlternativeType;
+
             return null;
         }
 
@@ -71,7 +85,22 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessIdentifier(context);
+            // get variable name
+            string name = VisitId(context.Identifier);
+
+            // get variable type and address
+            ExpressionResult? variable = CodeHandler.GetVariable(name);
+
+            // variable does not exist in the current context
+            if (variable is null) {
+                IssueHandler.Add(Issue.UnknownVariable(context, name));
+                return null;
+            }
+
+            // assign type and address
+            context.OriginalType = variable.Type;
+            context.Address = variable.Address;
+
             return null;
         }
 
@@ -99,7 +128,6 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitMemberAccessExpression(MemberAccessExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessMemberAccess(context);
             return null;
         }
 
@@ -115,7 +143,40 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessCast(context);
+            // get the target type
+            TypeIdentifier? targetType = VisitType(context.Type);
+
+            // stop if the type does not exist
+            if (targetType is null) {
+                return null;
+            }
+
+            // resolve the expression
+            VisitExpression(context.Expression);
+
+            // get the source type
+            TypeIdentifier? sourceType = context.Expression.OriginalType;
+
+            // stop if an error occured
+            if (sourceType is null) {
+                return null;
+            }
+
+            // check if the cast exists
+            // allow both explicit and implicit
+            if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
+                PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+
+                if (cast == PrimitiveCast.None) {
+                    IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
+                    return null;
+                }
+            }
+
+            // assign type
+            context.Expression.FinalType = targetType;
+            context.OriginalType = targetType;
+
             return null;
         }
 
@@ -148,7 +209,13 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessNested(context);
+            // visit inner expression
+            VisitExpression(context.Body);
+
+            // assign types
+            context.Body.FinalType = context.Body.OriginalType;
+            context.OriginalType = context.Body.OriginalType;
+
             return null;
         }
 
@@ -176,7 +243,6 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessFunctionCall(context);
             return null;
         }
 
@@ -191,7 +257,13 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitLeftUnaryExpression(LeftUnaryExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessLeftUnary(context);
+            // visit inner expression
+            VisitExpression(context.Expression);
+
+            // forward types
+            context.Expression.FinalType = context.Expression.OriginalType;
+            context.OriginalType = context.Expression.OriginalType;
+
             return null;
         }
 
@@ -206,7 +278,13 @@ internal sealed partial class ScriptBuilder {
     public override ExpressionResult? VisitRightUnaryExpression(RightUnaryExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
-            PreprocessRightUnary(context);
+            // visit inner expression
+            VisitExpression(context.Expression);
+
+            // forward types
+            context.Expression.FinalType = context.Expression.OriginalType;
+            context.OriginalType = context.Expression.OriginalType;
+
             return null;
         }
 
@@ -219,6 +297,14 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
+        if (IsPreprocessorMode) {
+            PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
+            
+            return null;
+        }
+
+        
+        
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -272,15 +358,15 @@ internal sealed partial class ScriptBuilder {
             context.OriginalType = TypeHandler.CoreTypes.Void;
             context.Left.FinalType = context.Left.OriginalType;
             context.Right.FinalType = context.Left.OriginalType;
-
+            
             return null;
         }
-        
+
         // error during preprocessing
         if (context.Left.FinalType is null || context.Right.FinalType is null) {
             return null;
         }
-        
+
         // calculate result
         ExpressionResult? result = context.Operator.start.Type switch {
             OP_ASSIGN => VisitExpression(context.Right),
@@ -300,178 +386,118 @@ internal sealed partial class ScriptBuilder {
         if (result is null || context.Left is not IdentifierExpressionContext variable) {
             return null;
         }
-        
+
         // assign value
-        return AssignmentOperation(variable, context.Right.FinalType);
+        return EmitAssignment(variable, context.Right.FinalType);
     }
 
     #endregion
 
-    #region Preprocess methods
-
-    /// <summary>
-    /// Preprocess an expression.
-    /// Turns preprocessor mode on for the duration of visiting the expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessExpression(ExpressionContext context) {
-        IsPreprocessorMode = true;
-
-        VisitExpression(context);
-
-        IsPreprocessorMode = false;
-    }
-
-    /// <summary>
-    /// Preprocess a null expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessNull(NullExpressionContext context) {
-        // assign the null type
-        context.OriginalType = TypeHandler.CoreTypes.Null;
-    }
-
-    /// <summary>
-    /// Preprocess a constant.
-    /// Store the constant in the data section and assign its type and address.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessConstant(ConstantExpressionContext context) {
-        // store the constant
-        ConstantResult? result = VisitConstant(context.Constant);
-
-        // error in the format of the constant
-        if (result is null) {
-            return;
-        }
-
-        // assign address and types
-        context.Address = result.Address;
-        context.OriginalType = result.Type;
-        context.AlternativeType = result.AlternativeType;
-    }
-
-    /// <summary>
-    /// Preprocess a variable identifier.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessIdentifier(IdentifierExpressionContext context) {
-        // get variable name
-        string name = VisitId(context.Identifier);
-
-        // get variable type and address
-        ExpressionResult? variable = CodeHandler.GetVariable(name);
-
-        // variable does not exist in the current context
-        if (variable is null) {
-            IssueHandler.Add(Issue.UnknownVariable(context, name));
-            return;
-        }
-
-        // assign type and address
-        context.OriginalType = variable.Type;
-        context.Address = variable.Address;
-    }
-
-    // TODO implement
-    private void PreprocessMemberAccess(MemberAccessExpressionContext context) {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Preprocess a type cast. Find the type we need to cast to.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessCast(CastExpressionContext context) {
-        // get the target type
-        TypeIdentifier? targetType = VisitType(context.Type);
-
-        // stop if the type does not exist
-        if (targetType is null) {
-            return;
-        }
-
-        // resolve the expression
-        VisitExpression(context.Expression);
-
-        // get the source type
-        TypeIdentifier? sourceType = context.Expression.OriginalType;
+    private void PreprocessBinaryDefault(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType, bool allowLeftCast = true, TypeIdentifier? overrideResultType = null) {
+        // resolve left and right side
+        VisitExpression(leftContext);
+        VisitExpression(rightContext);
 
         // stop if an error occured
-        if (sourceType is null) {
+        if (leftContext.OriginalType is null || rightContext.OriginalType is null) {
             return;
         }
 
-        // check if the cast exists
-        // allow both explicit and implicit
-        if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
-            PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+        // calculate results
+        // we do not care if the operation for the common type exists or not
+        TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, allowLeftCast, true);
 
-            if (cast == PrimitiveCast.None) {
-                IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
-                return;
+        // no valid common type exists
+        if (commonType is null) {
+            IssueHandler.Add(Issue.InvalidBinaryOperation(context, leftContext.OriginalType, rightContext.OriginalType, DefaultVocabulary.GetDisplayName(operatorType)));
+        }
+
+        // assign return type to the expression
+        context.OriginalType = overrideResultType ?? commonType;
+
+        // assign common type to both sides
+        leftContext.FinalType = commonType;
+        rightContext.FinalType = commonType;
+    }
+    
+    /// <summary>
+    /// Finds the best common type for a binary expression.
+    /// </summary>
+    /// <param name="left">The expression of the left side.</param>
+    /// <param name="right">The expression of the right side.</param>
+    /// <param name="allowLeftCast">Allow changing the type of the left side.</param>
+    /// <param name="allowRightCast">Allow changing the type of the right side.</param>
+    /// <returns>The common type for the left and right side if successful, null otherwise.</returns>
+    private TypeIdentifier? FindCommonType(ExpressionContext left, ExpressionContext right, bool allowLeftCast, bool allowRightCast) {
+        TypeIdentifier?[] leftTypes = left is ConstantExpressionContext leftConstant ? [leftConstant.OriginalType, leftConstant.AlternativeType] : [left.OriginalType];
+        TypeIdentifier?[] rightTypes = right is ConstantExpressionContext rightConstant ? [rightConstant.OriginalType, rightConstant.AlternativeType] : [right.OriginalType];
+
+        PrimitiveCast bestCast = PrimitiveCast.None;
+        TypeIdentifier? bestType = null;
+
+        // cast left to right
+        if (allowLeftCast) {
+            foreach (TypeIdentifier? sourceType in leftTypes) {
+                foreach (TypeIdentifier? targetType in rightTypes) {
+                    if (sourceType is null || targetType is null) {
+                        continue;
+                    }
+
+                    // TODO implement non-primitive cast
+                    if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
+                        continue;
+                    }
+
+                    PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+
+                    if (bestCast < cast) {
+                        bestCast = cast;
+                        bestType = targetType;
+                    }
+                }
             }
         }
 
-        // assign type
-        context.Expression.FinalType = targetType;
-        context.OriginalType = targetType;
+        // cast right to left
+        if (allowRightCast) {
+            foreach (TypeIdentifier? sourceType in rightTypes) {
+                foreach (TypeIdentifier? targetType in leftTypes) {
+                    if (sourceType is null || targetType is null) {
+                        continue;
+                    }
+
+                    // TODO implement non-primitive cast
+                    if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
+                        continue;
+                    }
+
+                    PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+
+                    if (bestCast < cast) {
+                        bestCast = cast;
+                        bestType = targetType;
+                    }
+                }
+            }
+        }
+
+        if (!bestCast.IsImplicit()) {
+            return null;
+        }
+
+        return bestType;
     }
 
     /// <summary>
-    /// Preprocess a nested expression. Forward the types of the inner expression.
+    /// Cast an expression from its original type to its final type.
     /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessNested(NestedExpressionContext context) {
-        // visit inner expression
-        VisitExpression(context.Body);
-
-        // assign types
-        context.Body.FinalType = context.Body.OriginalType;
-        context.OriginalType = context.Body.OriginalType;
-    }
-
-    // TODO implement
-    private void PreprocessFunctionCall(FunctionCallExpressionContext context) {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Preprocess a left unary expression. Forward the types of the inner expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessLeftUnary(LeftUnaryExpressionContext context) {
-        // visit inner expression
-        VisitExpression(context.Expression);
-
-        // forward types
-        context.Expression.FinalType = context.Expression.OriginalType;
-        context.OriginalType = context.Expression.OriginalType;
-    }
-
-    /// <summary>
-    /// Preprocess a right unary expression. Forward the types of the inner expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    private void PreprocessRightUnary(RightUnaryExpressionContext context) {
-        // visit inner expression
-        VisitExpression(context.Expression);
-
-        // forward types
-        context.Expression.FinalType = context.Expression.OriginalType;
-        context.OriginalType = context.Expression.OriginalType;
-    }
-
-    #endregion
-
-    #region Helper methods
-
+    /// <param name="context">The node to cast.</param>
+    /// <returns>True if the operation was successful, false otherwise.</returns>
     private bool CastExpression(ExpressionContext context) {
+        // return if either type is null
         if (context.OriginalType is null || context.FinalType is null) {
             return false;
         }
-
-        // TODO implement non-primitive casts
 
         // get the type of cast required
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
@@ -486,7 +512,9 @@ internal sealed partial class ScriptBuilder {
 
         return success;
     }
-
+    
+    #region Helper methods
+    
     private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
         if (IsPreprocessorMode) {
             // resolve left and right side
@@ -575,22 +603,22 @@ internal sealed partial class ScriptBuilder {
 
         // calculate results
         ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.addi, OperationCode.addf) : null,
-            OP_MINUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.subi, OperationCode.subf) : null,
-            OP_MULTIPLY => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.muli, OperationCode.mulf) : null,
-            OP_DIVIDE => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.divi, OperationCode.divf) : null,
-            OP_MODULUS => isPrimitiveType ? BinaryNumberOperation(left.Type, right.Type, OperationCode.modi, OperationCode.modf) : null,
-            OP_SHIFT_LEFT => isPrimitiveType ? BinaryShiftOperation(left.Type, right.Type, OperationCode.shfl) : null,
-            OP_SHIFT_RIGHT => isPrimitiveType ? BinaryShiftOperation(left.Type, right.Type, OperationCode.shfr) : null,
-            OP_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.eq) : null,
-            OP_NOT_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.neq) : null,
-            OP_LESS => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.lt) : null,
-            OP_GREATER => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.gt) : null,
-            OP_LESS_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.lte) : null,
-            OP_GREATER_EQ => isPrimitiveType ? BinaryComparisonOperation(left.Type, right.Type, OperationCode.gte) : null,
-            OP_AND => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
-            OP_OR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
-            OP_XOR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
+            OP_PLUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.addi, OperationCode.addf) : null,
+            OP_MINUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.subi, OperationCode.subf) : null,
+            OP_MULTIPLY => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.muli, OperationCode.mulf) : null,
+            OP_DIVIDE => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.divi, OperationCode.divf) : null,
+            OP_MODULUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.modi, OperationCode.modf) : null,
+            OP_SHIFT_LEFT => isPrimitiveType ? EmitShift(left.Type, right.Type, OperationCode.shfl) : null,
+            OP_SHIFT_RIGHT => isPrimitiveType ? EmitShift(left.Type, right.Type, OperationCode.shfr) : null,
+            OP_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.eq) : null,
+            OP_NOT_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.neq) : null,
+            OP_LESS => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.lt) : null,
+            OP_GREATER => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.gt) : null,
+            OP_LESS_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.lte) : null,
+            OP_GREATER_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.gte) : null,
+            OP_AND => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.and) : null,
+            OP_OR => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.or) : null,
+            OP_XOR => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.xor) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
@@ -624,11 +652,11 @@ internal sealed partial class ScriptBuilder {
 
         // calculate results
         ExpressionResult? result = operatorType switch {
-            OP_NOT => isPrimitiveType ? UnaryBoolOperation(inner.Type, OperationCode.negb) : null,
+            OP_NOT => isPrimitiveType ? EmitBoolUnary(inner.Type, OperationCode.negb) : null,
             OP_PLUS => isPrimitiveType ? inner : null,
-            OP_MINUS => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.sswi, OperationCode.sswf) : null,
-            OP_INCREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.inci, OperationCode.incf) : null,
-            OP_DECREMENT => isPrimitiveType ? UnaryNumberOperation(inner.Type, OperationCode.deci, OperationCode.decf) : null,
+            OP_MINUS => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.sswi, OperationCode.sswf) : null,
+            OP_INCREMENT => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.inci, OperationCode.incf) : null,
+            OP_DECREMENT => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.deci, OperationCode.decf) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
@@ -641,7 +669,7 @@ internal sealed partial class ScriptBuilder {
         return result;
     }
 
-    private ExpressionResult? UnaryNumberOperation(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
+    private ExpressionResult? EmitNumberUnary(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(type)) {
             MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, integerCode);
@@ -656,7 +684,7 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
-    private ExpressionResult? UnaryBoolOperation(TypeIdentifier type, OperationCode code) {
+    private ExpressionResult? EmitBoolUnary(TypeIdentifier type, OperationCode code) {
         // must be bool
         if (type == TypeHandler.CoreTypes.Bool) {
             MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, code);
@@ -666,7 +694,7 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
-    private ExpressionResult? BinaryNumberOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode integerCode, OperationCode floatCode) {
+    private ExpressionResult? EmitNumberBinary(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode integerCode, OperationCode floatCode) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -686,7 +714,7 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
-    private ExpressionResult? BinaryBitwiseOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private ExpressionResult? EmitBitwise(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -702,7 +730,7 @@ internal sealed partial class ScriptBuilder {
         return new ExpressionResult(address, leftType);
     }
 
-    private ExpressionResult? BinaryComparisonOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private ExpressionResult? EmitComparison(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -713,7 +741,7 @@ internal sealed partial class ScriptBuilder {
         return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
     }
 
-    private ExpressionResult? BinaryShiftOperation(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private ExpressionResult? EmitShift(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // left side must be an integer type
         if (!TypeHandler.Casts.IsIntegerType(leftType)) {
             return null;
@@ -729,7 +757,7 @@ internal sealed partial class ScriptBuilder {
         return new ExpressionResult(address, leftType);
     }
 
-    private ExpressionResult? AssignmentOperation(IdentifierExpressionContext left, TypeIdentifier rightType) {
+    private ExpressionResult? EmitAssignment(IdentifierExpressionContext left, TypeIdentifier rightType) {
         // must operate on the same types
         if (left.FinalType is null || left.Address is null || rightType != left.FinalType) {
             return null;
@@ -740,74 +768,6 @@ internal sealed partial class ScriptBuilder {
 
         // assignment returns void
         return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
-    }
-
-    /// <summary>
-    /// Finds the best common type for a binary expression.
-    /// </summary>
-    /// <param name="left">The expression of the left side.</param>
-    /// <param name="right">The expression of the right side.</param>
-    /// <param name="allowLeftCast">Allow changing the type of the left side.</param>
-    /// <param name="allowRightCast">Allow changing the type of the right side.</param>
-    /// <returns></returns>
-    private TypeIdentifier? FindCommonType(ExpressionContext left, ExpressionContext right, bool allowLeftCast, bool allowRightCast) {
-        TypeIdentifier?[] leftTypes = left is ConstantExpressionContext leftConstant ? [leftConstant.OriginalType, leftConstant.AlternativeType] : [left.OriginalType];
-        TypeIdentifier?[] rightTypes = right is ConstantExpressionContext rightConstant ? [rightConstant.OriginalType, rightConstant.AlternativeType] : [right.OriginalType];
-
-        PrimitiveCast bestCast = PrimitiveCast.None;
-        TypeIdentifier? bestType = null;
-
-        // cast left to right
-        if (allowLeftCast) {
-            foreach (TypeIdentifier? sourceType in leftTypes) {
-                foreach (TypeIdentifier? targetType in rightTypes) {
-                    if (sourceType is null || targetType is null) {
-                        continue;
-                    }
-
-                    // TODO implement non-primitive cast
-                    if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
-                        continue;
-                    }
-
-                    PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
-
-                    if (bestCast < cast) {
-                        bestCast = cast;
-                        bestType = targetType;
-                    }
-                }
-            }
-        }
-
-        // cast right to left
-        if (allowRightCast) {
-            foreach (TypeIdentifier? sourceType in rightTypes) {
-                foreach (TypeIdentifier? targetType in leftTypes) {
-                    if (sourceType is null || targetType is null) {
-                        continue;
-                    }
-
-                    // TODO implement non-primitive cast
-                    if (!TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
-                        continue;
-                    }
-
-                    PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
-
-                    if (bestCast < cast) {
-                        bestCast = cast;
-                        bestType = targetType;
-                    }
-                }
-            }
-        }
-
-        if (!bestCast.IsImplicit()) {
-            return null;
-        }
-
-        return bestType;
     }
 
     #endregion

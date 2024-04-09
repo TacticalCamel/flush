@@ -1,28 +1,9 @@
-module test.mod
-
 import auto
 
-//i32 i = 4;
-
-(i32)16 + 3 - 77777 * 3 / 7.7777 == 3 << 1;
-
-if(false){
-	0xffffff++;
-}
-else if(false){
-	0xeeeeee++;
-}
-else{
-	0xdddddd++;
+for(i8 i = 0; i < 10; i += 1){
+	<<PAUSE>>
 }
 
-/*
-i32 i = 7;
-f64 f = 3.214334434;
-
-i = 9;
-i += 3;
-i *= 2;*/
 
 /*
 struct v2{
