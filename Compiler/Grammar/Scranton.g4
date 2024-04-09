@@ -111,7 +111,7 @@ forBlock
 	;
 
 whileBlock
-	: KW_WHILE HEAD_START expression HEAD_END statement (KW_ELSE statement)?
+	: KW_WHILE HEAD_START Condition=expression HEAD_END Statement=statement
 	;
 
 tryBlock
