@@ -1,7 +1,15 @@
 import auto
 
-for(i8 i = 0; i < 10; i += 1){
-	<<PAUSE>>
+/*for(i8 i = 0; i < 10; i += 1){
+	
+}*/
+
+i8 i = 0;
+
+while(i < 10){
+	i += 2;
+	
+	if(i < 5) i -= 1;
 }
 
 

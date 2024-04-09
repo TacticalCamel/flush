@@ -81,6 +81,8 @@ public sealed unsafe class Script {
 
         stream.WriteLine();
 
+        int hexLength = Math.Max((Data.Length + 15) / 16, Instructions.Length).ToString("X").Length;
+        
         // data section
         stream.WriteLine(".data");
 
@@ -89,7 +91,7 @@ public sealed unsafe class Script {
 
             ReadOnlySpan<byte> row = Data.Span[i..end];
 
-            stream.Write($"    0x{i:X8}   ");
+            stream.Write($"    0x{i.ToString("X").PadLeft(hexLength, '0')}   ");
 
             for (int j = 0; j < row.Length; j++) {
                 byte b = row[j];
@@ -110,7 +112,7 @@ public sealed unsafe class Script {
             Instruction instruction = Instructions.Span[i];
             string name = Enum.GetName(instruction.Code)?.ToLower() ?? instruction.Code.ToString("X");
 
-            stream.Write($"    0x{i:X8}    {name,-4}");
+            stream.Write($"    0x{i.ToString("X").PadLeft(hexLength, '0')}    {name,-4}");
 
             for (int j = 0; j < instructionSize; j++) {
                 stream.Write($"{(j % 2 == 0 ? ' ' : string.Empty)}{instruction.Bytes[j]:X2}");
