@@ -41,7 +41,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonB
     /// Indicates that preprocessor mode is enabled.
     /// Visit methods may change behaviour depending on this value.
     /// </summary>
-    private bool IsPreprocessorMode { get; set; } = false;
+    private bool IsPreprocessorMode { get; set; }
 
     /// <summary>
     /// Visit a syntax tree and transform it to an executable program.

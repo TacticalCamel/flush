@@ -127,6 +127,16 @@ public unsafe ref struct ScriptExecutor {
                 DebugState($"{i.Count}");
                 break;
             }
+            
+            case OperationCode.pshs:
+                fixed (byte* source = &Stack[i.Address]) {
+                    Unsafe.CopyBlockUnaligned(StackPtr, source, i.TypeSize);
+                }
+                
+                StackPtr += i.TypeSize;
+                
+                DebugState($"0x{i.Address:X} {i.TypeSize}");
+                break;
 
             // integer operations
 

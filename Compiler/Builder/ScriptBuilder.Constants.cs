@@ -12,8 +12,8 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The expression result if successful, null otherwise.</returns>
-    public override ExpressionResult? VisitConstant(ConstantContext context) {
-        return (ExpressionResult?)Visit(context);
+    public override ConstantResult? VisitConstant(ConstantContext context) {
+        return (ConstantResult?)Visit(context);
     }
 
     /// <summary>
@@ -257,15 +257,6 @@ internal sealed partial class ScriptBuilder {
         int address = DataHandler.Bool.Add(false);
 
         return new ConstantResult(address, TypeHandler.CoreTypes.Bool);
-    }
-
-    /// <summary>
-    /// Visits the null keyword.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>An expression result with the type of void.</returns>
-    public override ExpressionResult VisitNullKeyword(NullKeywordContext context) {
-        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
     }
 
     /// <summary>

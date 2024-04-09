@@ -11,7 +11,7 @@ internal sealed class TypeIdentifier(TypeDefinition baseType, TypeIdentifier[] g
     /// <summary>
     /// The corresponding base type of the identifier.
     /// </summary>
-    private TypeDefinition BaseType { get; } = baseType;
+    public TypeDefinition BaseType { get; } = baseType;
 
     /// <summary>
     /// An array of types which are used as generic parameters.

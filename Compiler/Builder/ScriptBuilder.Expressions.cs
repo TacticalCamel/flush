@@ -7,28 +7,32 @@ using static Grammar.ScrantonParser;
 
 // ScriptBuilder.Expressions: methods related to visiting expressions
 internal sealed partial class ScriptBuilder {
-    /// <summary>
-    /// Preprocesses an expression.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    public void PreprocessExpression(ExpressionContext context) {
-        IsPreprocessorMode = true;
-
-        VisitExpression(context);
-
-        IsPreprocessorMode = false;
-    }
+    #region Visit methods
 
     /// <summary>
-    /// Visit an expression.
+    /// Visit an expression. Calls the visit method with the actual expression type.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitExpression(ExpressionContext context) {
         // visit expression subtype
-        ExpressionResult? result = (ExpressionResult?)Visit(context);
+        return (ExpressionResult?)Visit(context);
+    }
 
-        return result;
+    /// <summary>
+    /// Visit the null keyword.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>A null reference.</returns>
+    public override ExpressionResult? VisitNullExpression(NullExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessNull(context);
+            return null;
+        }
+
+        // return a null reference
+        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
     }
 
     /// <summary>
@@ -38,73 +42,68 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
+        // preprocessor mode on
         if (IsPreprocessorMode) {
-            // get expression result
-            ExpressionResult? result = VisitConstant(context.Constant);
-
-            if (result is null) {
-                return null;
-            }
-
-            // assign address and type
-            context.Address = result.Address;
-            context.OriginalType = result.Type;
-
-            // assign secondary type if it's a constant result
-            if (result is ConstantResult constantResult) {
-                context.AlternativeType = constantResult.SecondaryType;
-            }
-
+            PreprocessConstant(context);
             return null;
         }
 
-        // error during first pass, should never happen
+        // error during preprocessing
         if (context.Address is null || context.OriginalType is null || context.FinalType is null) {
             return null;
         }
 
-        // push the constant to the stack if it's stored in the data section
-        if (context.Address.Value.Location == MemoryLocation.Data) {
-            CodeHandler.PushBytesFromData((int)context.Address.Value.Value, context.OriginalType.Size);
-        }
+        // push the constant to the stack
+        MemoryAddress address = CodeHandler.PushBytesFromData(context.Address.Value, context.OriginalType.Size);
 
+        // cast the constant
         bool success = CastExpression(context);
 
+        // return a valid result if successful
+        return success ? new ExpressionResult(address, context.FinalType) : null;
+    }
+
+    /// <summary>
+    /// Visit an identifier expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>The address and type of the expression.</returns>
+    public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessIdentifier(context);
+            return null;
+        }
+
+        // error during preprocessing
+        if (context.Address is null || context.OriginalType is null || context.FinalType is null) {
+            return null;
+        }
+
+        // TODO not yet supported
+        if (context.Address.Value.Location != MemoryLocation.Stack) {
+            throw new NotImplementedException("Variable not on stack");
+        }
+
+        // copy to the top of the stack
+        CodeHandler.PushBytesFromStack((int)context.Address.Value.Value, context.OriginalType.Size);
+
+        // cast expression
+        bool success = CastExpression(context);
+
+        // return a valid result if successful
         return success ? new ExpressionResult(context.Address.Value, context.FinalType) : null;
     }
 
     // TODO implement
-    public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
-        throw new NotImplementedException();
-
-        /*string name = VisitId(context.Identifier);
-
-        ExpressionResult? expressionResult = CodeHandler.GetVariable(name);
-
-        if (expressionResult is null) {
-            IssueHandler.Add(Issue.UnknownVariable(context, name));
+    public override ExpressionResult? VisitMemberAccessExpression(MemberAccessExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessMemberAccess(context);
             return null;
         }
 
-        return expressionResult;*/
-    }
-
-    // TODO implement
-    public override ExpressionResult? VisitMemberAccessOperatorExpression(MemberAccessOperatorExpressionContext context) {
         throw new NotImplementedException();
-
-        /*
-        ExpressionResult? left = VisitExpression(context.Type);
-
-        if (left is null) {
-            return null;
-        }
-
-        string name = VisitId(context.Member);
-
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "member access"));
-        return null;
-        */
     }
 
     /// <summary>
@@ -114,52 +113,30 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
+        // preprocessor mode on
         if (IsPreprocessorMode) {
-            // get the target type
-            TypeIdentifier? targetType = VisitType(context.Type);
-
-            // stop if the type does not exist
-            if (targetType is null) {
-                return null;
-            }
-
-            // resolve the expression
-            VisitExpression(context.Expression);
-
-            // get the source type
-            TypeIdentifier? sourceType = context.Expression.OriginalType;
-
-            // stop if an error occured
-            if (sourceType is null) {
-                return null;
-            }
-
-            // check if the cast exists
-            // allow both explicit and implicit
-            if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
-                PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
-
-                if (cast == PrimitiveCast.None) {
-                    IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
-                    return null;
-                }
-            }
-
-            context.Expression.FinalType = targetType;
-            context.OriginalType = targetType;
-
+            PreprocessCast(context);
             return null;
         }
 
+        // error during preprocessing
+        if (context.OriginalType is null || context.FinalType is null) {
+            return null;
+        }
+
+        // resolve inner expression
         ExpressionResult? result = VisitExpression(context.Expression);
 
+        // could not resolve expression
         if (result is null) {
             return null;
         }
 
+        // cast expression
         bool success = CastExpression(context);
 
-        return success ? new ExpressionResult(result.Address, context.FinalType!) : null;
+        // return a valid result if successful
+        return success ? new ExpressionResult(result.Address, context.FinalType) : null;
     }
 
     /// <summary>
@@ -169,54 +146,41 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
+        // preprocessor mode on
         if (IsPreprocessorMode) {
-            VisitExpression(context.Body);
-
-            // assign types
-            context.Body.FinalType = context.Body.OriginalType;
-            context.OriginalType = context.Body.OriginalType;
-
+            PreprocessNested(context);
             return null;
         }
 
+        // error during preprocessing
+        if (context.OriginalType is null || context.FinalType is null) {
+            return null;
+        }
+
+        // visit inner expression
         ExpressionResult? result = VisitExpression(context.Body);
 
+        // could not resolve expression
         if (result is null) {
             return null;
         }
 
+        // cast expression
         bool success = CastExpression(context);
 
-        return success ? new ExpressionResult(result.Address, context.FinalType!) : null;
+        // return a valid result if successful
+        return success ? new ExpressionResult(result.Address, context.FinalType) : null;
     }
 
     // TODO implement
     public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
-        throw new NotImplementedException();
-
-        /*
-        ExpressionResult? callerExpression = VisitExpression(context.Caller);
-
-        // get parameter expressions
-        ExpressionContext[] expressions = context.ExpressionList.expression();
-
-        // create an array for results
-        ExpressionResult[] results = new ExpressionResult[expressions.Length];
-
-        // resolve parameters and return if any of them was null
-        for (int i = 0; i < expressions.Length; i++) {
-            ExpressionResult? result = VisitExpression(expressions[i]);
-
-            if (result is null) {
-                return null;
-            }
-
-            results[i] = result;
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessFunctionCall(context);
+            return null;
         }
 
-        IssueHandler.Add(Issue.FeatureNotImplemented(context, "function call"));
-        return null;
-        */
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -224,7 +188,13 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitLeftUnaryOperatorExpression(LeftUnaryOperatorExpressionContext context) {
+    public override ExpressionResult? VisitLeftUnaryExpression(LeftUnaryExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessLeftUnary(context);
+            return null;
+        }
+
         return ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
     }
 
@@ -233,7 +203,13 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitRightUnaryOperatorExpression(RightUnaryOperatorExpressionContext context) {
+    public override ExpressionResult? VisitRightUnaryExpression(RightUnaryExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            PreprocessRightUnary(context);
+            return null;
+        }
+
         return ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
     }
 
@@ -242,7 +218,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitMultiplicativeOperatorExpression(MultiplicativeOperatorExpressionContext context) {
+    public override ExpressionResult? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -251,7 +227,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitAdditiveOperatorExpression(AdditiveOperatorExpressionContext context) {
+    public override ExpressionResult? VisitAdditiveExpression(AdditiveExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -260,7 +236,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitShiftOperatorExpression(ShiftOperatorExpressionContext context) {
+    public override ExpressionResult? VisitShiftExpression(ShiftExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -269,7 +245,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitComparisonOperatorExpression(ComparisonOperatorExpressionContext context) {
+    public override ExpressionResult? VisitComparisonExpression(ComparisonExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -278,7 +254,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitLogicalOperatorExpression(LogicalOperatorExpressionContext context) {
+    public override ExpressionResult? VisitLogicalExpression(LogicalExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -287,9 +263,178 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitAssigmentOperatorExpression(AssigmentOperatorExpressionContext context) {
+    public override ExpressionResult? VisitAssigmentExpression(AssigmentExpressionContext context) {
+        if (IsPreprocessorMode) {
+            context.OriginalType = TypeHandler.CoreTypes.Void;
+            context.Left.FinalType = context.Left.OriginalType;
+            context.Right.FinalType = context.Left.OriginalType;
+
+            return null;
+        }
+
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
+
+    #endregion
+
+    #region Preprocess methods
+
+    /// <summary>
+    /// Preprocess an expression.
+    /// Turns preprocessor mode on for the duration of visiting the expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessExpression(ExpressionContext context) {
+        IsPreprocessorMode = true;
+
+        VisitExpression(context);
+
+        IsPreprocessorMode = false;
+    }
+
+    /// <summary>
+    /// Preprocess a null expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessNull(NullExpressionContext context) {
+        // assign the null type
+        context.OriginalType = TypeHandler.CoreTypes.Null;
+    }
+
+    /// <summary>
+    /// Preprocess a constant.
+    /// Store the constant in the data section and assign its type and address.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessConstant(ConstantExpressionContext context) {
+        // store the constant
+        ConstantResult? result = VisitConstant(context.Constant);
+
+        // error in the format of the constant
+        if (result is null) {
+            return;
+        }
+
+        // assign address and types
+        context.Address = result.Address;
+        context.OriginalType = result.Type;
+        context.AlternativeType = result.AlternativeType;
+    }
+
+    /// <summary>
+    /// Preprocess a variable identifier.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessIdentifier(IdentifierExpressionContext context) {
+        // get variable name
+        string name = VisitId(context.Identifier);
+
+        // get variable type and address
+        ExpressionResult? variable = CodeHandler.GetVariable(name);
+
+        // variable does not exist in the current context
+        if (variable is null) {
+            IssueHandler.Add(Issue.UnknownVariable(context, name));
+            return;
+        }
+
+        // assign type and address
+        context.OriginalType = variable.Type;
+        context.Address = variable.Address;
+    }
+
+    // TODO implement
+    private void PreprocessMemberAccess(MemberAccessExpressionContext context) {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Preprocess a type cast. Find the type we need to cast to.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessCast(CastExpressionContext context) {
+        // get the target type
+        TypeIdentifier? targetType = VisitType(context.Type);
+
+        // stop if the type does not exist
+        if (targetType is null) {
+            return;
+        }
+
+        // resolve the expression
+        VisitExpression(context.Expression);
+
+        // get the source type
+        TypeIdentifier? sourceType = context.Expression.OriginalType;
+
+        // stop if an error occured
+        if (sourceType is null) {
+            return;
+        }
+
+        // check if the cast exists
+        // allow both explicit and implicit
+        if (TypeHandler.Casts.ArePrimitiveTypes(sourceType, targetType)) {
+            PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(sourceType, targetType);
+
+            if (cast == PrimitiveCast.None) {
+                IssueHandler.Add(Issue.InvalidCast(context, sourceType, targetType));
+                return;
+            }
+        }
+
+        // assign type
+        context.Expression.FinalType = targetType;
+        context.OriginalType = targetType;
+    }
+
+    /// <summary>
+    /// Preprocess a nested expression. Forward the types of the inner expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessNested(NestedExpressionContext context) {
+        // visit inner expression
+        VisitExpression(context.Body);
+
+        // assign types
+        context.Body.FinalType = context.Body.OriginalType;
+        context.OriginalType = context.Body.OriginalType;
+    }
+
+    // TODO implement
+    private void PreprocessFunctionCall(FunctionCallExpressionContext context) {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Preprocess a left unary expression. Forward the types of the inner expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessLeftUnary(LeftUnaryExpressionContext context) {
+        // visit inner expression
+        VisitExpression(context.Expression);
+
+        // forward types
+        context.Expression.FinalType = context.Expression.OriginalType;
+        context.OriginalType = context.Expression.OriginalType;
+    }
+
+    /// <summary>
+    /// Preprocess a right unary expression. Forward the types of the inner expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessRightUnary(RightUnaryExpressionContext context) {
+        // visit inner expression
+        VisitExpression(context.Expression);
+
+        // forward types
+        context.Expression.FinalType = context.Expression.OriginalType;
+        context.OriginalType = context.Expression.OriginalType;
+    }
+
+    #endregion
+
+    #region Helper methods
 
     private bool CastExpression(ExpressionContext context) {
         if (context.OriginalType is null || context.FinalType is null) {
@@ -342,35 +487,30 @@ internal sealed partial class ScriptBuilder {
 
             // casting the left side is not valid for assignment operators
             bool allowLeftCast = operatorType switch {
-                OP_PLUS => true,
-                OP_MINUS => true,
-                OP_MULTIPLY => true,
-                OP_DIVIDE => true,
-                OP_MODULUS => true,
-                OP_EQ => true,
-                OP_NOT_EQ => true,
-                OP_LESS => true,
-                OP_GREATER => true,
-                OP_LESS_EQ => true,
-                OP_GREATER_EQ => true,
-                OP_AND => true,
-                OP_OR => true,
-                OP_XOR => true,
-                OP_SHIFT_LEFT => true,
-                OP_SHIFT_RIGHT => true,
-                _ => false
+                OP_MULTIPLY_ASSIGN => false,
+                OP_DIVIDE_ASSIGN => false,
+                OP_MODULUS_ASSIGN => false,
+                OP_PLUS_ASSIGN => false,
+                OP_MINUS_ASSIGN => false,
+                OP_SHIFT_LEFT_ASSIGN => false,
+                OP_SHIFT_RIGHT_ASSIGN => false,
+                OP_AND_ASSIGN => false,
+                OP_OR_ASSIGN => false,
+                OP_XOR_ASSIGN => false,
+                _ => true
             };
 
             // calculate results
             // we do not care if the operation for the common type exists or not
             TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, allowLeftCast, true);
 
-            // stop if no valid common type exists
+            // no valid common type exists
             if (commonType is null) {
                 IssueHandler.Add(Issue.InvalidBinaryOperation(context, leftContext.OriginalType, rightContext.OriginalType, DefaultVocabulary.GetDisplayName(operatorType)));
             }
 
             // return type is bool for comparison operators
+            // return type is void for assignment operators
             context.OriginalType = operatorType switch {
                 OP_EQ => TypeHandler.CoreTypes.Bool,
                 OP_NOT_EQ => TypeHandler.CoreTypes.Bool,
@@ -378,12 +518,22 @@ internal sealed partial class ScriptBuilder {
                 OP_GREATER => TypeHandler.CoreTypes.Bool,
                 OP_LESS_EQ => TypeHandler.CoreTypes.Bool,
                 OP_GREATER_EQ => TypeHandler.CoreTypes.Bool,
+                OP_MULTIPLY_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_DIVIDE_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_MODULUS_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_PLUS_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_MINUS_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_SHIFT_LEFT_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_SHIFT_RIGHT_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_AND_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_OR_ASSIGN => TypeHandler.CoreTypes.Void,
+                OP_XOR_ASSIGN => TypeHandler.CoreTypes.Void,
                 _ => commonType
             };
 
             leftContext.FinalType = commonType;
             rightContext.FinalType = commonType;
-            
+
             return null;
         }
 
@@ -428,7 +578,7 @@ internal sealed partial class ScriptBuilder {
             OP_AND => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
             OP_OR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
             OP_XOR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
-            OP_ASSIGN => null,
+            OP_ASSIGN => isPrimitiveType ? AssignmentOperation(left.Type, right.Type) : null,
             OP_MULTIPLY_ASSIGN => null,
             OP_DIVIDE_ASSIGN => null,
             OP_MODULUS_ASSIGN => null,
@@ -438,6 +588,7 @@ internal sealed partial class ScriptBuilder {
             OP_SHIFT_RIGHT_ASSIGN => null,
             OP_AND_ASSIGN => null,
             OP_OR_ASSIGN => null,
+            OP_XOR_ASSIGN => null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
@@ -457,23 +608,7 @@ internal sealed partial class ScriptBuilder {
     }
 
     private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
-        if (IsPreprocessorMode) {
-            // resolve the inner expression
-            VisitExpression(innerContext);
-
-            // stop if an error occured
-            if (innerContext.OriginalType is null) {
-                return null;
-            }
-
-            // unary operators do not change the type
-            innerContext.FinalType = innerContext.OriginalType;
-            context.OriginalType = innerContext.OriginalType;
-
-            return null;
-        }
-
-        // resolve the expression
+        // resolve the inner expression
         ExpressionResult? inner = VisitExpression(innerContext);
 
         // return if an error occured
@@ -591,7 +726,20 @@ internal sealed partial class ScriptBuilder {
         MemoryAddress address = CodeHandler.PrimitiveShiftOperation(leftType.Size, code);
         return new ExpressionResult(address, leftType);
     }
-    
+
+    private ExpressionResult? AssignmentOperation(TypeIdentifier leftType, TypeIdentifier rightType) {
+        // must operate on the same types
+        if (leftType != rightType) {
+            return null;
+        }
+
+        // can be any type
+        CodeHandler.PrimitiveAssignmentOperation(leftType.Size);
+
+        // assignment returns void
+        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
+    }
+
     /// <summary>
     /// Finds the best common type for a binary expression.
     /// </summary>
@@ -659,4 +807,6 @@ internal sealed partial class ScriptBuilder {
 
         return bestType;
     }
+
+    #endregion
 }

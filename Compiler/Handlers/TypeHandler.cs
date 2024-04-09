@@ -202,6 +202,14 @@ internal sealed class TypeHandler {
         /// Identifier for a return type that does not exist.
         /// </summary>
         public TypeIdentifier Void { get; }
+        
+        /// <summary>
+        /// The type of a null reference.
+        /// </summary>
+        /// <remarks>
+        /// Assignable to any reference type. Equivalent to a void pointer.
+        /// </remarks>
+        public TypeIdentifier Null { get; }
 
         /// <summary>
         /// Create a new core type helper.
@@ -233,7 +241,18 @@ internal sealed class TypeHandler {
                 Fields = [],
                 Methods = [],
                 GenericParameterCount = 0,
-                StackSize = 0
+                StackSize = 8
+            }, []);
+            
+            Null = new TypeIdentifier(new TypeDefinition {
+                Modifiers = default,
+                IsReference = true,
+                Name = "null",
+                GenericIndex = -1,
+                Fields = [],
+                Methods = [],
+                GenericParameterCount = 0,
+                StackSize = 8
             }, []);
 
             return;
