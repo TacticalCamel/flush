@@ -10,7 +10,12 @@
         <OutputPath>$(SolutionDir).out\bin\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
 
-        <!-- other -->
+        <!-- other common properties -->
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>12</LangVersion>
         <DebugType>embedded</DebugType>
+        <AssemblyVersion>0.1.21</AssemblyVersion>
     </PropertyGroup>
 </Project>

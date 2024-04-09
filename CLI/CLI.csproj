@@ -1,15 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <LangVersion>12</LangVersion>
         <OutputType>Exe</OutputType>
         <ApplicationIcon>..\icon.ico</ApplicationIcon>
         <AssemblyName>Scranton</AssemblyName>
-        <AssemblyVersion>0.1.17</AssemblyVersion>
-
-        <!-- publish options -->
         <PublishAot>true</PublishAot>
     </PropertyGroup>
 
