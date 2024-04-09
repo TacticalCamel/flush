@@ -60,11 +60,16 @@ genericParameters
 	;
 
 statement
-	: regularStatement STATEMENT_SEP
+    : debugStatement
+	| regularStatement STATEMENT_SEP
 	| controlStatement STATEMENT_SEP
 	| blockStatement
 	| STATEMENT_SEP
 	;
+
+debugStatement
+    : '<<PAUSE>>'
+    ;
 
 regularStatement
 	: VariableDeclaration=variableDeclaration

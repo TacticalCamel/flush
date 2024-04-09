@@ -264,15 +264,45 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override ExpressionResult? VisitAssigmentExpression(AssigmentExpressionContext context) {
+        // preprocessor mode on
         if (IsPreprocessorMode) {
+            VisitExpression(context.Left);
+            VisitExpression(context.Right);
+            
             context.OriginalType = TypeHandler.CoreTypes.Void;
             context.Left.FinalType = context.Left.OriginalType;
             context.Right.FinalType = context.Left.OriginalType;
 
             return null;
         }
+        
+        // error during preprocessing
+        if (context.Left.FinalType is null || context.Right.FinalType is null) {
+            return null;
+        }
+        
+        // calculate result
+        ExpressionResult? result = context.Operator.start.Type switch {
+            OP_ASSIGN => VisitExpression(context.Right),
+            OP_MULTIPLY_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_MULTIPLY),
+            OP_DIVIDE_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_DIVIDE),
+            OP_MODULUS_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_MODULUS),
+            OP_PLUS_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_PLUS),
+            OP_MINUS_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_MINUS),
+            OP_SHIFT_LEFT_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_SHIFT_LEFT),
+            OP_SHIFT_RIGHT_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_SHIFT_RIGHT),
+            OP_AND_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_AND),
+            OP_OR_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_OR),
+            OP_XOR_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_XOR),
+            _ => null
+        };
 
-        return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
+        if (result is null || context.Left is not IdentifierExpressionContext variable) {
+            return null;
+        }
+        
+        // assign value
+        return AssignmentOperation(variable, context.Right.FinalType);
     }
 
     #endregion
@@ -472,8 +502,6 @@ internal sealed partial class ScriptBuilder {
             bool isShiftOperator = operatorType switch {
                 OP_SHIFT_LEFT => true,
                 OP_SHIFT_RIGHT => true,
-                OP_SHIFT_LEFT_ASSIGN => true,
-                OP_SHIFT_RIGHT_ASSIGN => true,
                 _ => false
             };
 
@@ -485,24 +513,9 @@ internal sealed partial class ScriptBuilder {
                 return null;
             }
 
-            // casting the left side is not valid for assignment operators
-            bool allowLeftCast = operatorType switch {
-                OP_MULTIPLY_ASSIGN => false,
-                OP_DIVIDE_ASSIGN => false,
-                OP_MODULUS_ASSIGN => false,
-                OP_PLUS_ASSIGN => false,
-                OP_MINUS_ASSIGN => false,
-                OP_SHIFT_LEFT_ASSIGN => false,
-                OP_SHIFT_RIGHT_ASSIGN => false,
-                OP_AND_ASSIGN => false,
-                OP_OR_ASSIGN => false,
-                OP_XOR_ASSIGN => false,
-                _ => true
-            };
-
             // calculate results
             // we do not care if the operation for the common type exists or not
-            TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, allowLeftCast, true);
+            TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, true, true);
 
             // no valid common type exists
             if (commonType is null) {
@@ -578,17 +591,6 @@ internal sealed partial class ScriptBuilder {
             OP_AND => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.and) : null,
             OP_OR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.or) : null,
             OP_XOR => isPrimitiveType ? BinaryBitwiseOperation(left.Type, right.Type, OperationCode.xor) : null,
-            OP_ASSIGN => isPrimitiveType ? AssignmentOperation(left.Type, right.Type) : null,
-            OP_MULTIPLY_ASSIGN => null,
-            OP_DIVIDE_ASSIGN => null,
-            OP_MODULUS_ASSIGN => null,
-            OP_PLUS_ASSIGN => null,
-            OP_MINUS_ASSIGN => null,
-            OP_SHIFT_LEFT_ASSIGN => null,
-            OP_SHIFT_RIGHT_ASSIGN => null,
-            OP_AND_ASSIGN => null,
-            OP_OR_ASSIGN => null,
-            OP_XOR_ASSIGN => null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
@@ -727,14 +729,14 @@ internal sealed partial class ScriptBuilder {
         return new ExpressionResult(address, leftType);
     }
 
-    private ExpressionResult? AssignmentOperation(TypeIdentifier leftType, TypeIdentifier rightType) {
+    private ExpressionResult? AssignmentOperation(IdentifierExpressionContext left, TypeIdentifier rightType) {
         // must operate on the same types
-        if (leftType != rightType) {
+        if (left.FinalType is null || left.Address is null || rightType != left.FinalType) {
             return null;
         }
 
         // can be any type
-        CodeHandler.PrimitiveAssignmentOperation(leftType.Size);
+        CodeHandler.PrimitiveAssignmentOperation(left.FinalType.Size, (int)left.Address.Value.Value);
 
         // assignment returns void
         return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);

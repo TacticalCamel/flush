@@ -210,6 +210,9 @@ internal sealed partial class ScriptBuilder {
         
         return null;
     }
-    
-    
+
+    public override object? VisitDebugStatement(DebugStatementContext context) {
+        CodeHandler.StopDebug();
+        return null;
+    }
 }

@@ -80,6 +80,13 @@ public unsafe ref struct ScriptExecutor {
             case OperationCode.exit:
                 DebugState($"{stopwatch.Elapsed.TotalMilliseconds:N3}ms");
                 return;
+            
+            case OperationCode.dbug:
+                DebugState("PAUSED");
+                stopwatch.Stop();
+                Console.ReadKey();
+                stopwatch.Start();
+                break;
 
             case OperationCode.jump:
                 DebugState($"0x{i.Address:X}");
@@ -134,6 +141,16 @@ public unsafe ref struct ScriptExecutor {
                 }
                 
                 StackPtr += i.TypeSize;
+                
+                DebugState($"0x{i.Address:X} {i.TypeSize}");
+                break;
+            
+            case OperationCode.asgm:
+                StackPtr -= i.TypeSize;
+                
+                fixed (byte* destination = &Stack[i.Address]) {
+                    Unsafe.CopyBlockUnaligned(destination, StackPtr, i.TypeSize);
+                }
                 
                 DebugState($"0x{i.Address:X} {i.TypeSize}");
                 break;

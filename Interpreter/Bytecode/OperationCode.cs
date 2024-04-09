@@ -11,6 +11,10 @@ public enum OperationCode : byte {
     /// <remarks>opcode:1 return-code:4</remarks>
     exit,
     
+    /// <summary>Pause the program execution until user input.</summary>
+    /// <remarks>opcode:1</remarks>
+    dbug,
+    
     /// <summary>Set the instruction pointer.</summary>
     /// <remarks>opcode:1 value:4</remarks>
     jump,
@@ -26,6 +30,10 @@ public enum OperationCode : byte {
     /// <summary>Copy bytes from the stack to the top of the stack.</summary>
     /// <remarks>opcode:1 size:4 stack-address:4</remarks>
     pshs,
+    
+    /// <summary>Copy bytes from the top of the stack to another location in the stack.</summary>
+    /// <remarks>opcode:1 size:4 stack-address:4</remarks>
+    asgm,
     
     /// <summary>Push a number of 0 bytes to the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
