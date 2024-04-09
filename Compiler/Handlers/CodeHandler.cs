@@ -69,26 +69,46 @@ internal sealed class CodeHandler {
         return null;
     }
 
-    public JumpHandle CreateJumpPlaceholder() {
+    public JumpHandle CreateJumpSource() {
         Instructions.Add(new Instruction());
 
-        return new JumpHandle(Instructions.Count - 1);
+        return new JumpHandle(Instructions.Count - 1, true);
+    }
+    
+    public JumpHandle CreateJumpDestination() {
+        return new JumpHandle(Instructions.Count, false);
     }
 
     public void ConditionalJump(JumpHandle handle) {
-        Instructions[handle.Index] = new Instruction {
-            Code = OperationCode.cjmp,
-            Address = Instructions.Count
-        };
-
+        if (handle.IsSource) {
+            Instructions[handle.Index] = new Instruction {
+                Code = OperationCode.cjmp,
+                Address = Instructions.Count
+            };
+        }
+        else {
+            Instructions.Add(new Instruction {
+                Code = OperationCode.cjmp,
+                Address = handle.Index
+            });
+        }
+        
         StackSize--;
     }
 
     public void Jump(JumpHandle handle) {
-        Instructions[handle.Index] = new Instruction {
-            Code = OperationCode.jump,
-            Address = Instructions.Count
-        };
+        if (handle.IsSource) {
+            Instructions[handle.Index] = new Instruction {
+                Code = OperationCode.jump,
+                Address = Instructions.Count
+            };
+        }
+        else {
+            Instructions.Add(new Instruction {
+                Code = OperationCode.jump,
+                Address = handle.Index
+            });
+        }
     }
 
     /// <summary>
@@ -201,7 +221,7 @@ internal sealed class CodeHandler {
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
-    public void StopDebug() {
+    public void PauseForDebug() {
         Instructions.Add(new Instruction {
             Code = OperationCode.dbug
         });

@@ -107,8 +107,7 @@ ifBlockBody
 	;
 
 forBlock
-	: KW_FOR HEAD_START variableDeclaration? STATEMENT_SEP expression? STATEMENT_SEP expression? HEAD_END statement (KW_ELSE statement)?
-	| KW_FOR HEAD_START variableWithType KW_IN id HEAD_END statement (KW_ELSE statement)?
+	: KW_FOR HEAD_START (StartStatement=variableDeclaration)? STATEMENT_SEP (Condition=expression)? STATEMENT_SEP (IterationExpression=expression)? HEAD_END Statement=statement
 	;
 
 whileBlock

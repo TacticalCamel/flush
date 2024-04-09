@@ -148,10 +148,10 @@ internal sealed partial class ScriptBuilder {
 
         // visit statements inside
         VisitChildren(context);
-        
+
         // exit scope
         CodeHandler.ExitScope();
-        
+
         return null;
     }
 
@@ -167,12 +167,12 @@ internal sealed partial class ScriptBuilder {
 
         // visit every 
         foreach (IfBlockBodyContext bodyContext in context.ifBlockBody()) {
-            // preprocess expression to resolve types
+            // preprocess condition to resolve types
             PreprocessExpression(bodyContext.Condition);
-            
-            // expression must evaluate to bool
+
+            // condition must evaluate to bool
             bodyContext.Condition.FinalType = TypeHandler.CoreTypes.Bool;
-            
+
             // visit condition
             ExpressionResult? result = VisitExpression(bodyContext.Condition);
 
@@ -180,19 +180,19 @@ internal sealed partial class ScriptBuilder {
             if (result is null) {
                 return null;
             }
-            
+
             // the jump targeting the next if branch
-            JumpHandle nextJump = CodeHandler.CreateJumpPlaceholder();
-            
+            JumpHandle nextJump = CodeHandler.CreateJumpSource();
+
             // visit contents
             VisitStatement(bodyContext.Statement);
 
             // the jump targeting the end of the entire if block
-            JumpHandle endJump = CodeHandler.CreateJumpPlaceholder();
-            
+            JumpHandle endJump = CodeHandler.CreateJumpSource();
+
             // add the the jump list
             endJumps.Add(endJump);
-            
+
             // place next jump immediately before the next branch
             CodeHandler.ConditionalJump(nextJump);
         }
@@ -202,17 +202,97 @@ internal sealed partial class ScriptBuilder {
             // visit contents
             VisitStatement(context.ElseStatement);
         }
-        
+
         // resolve end jumps
         foreach (JumpHandle endJump in endJumps) {
             CodeHandler.Jump(endJump);
         }
-        
+
         return null;
     }
 
+    public override object? VisitForBlock(ForBlockContext context) {
+        // start a new scope
+        CodeHandler.EnterScope();
+
+        if (context.StartStatement is not null) {
+            // visit the start statement
+            VisitVariableDeclaration(context.StartStatement);
+        }
+        
+        // the jump targeting the start
+        JumpHandle loopJump = CodeHandler.CreateJumpDestination();
+        JumpHandle? conditionJump = null;
+
+        if (context.Condition is not null) {
+            // preprocess to resolve types
+            PreprocessExpression(context.Condition);
+
+            // condition must evaluate to bool
+            context.Condition.FinalType = TypeHandler.CoreTypes.Bool;
+
+            // visit condition
+            ExpressionResult? result = VisitExpression(context.Condition);
+
+            // return if an error occured
+            if (result is null) {
+                return null;
+            }
+
+            // the jump targeting the end
+            conditionJump = CodeHandler.CreateJumpSource();
+        }
+
+        // visit contents
+        VisitStatement(context.Statement);
+
+        if (context.IterationExpression is not null) {
+            // preprocess to resolve types
+            PreprocessExpression(context.IterationExpression);
+            
+            // visit iterator
+            ExpressionResult? result = VisitExpression(context.IterationExpression);
+            
+            // return if an error occured
+            if (result is null) {
+                return null;
+            }
+        }
+        
+        // jump to the start
+        CodeHandler.Jump(loopJump);
+
+        if (conditionJump is not null) {
+            CodeHandler.ConditionalJump(conditionJump.Value);
+        }
+        
+        // exit the outer scope
+        CodeHandler.ExitScope();
+
+        return null;
+    }
+
+    /// <summary>
+    /// Preprocess an expression.
+    /// Turns preprocessor mode on for the duration of visiting the expression.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    private void PreprocessExpression(ExpressionContext context) {
+        IsPreprocessorMode = true;
+
+        VisitExpression(context);
+
+        IsPreprocessorMode = false;
+    }
+
+    /// <summary>
+    /// Visit a debug statement.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
     public override object? VisitDebugStatement(DebugStatementContext context) {
-        CodeHandler.StopDebug();
+        CodeHandler.PauseForDebug();
+
         return null;
     }
 }
