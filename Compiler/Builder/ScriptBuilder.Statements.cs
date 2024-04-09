@@ -211,6 +211,11 @@ internal sealed partial class ScriptBuilder {
         return null;
     }
 
+    /// <summary>
+    /// Visit a for block.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
     public override object? VisitForBlock(ForBlockContext context) {
         // start a new scope
         CodeHandler.EnterScope();
@@ -222,6 +227,8 @@ internal sealed partial class ScriptBuilder {
         
         // the jump targeting the start
         JumpHandle loopJump = CodeHandler.CreateJumpDestination();
+        
+        // the jump targeting the end
         JumpHandle? conditionJump = null;
 
         if (context.Condition is not null) {
@@ -268,6 +275,44 @@ internal sealed partial class ScriptBuilder {
         
         // exit the outer scope
         CodeHandler.ExitScope();
+
+        return null;
+    }
+
+    /// <summary>
+    /// Visit a while block.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>Always null.</returns>
+    public override object? VisitWhileBlock(WhileBlockContext context) {
+        // the jump targeting the start
+        JumpHandle loopJump = CodeHandler.CreateJumpDestination();
+        
+        // preprocess condition to resolve types
+        PreprocessExpression(context.Condition);
+
+        // condition must evaluate to bool
+        context.Condition.FinalType = TypeHandler.CoreTypes.Bool;
+
+        // visit condition
+        ExpressionResult? result = VisitExpression(context.Condition);
+
+        // return if an error occured
+        if (result is null) {
+            return null;
+        }
+
+        // the jump targeting the end
+        JumpHandle endJump = CodeHandler.CreateJumpSource();
+        
+        // visit contents
+        VisitStatement(context.Statement);
+        
+        // resolve loop jump
+        CodeHandler.Jump(loopJump);
+        
+        // resolve end jump
+        CodeHandler.ConditionalJump(endJump);
 
         return null;
     }
