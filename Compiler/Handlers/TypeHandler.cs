@@ -241,7 +241,7 @@ internal sealed class TypeHandler {
                 Fields = [],
                 Methods = [],
                 GenericParameterCount = 0,
-                StackSize = 8
+                StackSize = 0
             }, []);
             
             Null = new TypeIdentifier(new TypeDefinition {

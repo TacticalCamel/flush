@@ -61,7 +61,7 @@ internal sealed class CodeHandler {
         foreach (Scope scope in StackScopes) {
             foreach (Variable variable in scope.DeclaredVariables) {
                 if (variable.Name != name) continue;
-                
+
                 return variable.ExpressionResult;
             }
         }
@@ -100,13 +100,14 @@ internal sealed class CodeHandler {
     /// <returns>The address.</returns>
     public MemoryAddress PushBytesFromData(int address, ushort size) {
         Instructions.Add(new Instruction {
-            Code = OperationCode.pshd,
-            Address = address,
-            TypeSize = size
-        });
+                Code = OperationCode.pshd,
+                Address = address,
+                TypeSize = size
+            }
+        );
 
         MemoryAddress result = new MemoryAddress((ulong)StackSize, MemoryLocation.Stack);
-        
+
         StackSize += size;
 
         return result;
@@ -125,10 +126,11 @@ internal sealed class CodeHandler {
         }
 
         Instructions.Add(new Instruction {
-            Code = OperationCode.pshs,
-            Address = address,
-            TypeSize = size
-        });
+                Code = OperationCode.pshs,
+                Address = address,
+                TypeSize = size
+            }
+        );
 
         StackSize += size;
     }
@@ -145,18 +147,20 @@ internal sealed class CodeHandler {
         }
 
         Instructions.Add(new Instruction {
-            Code = OperationCode.pop,
-            Count = count
-        });
+                Code = OperationCode.pop,
+                Count = count
+            }
+        );
 
         StackSize -= count;
     }
 
     public MemoryAddress PrimitiveBinaryOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
+                Code = code,
+                TypeSize = size
+            }
+        );
 
         StackSize -= size;
 
@@ -165,18 +169,20 @@ internal sealed class CodeHandler {
 
     public MemoryAddress PrimitiveUnaryOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
+                Code = code,
+                TypeSize = size
+            }
+        );
 
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
     public MemoryAddress PrimitiveShiftOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
+                Code = code,
+                TypeSize = size
+            }
+        );
 
         StackSize -= 4;
 
@@ -185,21 +191,31 @@ internal sealed class CodeHandler {
 
     public MemoryAddress PrimitiveComparisonOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
+                Code = code,
+                TypeSize = size
+            }
+        );
 
         StackSize -= size * 2 - 1;
 
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
 
-    public void PrimitiveAssignmentOperation(ushort size) {
+    public void StopDebug() {
         Instructions.Add(new Instruction {
-            
+            Code = OperationCode.dbug
         });
-        
-        StackSize -= size * 2;
+    }
+
+    public void PrimitiveAssignmentOperation(ushort size, int address) {
+        Instructions.Add(new Instruction {
+                Code = OperationCode.asgm,
+                Address = address,
+                TypeSize = size
+            }
+        );
+
+        StackSize -= size;
     }
 
     public bool Cast(ushort sourceSize, ushort targetSize, PrimitiveCast cast) {
@@ -218,54 +234,60 @@ internal sealed class CodeHandler {
                 }
 
                 Instructions.Add(new Instruction {
-                    Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    TypeSize = (ushort)Math.Abs(difference)
-                });
+                        Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
+                        TypeSize = (ushort)Math.Abs(difference)
+                    }
+                );
 
                 return true;
 
             case PrimitiveCast.FloatToFloatExplicit or PrimitiveCast.FloatToFloatImplicit:
                 Instructions.Add(new Instruction {
-                    Code = OperationCode.ftof,
-                    TypeSize = sourceSize,
-                    SecondTypeSize = targetSize
-                });
+                        Code = OperationCode.ftof,
+                        TypeSize = sourceSize,
+                        SecondTypeSize = targetSize
+                    }
+                );
 
                 return true;
 
             case PrimitiveCast.FloatToSignedExplicit:
                 Instructions.Add(new Instruction {
-                    Code = OperationCode.ftoi,
-                    TypeSize = sourceSize,
-                    SecondTypeSize = targetSize
-                });
+                        Code = OperationCode.ftoi,
+                        TypeSize = sourceSize,
+                        SecondTypeSize = targetSize
+                    }
+                );
 
                 return true;
 
             case PrimitiveCast.FloatToUnsignedExplicit:
                 Instructions.Add(new Instruction {
-                    Code = OperationCode.ftou,
-                    TypeSize = sourceSize,
-                    SecondTypeSize = targetSize
-                });
+                        Code = OperationCode.ftou,
+                        TypeSize = sourceSize,
+                        SecondTypeSize = targetSize
+                    }
+                );
 
                 return true;
 
             case PrimitiveCast.SignedToFloatImplicit:
                 Instructions.Add(new Instruction {
-                    Code = OperationCode.itof,
-                    TypeSize = sourceSize,
-                    SecondTypeSize = targetSize
-                });
+                        Code = OperationCode.itof,
+                        TypeSize = sourceSize,
+                        SecondTypeSize = targetSize
+                    }
+                );
 
                 return true;
 
             case PrimitiveCast.UnsignedToFloatImplicit:
                 Instructions.Add(new Instruction {
-                    Code = OperationCode.utof,
-                    TypeSize = sourceSize,
-                    SecondTypeSize = targetSize
-                });
+                        Code = OperationCode.utof,
+                        TypeSize = sourceSize,
+                        SecondTypeSize = targetSize
+                    }
+                );
 
                 return true;
 
