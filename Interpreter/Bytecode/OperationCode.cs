@@ -23,6 +23,10 @@ public enum OperationCode : byte {
     /// <remarks>opcode:1 size:4 data-address:4</remarks>
     pshd,
     
+    /// <summary>Copy bytes from the stack to the top of the stack.</summary>
+    /// <remarks>opcode:1 size:4 stack-address:4</remarks>
+    pshs,
+    
     /// <summary>Push a number of 0 bytes to the stack.</summary>
     /// <remarks>opcode:1 size:1</remarks>
     pshz,

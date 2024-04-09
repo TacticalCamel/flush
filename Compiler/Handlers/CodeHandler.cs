@@ -49,18 +49,24 @@ internal sealed class CodeHandler {
             return false;
         }
 
-        Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)StackSize, MemoryLocation.Stack), type));
+        Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)(StackSize - type.Size), MemoryLocation.Stack), type));
         Scope scope = StackScopes.Peek();
-        
+
         scope.DeclaredVariables.Add(variable);
 
         return true;
     }
 
     public ExpressionResult? GetVariable(string name) {
-        return StackScopes
-            .Select(scope => scope.DeclaredVariables.FirstOrDefault(x => x.Name == name)?.ExpressionResult)
-            .FirstOrDefault();
+        foreach (Scope scope in StackScopes) {
+            foreach (Variable variable in scope.DeclaredVariables) {
+                if (variable.Name != name) continue;
+                
+                return variable.ExpressionResult;
+            }
+        }
+
+        return null;
     }
 
     public JumpHandle CreateJumpPlaceholder() {
@@ -77,7 +83,7 @@ internal sealed class CodeHandler {
 
         StackSize--;
     }
-    
+
     public void Jump(JumpHandle handle) {
         Instructions[handle.Index] = new Instruction {
             Code = OperationCode.jump,
@@ -91,14 +97,35 @@ internal sealed class CodeHandler {
     /// </summary>
     /// <param name="address">The address in the data section.</param>
     /// <param name="size">The number of bytes.</param>
-    public void PushBytesFromData(int address, ushort size) {
+    /// <returns>The address.</returns>
+    public MemoryAddress PushBytesFromData(int address, ushort size) {
+        Instructions.Add(new Instruction {
+            Code = OperationCode.pshd,
+            Address = address,
+            TypeSize = size
+        });
+
+        MemoryAddress result = new MemoryAddress((ulong)StackSize, MemoryLocation.Stack);
+        
+        StackSize += size;
+
+        return result;
+    }
+
+    /// <summary>
+    /// Copy bytes from the stack to the top of the stack.
+    /// Increase the stack size.
+    /// </summary>
+    /// <param name="address">The address in the stack.</param>
+    /// <param name="size">The number of bytes.</param>
+    public void PushBytesFromStack(int address, ushort size) {
         // do not emit when size is 0
         if (size == 0) {
             return;
         }
-        
+
         Instructions.Add(new Instruction {
-            Code = OperationCode.pshd,
+            Code = OperationCode.pshs,
             Address = address,
             TypeSize = size
         });
@@ -152,10 +179,10 @@ internal sealed class CodeHandler {
         });
 
         StackSize -= 4;
-        
+
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
     }
-    
+
     public MemoryAddress PrimitiveComparisonOperation(ushort size, OperationCode code) {
         Instructions.Add(new Instruction {
             Code = code,
@@ -163,8 +190,16 @@ internal sealed class CodeHandler {
         });
 
         StackSize -= size * 2 - 1;
-        
+
         return new MemoryAddress((ulong)(StackSize - size), MemoryLocation.Stack);
+    }
+
+    public void PrimitiveAssignmentOperation(ushort size) {
+        Instructions.Add(new Instruction {
+            
+        });
+        
+        StackSize -= size * 2;
     }
 
     public bool Cast(ushort sourceSize, ushort targetSize, PrimitiveCast cast) {
@@ -238,10 +273,10 @@ internal sealed class CodeHandler {
                 return false;
         }
     }
-    
+
     public Instruction[] GetInstructionArray() {
         return Instructions
-            .Append(new Instruction{Code = OperationCode.exit})
+            .Append(new Instruction { Code = OperationCode.exit })
             .ToArray();
     }
 

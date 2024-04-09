@@ -115,20 +115,21 @@ tryBlock
 	;
 	
 expression
-	: Constant=constant #ConstantExpression
+	: KW_NULL #NullExpression
+	| Constant=constant #ConstantExpression
 	| Identifier=id #IdentifierExpression
-	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessOperatorExpression
+	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessExpression
 	| HEAD_START Type=type HEAD_END Expression=expression #CastExpression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
 	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
-	| Operator=opLeftUnary Expression=expression #LeftUnaryOperatorExpression
-	| Expression=expression Operator=opRightUnary #RightUnaryOperatorExpression
-	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeOperatorExpression
-	| Left=expression Operator=opAdditive Right=expression #AdditiveOperatorExpression
-	| Left=expression Operator=opShift Right=expression #ShiftOperatorExpression
-	| Left=expression Operator=opComparison Right=expression #ComparisonOperatorExpression
-	| Left=expression Operator=opLogical Right=expression #LogicalOperatorExpression
-	| Left=expression Operator=opAssignment Right=expression #AssigmentOperatorExpression
+	| Operator=opLeftUnary Expression=expression #LeftUnaryExpression
+	| Expression=expression Operator=opRightUnary #RightUnaryExpression
+	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeExpression
+	| Left=expression Operator=opAdditive Right=expression #AdditiveExpression
+	| Left=expression Operator=opShift Right=expression #ShiftExpression
+	| Left=expression Operator=opComparison Right=expression #ComparisonExpression
+	| Left=expression Operator=opLogical Right=expression #LogicalExpression
+	| Left=expression Operator=opAssignment Right=expression #AssigmentExpression
 //	| Lambda=lambda #LambdaExpression
 //	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
 //	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
@@ -143,7 +144,6 @@ constant
 	| HALF_FLOAT #HalfFloat
 	| STRING_LITERAL #StringLiteral
 	| CHAR_LITERAL #CharLiteral
-	| KW_NULL #NullKeyword
 	| KW_TRUE #TrueKeyword
 	| KW_FALSE #FalseKeyword
 	;

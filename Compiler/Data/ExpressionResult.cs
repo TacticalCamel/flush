@@ -7,7 +7,7 @@
 /// <param name="type">The type of the result.</param>
 internal class ExpressionResult(MemoryAddress address, TypeIdentifier type) {
     /// <summary>
-    /// The address of the result.
+    /// The address of the result on the stack.
     /// </summary>
     public MemoryAddress Address { get; } = address;
 
