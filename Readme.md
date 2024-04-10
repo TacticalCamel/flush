@@ -14,48 +14,6 @@ A nyelvben írt kód az elkészített fordító segítségével fog utasítások
 Egy érdekes témát szerettem volna választani, ami nem egy ezredik unalmas webshop alkalmazás. Mindig is érdekelt mind a fordítóprogramok és az automatizáció témaköre, ezért egy mindkettőt magába foglaló projekt tökéletesnek tűnt.
 Úgy gondolom, hogy egy egyedi megoldást készítek el a feladatra, annak ellenére, hogy a megoldandó automatizálási problémákra már léteznek más eszközök.
 
-## Tervezett ütemezés
-<table>
-  <tbody>
-    <tr>
-      <td>Szeptember</td>
-      <td>A nyelv szintaxisának megtervezése<br>A nyelv működésének megtervezése</td>
-    </tr>
-    <tr>
-      <td>Október</td>
-      <td>Kód tokenizáció és szintaxis fára bontás</td>
-    </tr>
-    <tr>
-      <td>November</td>
-      <td>Fordítás utasításokra</td>
-    </tr>
-    <tr>
-      <td>December</td>
-      <td>Futtatási környezet felépítése</td>
-    </tr>
-    <tr>
-      <td>Január</td>
-      <td>Általános célú funkciók</td>
-    </tr>
-    <tr>
-      <td>Február</td>
-      <td>További osztályok és modulok</td>
-    </tr>
-    <tr>
-      <td>Március</td>
-      <td>Apró extra funkciók<br>Optimalizálás</td>
-    </tr>
-    <tr>
-      <td>Április</td>
-      <td>Hibajavítások<br>Tesztelés</td>
-    </tr>
-    <tr>
-      <td>Május</td>
-      <td>Leadás<br>Védés</td>
-    </tr>
-  </tbody>
-</table>
-
 ## Felhasznált eszközök
 - Jetbrains Rider - Fejlesztői környezet
 - C# 12 (.NET Core 8) - Projekt programozási nyelve

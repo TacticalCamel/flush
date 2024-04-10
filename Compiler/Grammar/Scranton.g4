@@ -60,15 +60,15 @@ genericParameters
 	;
 
 statement
-    : debugStatement
-	| regularStatement STATEMENT_SEP
+    : debugStatement STATEMENT_SEP
 	| controlStatement STATEMENT_SEP
+	| regularStatement STATEMENT_SEP
 	| blockStatement
 	| STATEMENT_SEP
 	;
 
 debugStatement
-    : '<<PAUSE>>'
+    : 'pause'
     ;
 
 regularStatement
@@ -81,7 +81,7 @@ variableDeclaration
 	;
 
 controlStatement
-	: KW_RETURN Value=expression? #ReturnStatement
+	: KW_RETURN (Expression=expression)? #ReturnStatement
 	| KW_BREAK #BreakStatement
 	| KW_CONTINUE #ContinueStatement
 	;

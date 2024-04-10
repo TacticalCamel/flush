@@ -61,14 +61,14 @@ internal sealed partial class ScriptBuilder {
         PreprocessExpression(context.Expression);
 
         // visit expression
-        ExpressionResult? result = VisitExpression(context.Expression);
+        TypeIdentifier? result = VisitExpression(context.Expression);
 
         if (result is null) {
             return null;
         }
 
         // discard results
-        CodeHandler.PopBytes(result.Type.Size);
+        CodeHandler.DiscardExpressionResult(result);
 
         return null;
     }
@@ -120,7 +120,7 @@ internal sealed partial class ScriptBuilder {
         context.Expression.FinalType = type;
 
         // visit expression
-        ExpressionResult? result = VisitExpression(context.Expression);
+        TypeIdentifier? result = VisitExpression(context.Expression);
 
         if (result is null) {
             return null;
@@ -128,7 +128,7 @@ internal sealed partial class ScriptBuilder {
 
         // define variable
         // do not pop result, it will be on the stack until the variable is out of scope
-        bool success = CodeHandler.DefineVariable(name, result.Type);
+        bool success = CodeHandler.DefineVariable(name, result);
 
         if (!success) {
             IssueHandler.Add(Issue.VariableAlreadyDeclared(context, name));
@@ -174,7 +174,7 @@ internal sealed partial class ScriptBuilder {
             bodyContext.Condition.FinalType = TypeHandler.CoreTypes.Bool;
 
             // visit condition
-            ExpressionResult? result = VisitExpression(bodyContext.Condition);
+            TypeIdentifier? result = VisitExpression(bodyContext.Condition);
 
             // return if an error occured
             if (result is null) {
@@ -182,22 +182,22 @@ internal sealed partial class ScriptBuilder {
             }
 
             // the jump targeting the next if branch
-            JumpHandle nextJump = CodeHandler.CreateJumpSource();
+            JumpHandle nextJump = CodeHandler.CreateJumpPlaceholder();
 
             // visit contents
             VisitStatement(bodyContext.Statement);
 
             // the jump targeting the end of the entire if block
-            JumpHandle endJump = CodeHandler.CreateJumpSource();
+            JumpHandle endJump = CodeHandler.CreateJumpPlaceholder();
 
-            // add the the jump list
+            // add the jump list
             endJumps.Add(endJump);
 
             // place next jump immediately before the next branch
-            CodeHandler.ConditionalJump(nextJump);
+            CodeHandler.FinishJump(nextJump, true);
         }
 
-        // if has an else branch
+        // if the block has an else branch
         if (context.ElseStatement is not null) {
             // visit contents
             VisitStatement(context.ElseStatement);
@@ -205,7 +205,7 @@ internal sealed partial class ScriptBuilder {
 
         // resolve end jumps
         foreach (JumpHandle endJump in endJumps) {
-            CodeHandler.Jump(endJump);
+            CodeHandler.FinishJump(endJump, false);
         }
 
         return null;
@@ -226,7 +226,7 @@ internal sealed partial class ScriptBuilder {
         }
         
         // the jump targeting the start
-        JumpHandle loopJump = CodeHandler.CreateJumpDestination();
+        JumpHandle loopJump = CodeHandler.CreateLabel();
         
         // the jump targeting the end
         JumpHandle? conditionJump = null;
@@ -239,7 +239,7 @@ internal sealed partial class ScriptBuilder {
             context.Condition.FinalType = TypeHandler.CoreTypes.Bool;
 
             // visit condition
-            ExpressionResult? result = VisitExpression(context.Condition);
+            TypeIdentifier? result = VisitExpression(context.Condition);
 
             // return if an error occured
             if (result is null) {
@@ -247,7 +247,7 @@ internal sealed partial class ScriptBuilder {
             }
 
             // the jump targeting the end
-            conditionJump = CodeHandler.CreateJumpSource();
+            conditionJump = CodeHandler.CreateJumpPlaceholder();
         }
 
         // visit contents
@@ -258,7 +258,7 @@ internal sealed partial class ScriptBuilder {
             PreprocessExpression(context.IterationExpression);
             
             // visit iterator
-            ExpressionResult? result = VisitExpression(context.IterationExpression);
+            TypeIdentifier? result = VisitExpression(context.IterationExpression);
             
             // return if an error occured
             if (result is null) {
@@ -267,10 +267,10 @@ internal sealed partial class ScriptBuilder {
         }
         
         // jump to the start
-        CodeHandler.Jump(loopJump);
+        CodeHandler.FinishJump(loopJump, false);
 
         if (conditionJump is not null) {
-            CodeHandler.ConditionalJump(conditionJump.Value);
+            CodeHandler.FinishJump(conditionJump.Value, true);
         }
         
         // exit the outer scope
@@ -286,7 +286,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>Always null.</returns>
     public override object? VisitWhileBlock(WhileBlockContext context) {
         // the jump targeting the start
-        JumpHandle loopJump = CodeHandler.CreateJumpDestination();
+        JumpHandle loopJump = CodeHandler.CreateLabel();
         
         // preprocess condition to resolve types
         PreprocessExpression(context.Condition);
@@ -295,7 +295,7 @@ internal sealed partial class ScriptBuilder {
         context.Condition.FinalType = TypeHandler.CoreTypes.Bool;
 
         // visit condition
-        ExpressionResult? result = VisitExpression(context.Condition);
+        TypeIdentifier? result = VisitExpression(context.Condition);
 
         // return if an error occured
         if (result is null) {
@@ -303,16 +303,16 @@ internal sealed partial class ScriptBuilder {
         }
 
         // the jump targeting the end
-        JumpHandle endJump = CodeHandler.CreateJumpSource();
+        JumpHandle endJump = CodeHandler.CreateJumpPlaceholder();
         
         // visit contents
         VisitStatement(context.Statement);
         
         // resolve loop jump
-        CodeHandler.Jump(loopJump);
+        CodeHandler.FinishJump(loopJump, false);
         
         // resolve end jump
-        CodeHandler.ConditionalJump(endJump);
+        CodeHandler.FinishJump(endJump, true);
 
         return null;
     }
@@ -336,7 +336,7 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
     public override object? VisitDebugStatement(DebugStatementContext context) {
-        CodeHandler.PauseForDebug();
+        CodeHandler.EmitDebugPause();
 
         return null;
     }

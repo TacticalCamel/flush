@@ -14,9 +14,9 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitExpression(ExpressionContext context) {
+    public override TypeIdentifier? VisitExpression(ExpressionContext context) {
         // visit expression subtype
-        return (ExpressionResult?)Visit(context);
+        return (TypeIdentifier?)Visit(context);
     }
 
     /// <summary>
@@ -24,7 +24,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>A null reference.</returns>
-    public override ExpressionResult? VisitNullExpression(NullExpressionContext context) {
+    public override TypeIdentifier? VisitNullExpression(NullExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // assign the null type
@@ -34,7 +34,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // return a null reference
-        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
+        return TypeHandler.CoreTypes.Void;
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitConstantExpression(ConstantExpressionContext context) {
+    public override TypeIdentifier? VisitConstantExpression(ConstantExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // store the constant
@@ -68,13 +68,13 @@ internal sealed partial class ScriptBuilder {
         }
 
         // push the constant to the stack
-        MemoryAddress address = CodeHandler.PushBytesFromData(context.Address.Value, context.OriginalType.Size);
+        CodeHandler.PushBytesFromData(context.Address.Value, context.OriginalType.Size);
 
         // cast the constant
         bool success = CastExpression(context);
 
         // return a valid result if successful
-        return success ? new ExpressionResult(address, context.FinalType) : null;
+        return success ? context.FinalType : null;
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitIdentifierExpression(IdentifierExpressionContext context) {
+    public override TypeIdentifier? VisitIdentifierExpression(IdentifierExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // get variable name
@@ -121,11 +121,11 @@ internal sealed partial class ScriptBuilder {
         bool success = CastExpression(context);
 
         // return a valid result if successful
-        return success ? new ExpressionResult(context.Address.Value, context.FinalType) : null;
+        return success ? context.FinalType : null;
     }
 
     // TODO implement
-    public override ExpressionResult? VisitMemberAccessExpression(MemberAccessExpressionContext context) {
+    public override TypeIdentifier? VisitMemberAccessExpression(MemberAccessExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             return null;
@@ -140,7 +140,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitCastExpression(CastExpressionContext context) {
+    public override TypeIdentifier? VisitCastExpression(CastExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // get the target type
@@ -186,7 +186,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // resolve inner expression
-        ExpressionResult? result = VisitExpression(context.Expression);
+        TypeIdentifier? result = VisitExpression(context.Expression);
 
         // could not resolve expression
         if (result is null) {
@@ -197,7 +197,7 @@ internal sealed partial class ScriptBuilder {
         bool success = CastExpression(context);
 
         // return a valid result if successful
-        return success ? new ExpressionResult(result.Address, context.FinalType) : null;
+        return success ? context.FinalType : null;
     }
 
     /// <summary>
@@ -206,7 +206,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitNestedExpression(NestedExpressionContext context) {
+    public override TypeIdentifier? VisitNestedExpression(NestedExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // visit inner expression
@@ -225,7 +225,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // visit inner expression
-        ExpressionResult? result = VisitExpression(context.Body);
+        TypeIdentifier? result = VisitExpression(context.Body);
 
         // could not resolve expression
         if (result is null) {
@@ -236,11 +236,11 @@ internal sealed partial class ScriptBuilder {
         bool success = CastExpression(context);
 
         // return a valid result if successful
-        return success ? new ExpressionResult(result.Address, context.FinalType) : null;
+        return success ? context.FinalType : null;
     }
 
     // TODO implement
-    public override ExpressionResult? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
+    public override TypeIdentifier? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             return null;
@@ -254,7 +254,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitLeftUnaryExpression(LeftUnaryExpressionContext context) {
+    public override TypeIdentifier? VisitLeftUnaryExpression(LeftUnaryExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // visit inner expression
@@ -275,7 +275,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitRightUnaryExpression(RightUnaryExpressionContext context) {
+    public override TypeIdentifier? VisitRightUnaryExpression(RightUnaryExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             // visit inner expression
@@ -296,7 +296,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
+    public override TypeIdentifier? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
         if (IsPreprocessorMode) {
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
             
@@ -313,7 +313,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitAdditiveExpression(AdditiveExpressionContext context) {
+    public override TypeIdentifier? VisitAdditiveExpression(AdditiveExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -322,7 +322,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitShiftExpression(ShiftExpressionContext context) {
+    public override TypeIdentifier? VisitShiftExpression(ShiftExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -331,7 +331,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitComparisonExpression(ComparisonExpressionContext context) {
+    public override TypeIdentifier? VisitComparisonExpression(ComparisonExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -340,7 +340,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitLogicalExpression(LogicalExpressionContext context) {
+    public override TypeIdentifier? VisitLogicalExpression(LogicalExpressionContext context) {
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
@@ -349,7 +349,7 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
-    public override ExpressionResult? VisitAssigmentExpression(AssigmentExpressionContext context) {
+    public override TypeIdentifier? VisitAssigmentExpression(AssigmentExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
             VisitExpression(context.Left);
@@ -368,7 +368,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // calculate result
-        ExpressionResult? result = context.Operator.start.Type switch {
+        TypeIdentifier? result = context.Operator.start.Type switch {
             OP_ASSIGN => VisitExpression(context.Right),
             OP_MULTIPLY_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_MULTIPLY),
             OP_DIVIDE_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_DIVIDE),
@@ -502,20 +502,21 @@ internal sealed partial class ScriptBuilder {
         // get the type of cast required
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
 
-        // emit a cast instruction
-        bool success = CodeHandler.Cast(context.OriginalType.Size, context.FinalType.Size, cast);
-
         // stop if failed
-        if (!success) {
+        if (cast == PrimitiveCast.None) {
             IssueHandler.Add(Issue.InvalidCast(context, context.OriginalType, context.FinalType));
+            return false;
         }
 
-        return success;
+        // emit a cast instruction
+        CodeHandler.EmitCast(context.OriginalType.Size, context.FinalType.Size, cast);
+
+        return true;
     }
     
     #region Helper methods
     
-    private ExpressionResult? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
+    private TypeIdentifier? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
         if (IsPreprocessorMode) {
             // resolve left and right side
             VisitExpression(leftContext);
@@ -579,7 +580,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // resolve left side
-        ExpressionResult? left = VisitExpression(leftContext);
+        TypeIdentifier? left = VisitExpression(leftContext);
 
         // return if there was an error
         if (left is null) {
@@ -587,44 +588,44 @@ internal sealed partial class ScriptBuilder {
         }
 
         // resolve right side
-        ExpressionResult? right = VisitExpression(rightContext);
+        TypeIdentifier? right = VisitExpression(rightContext);
 
         // return if there was an error
         if (right is null) {
             return null;
         }
 
-        bool isLeftPrimitive = TypeHandler.Casts.IsPrimitiveType(left.Type);
-        bool isRightPrimitive = TypeHandler.Casts.IsPrimitiveType(right.Type);
+        bool isLeftPrimitive = TypeHandler.Casts.IsPrimitiveType(left);
+        bool isRightPrimitive = TypeHandler.Casts.IsPrimitiveType(right);
 
         // true if both expression types are primitive types or null
         // in this case we can use a simple instruction instead of a function call
         bool isPrimitiveType = isLeftPrimitive && isRightPrimitive;
 
         // calculate results
-        ExpressionResult? result = operatorType switch {
-            OP_PLUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.addi, OperationCode.addf) : null,
-            OP_MINUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.subi, OperationCode.subf) : null,
-            OP_MULTIPLY => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.muli, OperationCode.mulf) : null,
-            OP_DIVIDE => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.divi, OperationCode.divf) : null,
-            OP_MODULUS => isPrimitiveType ? EmitNumberBinary(left.Type, right.Type, OperationCode.modi, OperationCode.modf) : null,
-            OP_SHIFT_LEFT => isPrimitiveType ? EmitShift(left.Type, right.Type, OperationCode.shfl) : null,
-            OP_SHIFT_RIGHT => isPrimitiveType ? EmitShift(left.Type, right.Type, OperationCode.shfr) : null,
-            OP_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.eq) : null,
-            OP_NOT_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.neq) : null,
-            OP_LESS => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.lt) : null,
-            OP_GREATER => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.gt) : null,
-            OP_LESS_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.lte) : null,
-            OP_GREATER_EQ => isPrimitiveType ? EmitComparison(left.Type, right.Type, OperationCode.gte) : null,
-            OP_AND => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.and) : null,
-            OP_OR => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.or) : null,
-            OP_XOR => isPrimitiveType ? EmitBitwise(left.Type, right.Type, OperationCode.xor) : null,
+        TypeIdentifier? result = operatorType switch {
+            OP_PLUS => isPrimitiveType ? EmitNumberBinary(left, right, OperationCode.addi, OperationCode.addf) : null,
+            OP_MINUS => isPrimitiveType ? EmitNumberBinary(left, right, OperationCode.subi, OperationCode.subf) : null,
+            OP_MULTIPLY => isPrimitiveType ? EmitNumberBinary(left, right, OperationCode.muli, OperationCode.mulf) : null,
+            OP_DIVIDE => isPrimitiveType ? EmitNumberBinary(left, right, OperationCode.divi, OperationCode.divf) : null,
+            OP_MODULUS => isPrimitiveType ? EmitNumberBinary(left, right, OperationCode.modi, OperationCode.modf) : null,
+            OP_SHIFT_LEFT => isPrimitiveType ? EmitShift(left, right, OperationCode.shfl) : null,
+            OP_SHIFT_RIGHT => isPrimitiveType ? EmitShift(left, right, OperationCode.shfr) : null,
+            OP_EQ => isPrimitiveType ? EmitComparison(left, right, OperationCode.eq) : null,
+            OP_NOT_EQ => isPrimitiveType ? EmitComparison(left, right, OperationCode.neq) : null,
+            OP_LESS => isPrimitiveType ? EmitComparison(left, right, OperationCode.lt) : null,
+            OP_GREATER => isPrimitiveType ? EmitComparison(left, right, OperationCode.gt) : null,
+            OP_LESS_EQ => isPrimitiveType ? EmitComparison(left, right, OperationCode.lte) : null,
+            OP_GREATER_EQ => isPrimitiveType ? EmitComparison(left, right, OperationCode.gte) : null,
+            OP_AND => isPrimitiveType ? EmitBitwise(left, right, OperationCode.and) : null,
+            OP_OR => isPrimitiveType ? EmitBitwise(left, right, OperationCode.or) : null,
+            OP_XOR => isPrimitiveType ? EmitBitwise(left, right, OperationCode.xor) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
         // operation invalid
         if (result is null) {
-            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left.Type, right.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+            IssueHandler.Add(Issue.InvalidBinaryOperation(context, left, right, DefaultVocabulary.GetDisplayName(operatorType)));
             return null;
         }
 
@@ -634,12 +635,12 @@ internal sealed partial class ScriptBuilder {
         }
 
         // need the return value, cast it to the target type
-        return CastExpression(context) ? new ExpressionResult(result.Address, context.FinalType) : null;
+        return CastExpression(context) ? context.FinalType : null;
     }
 
-    private ExpressionResult? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
+    private TypeIdentifier? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
         // resolve the inner expression
-        ExpressionResult? inner = VisitExpression(innerContext);
+        TypeIdentifier? inner = VisitExpression(innerContext);
 
         // return if an error occured
         if (inner is null) {
@@ -648,53 +649,53 @@ internal sealed partial class ScriptBuilder {
 
         // true if the expression type is a primitive type or null
         // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(inner.Type);
+        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(inner);
 
         // calculate results
-        ExpressionResult? result = operatorType switch {
-            OP_NOT => isPrimitiveType ? EmitBoolUnary(inner.Type, OperationCode.negb) : null,
+        TypeIdentifier? result = operatorType switch {
+            OP_NOT => isPrimitiveType ? EmitBoolUnary(inner, OperationCode.negb) : null,
             OP_PLUS => isPrimitiveType ? inner : null,
-            OP_MINUS => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.sswi, OperationCode.sswf) : null,
-            OP_INCREMENT => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.inci, OperationCode.incf) : null,
-            OP_DECREMENT => isPrimitiveType ? EmitNumberUnary(inner.Type, OperationCode.deci, OperationCode.decf) : null,
+            OP_MINUS => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.sswi, OperationCode.sswf) : null,
+            OP_INCREMENT => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.inci, OperationCode.incf) : null,
+            OP_DECREMENT => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.deci, OperationCode.decf) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
         // operation invalid
         if (result is null) {
-            IssueHandler.Add(Issue.InvalidUnaryOperation(context, inner.Type, DefaultVocabulary.GetDisplayName(operatorType)));
+            IssueHandler.Add(Issue.InvalidUnaryOperation(context, inner, DefaultVocabulary.GetDisplayName(operatorType)));
             return null;
         }
 
         return result;
     }
 
-    private ExpressionResult? EmitNumberUnary(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
+    private TypeIdentifier? EmitNumberUnary(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(type)) {
-            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, integerCode);
-            return new ExpressionResult(address, type);
+            CodeHandler.EmitDefaultUnaryOperation(type.Size, integerCode);
+            return type;
         }
 
         if (TypeHandler.Casts.IsFloatType(type)) {
-            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, floatCode);
-            return new ExpressionResult(address, type);
+            CodeHandler.EmitDefaultUnaryOperation(type.Size, floatCode);
+            return type;
         }
 
         return null;
     }
 
-    private ExpressionResult? EmitBoolUnary(TypeIdentifier type, OperationCode code) {
+    private TypeIdentifier? EmitBoolUnary(TypeIdentifier type, OperationCode code) {
         // must be bool
         if (type == TypeHandler.CoreTypes.Bool) {
-            MemoryAddress address = CodeHandler.PrimitiveUnaryOperation(type.Size, code);
-            return new ExpressionResult(address, type);
+            CodeHandler.EmitDefaultUnaryOperation(type.Size, code);
+            return type;
         }
 
         return null;
     }
 
-    private ExpressionResult? EmitNumberBinary(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode integerCode, OperationCode floatCode) {
+    private TypeIdentifier? EmitNumberBinary(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode integerCode, OperationCode floatCode) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -702,19 +703,19 @@ internal sealed partial class ScriptBuilder {
 
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(leftType)) {
-            MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, integerCode);
-            return new ExpressionResult(address, leftType);
+            CodeHandler.EmitDefaultBinaryOperation(leftType.Size, integerCode);
+            return leftType;
         }
 
         if (TypeHandler.Casts.IsFloatType(leftType)) {
-            MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, floatCode);
-            return new ExpressionResult(address, leftType);
+            CodeHandler.EmitDefaultBinaryOperation(leftType.Size, floatCode);
+            return leftType;
         }
 
         return null;
     }
 
-    private ExpressionResult? EmitBitwise(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private TypeIdentifier? EmitBitwise(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
@@ -725,23 +726,23 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        MemoryAddress address = CodeHandler.PrimitiveBinaryOperation(leftType.Size, code);
+        CodeHandler.EmitDefaultBinaryOperation(leftType.Size, code);
 
-        return new ExpressionResult(address, leftType);
+        return leftType;
     }
 
-    private ExpressionResult? EmitComparison(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private TypeIdentifier? EmitComparison(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // must operate on the same types
         if (leftType != rightType) {
             return null;
         }
 
         // can be any type
-        MemoryAddress address = CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
-        return new ExpressionResult(address, TypeHandler.CoreTypes.Bool);
+        CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        return TypeHandler.CoreTypes.Bool;
     }
 
-    private ExpressionResult? EmitShift(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
+    private TypeIdentifier? EmitShift(TypeIdentifier leftType, TypeIdentifier rightType, OperationCode code) {
         // left side must be an integer type
         if (!TypeHandler.Casts.IsIntegerType(leftType)) {
             return null;
@@ -753,11 +754,11 @@ internal sealed partial class ScriptBuilder {
         }
 
         // can be any type
-        MemoryAddress address = CodeHandler.PrimitiveShiftOperation(leftType.Size, code);
-        return new ExpressionResult(address, leftType);
+        CodeHandler.PrimitiveShiftOperation(leftType.Size, code);
+        return leftType;
     }
 
-    private ExpressionResult? EmitAssignment(IdentifierExpressionContext left, TypeIdentifier rightType) {
+    private TypeIdentifier? EmitAssignment(IdentifierExpressionContext left, TypeIdentifier rightType) {
         // must operate on the same types
         if (left.FinalType is null || left.Address is null || rightType != left.FinalType) {
             return null;
@@ -767,7 +768,7 @@ internal sealed partial class ScriptBuilder {
         CodeHandler.PrimitiveAssignmentOperation(left.FinalType.Size, (int)left.Address.Value.Value);
 
         // assignment returns void
-        return new ExpressionResult(MemoryAddress.Null, TypeHandler.CoreTypes.Void);
+        return TypeHandler.CoreTypes.Void;
     }
 
     #endregion

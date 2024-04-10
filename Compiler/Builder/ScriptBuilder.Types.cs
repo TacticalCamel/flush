@@ -7,10 +7,11 @@ using static Grammar.ScrantonParser;
 
 // ScriptBuilder.Types: methods related to visiting type definitions and type names
 internal sealed partial class ScriptBuilder {
-    private void ProcessTypeDefinitions(TypeDefinitionContext[] typeDefinitions) {
+    
+    private void ProcessTypeDefinitions(TypeDefinitionContext[] _) {
         // TODO implement
-        /*// create array for type drafts
-        TypeDraft[] drafts = new TypeDraft[typeDefinitions.Length];
+        // create array for type drafts
+        /*TypeDraft[] drafts = new TypeDraft[typeDefinitions.Length];
 
         // create type drafts 
         for (int i = 0; i < typeDefinitions.Length; i++) {
@@ -30,6 +31,7 @@ internal sealed partial class ScriptBuilder {
         }*/
     }
 
+    
     /*
     private TypeDraft? CreateTypeDraft(TypeDefinitionContext context) {
         // the modifiers of the type
@@ -51,12 +53,12 @@ internal sealed partial class ScriptBuilder {
         };
         
         return draft;
-    }*/
+    }
 
     private bool ProcessTypeDefinition(TypeDefinitionContext context) {
         return true;
 
-        /*// loading finished
+        // loading finished
         if (context.LoadingState is not null) {
             return true;
         }
@@ -97,7 +99,7 @@ internal sealed partial class ScriptBuilder {
         // issue: struct layouts can have circles in them
         // solution: explore the dependencies of a type recursively and detect circles
 
-        return true;*/
+        return true;
     }
 
     /// <summary>
@@ -122,6 +124,8 @@ internal sealed partial class ScriptBuilder {
 
         return null;
     }
+    
+    */
 
     /// <summary>
     /// Visits a return type.
