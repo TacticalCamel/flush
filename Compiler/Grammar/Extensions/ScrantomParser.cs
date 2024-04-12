@@ -42,6 +42,6 @@ public partial class ScrantonParser {
         /// The address of the variable.
         /// Assigned when the expression is visited.
         /// </summary>
-        internal MemoryAddress? Address { get; set; }
+        internal int? Address { get; set; }
     }
 }

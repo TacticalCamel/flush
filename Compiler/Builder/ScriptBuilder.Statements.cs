@@ -103,12 +103,6 @@ internal sealed partial class ScriptBuilder {
     /// <param name="context">The node to visit.</param>
     /// <returns>Always null.</returns>
     public override object? VisitVariableDeclaration(VariableDeclarationContext context) {
-        // get variable name
-        string name = VisitId(context.VariableWithType.Name);
-
-        // preprocess expression to resolve types
-        PreprocessExpression(context.Expression);
-
         // get variable type
         TypeIdentifier? type = VisitType(context.VariableWithType.Type);
 
@@ -116,19 +110,35 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        // assign final type
-        context.Expression.FinalType = type;
+        // get variable name
+        string name = VisitId(context.VariableWithType.Name);
 
-        // visit expression
-        TypeIdentifier? result = VisitExpression(context.Expression);
+        if (context.Expression is not null) {
+            // preprocess expression to resolve types
+            PreprocessExpression(context.Expression);
 
-        if (result is null) {
-            return null;
+            // assign final type
+            context.Expression.FinalType = type;
+
+            // visit expression
+            TypeIdentifier? result = VisitExpression(context.Expression);
+            
+            if (result is null) {
+                return null;
+            }
+        }
+        else if(type.Definition.IsReference){
+            // assign null reference
+            CodeHandler.EmitCast(0, 8, PrimitiveCast.ResizeImplicit);
+        }
+        else {
+            // assign default value
+            CodeHandler.EmitCast(0, type.Definition.Size, PrimitiveCast.ResizeImplicit);
         }
 
         // define variable
         // do not pop result, it will be on the stack until the variable is out of scope
-        bool success = CodeHandler.DefineVariable(name, result);
+        bool success = CodeHandler.DefineVariable(name, type);
 
         if (!success) {
             IssueHandler.Add(Issue.VariableAlreadyDeclared(context, name));
@@ -224,10 +234,10 @@ internal sealed partial class ScriptBuilder {
             // visit the start statement
             VisitVariableDeclaration(context.StartStatement);
         }
-        
+
         // the jump targeting the start
         JumpHandle loopJump = CodeHandler.CreateLabel();
-        
+
         // the jump targeting the end
         JumpHandle? conditionJump = null;
 
@@ -256,23 +266,23 @@ internal sealed partial class ScriptBuilder {
         if (context.IterationExpression is not null) {
             // preprocess to resolve types
             PreprocessExpression(context.IterationExpression);
-            
+
             // visit iterator
             TypeIdentifier? result = VisitExpression(context.IterationExpression);
-            
+
             // return if an error occured
             if (result is null) {
                 return null;
             }
         }
-        
+
         // jump to the start
         CodeHandler.FinishJump(loopJump, false);
 
         if (conditionJump is not null) {
             CodeHandler.FinishJump(conditionJump.Value, true);
         }
-        
+
         // exit the outer scope
         CodeHandler.ExitScope();
 
@@ -287,7 +297,7 @@ internal sealed partial class ScriptBuilder {
     public override object? VisitWhileBlock(WhileBlockContext context) {
         // the jump targeting the start
         JumpHandle loopJump = CodeHandler.CreateLabel();
-        
+
         // preprocess condition to resolve types
         PreprocessExpression(context.Condition);
 
@@ -304,13 +314,13 @@ internal sealed partial class ScriptBuilder {
 
         // the jump targeting the end
         JumpHandle endJump = CodeHandler.CreateJumpPlaceholder();
-        
+
         // visit contents
         VisitStatement(context.Statement);
-        
+
         // resolve loop jump
         CodeHandler.FinishJump(loopJump, false);
-        
+
         // resolve end jump
         CodeHandler.FinishJump(endJump, true);
 

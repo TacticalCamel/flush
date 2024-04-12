@@ -1,7 +1,7 @@
 ﻿namespace Interpreter.Types;
 
 /// <summary>
-/// Represents a field in a type definition.
+/// Represents a defined field.
 /// </summary>
 public sealed class FieldDefinition {
     /// <summary>
@@ -17,5 +17,5 @@ public sealed class FieldDefinition {
     /// <summary>
     /// The type of the field.
     /// </summary>
-    public required TypeDefinition Type { get; init; }
+    public required Guid Type { get; init; }
 }

@@ -23,11 +23,6 @@ internal sealed class CodeHandler {
     private int StackSize { get; set; }
 
     /// <summary>
-    /// Whether the program contains any instructions.
-    /// </summary>
-    public bool HasInstructions => Instructions.Count > 0;
-
-    /// <summary>
     /// Get the final instructions of the program.
     /// </summary>
     /// <returns>An array of instructions.</returns>
@@ -57,7 +52,7 @@ internal sealed class CodeHandler {
         Scope scope = StackScopes.Pop();
 
         // free all declared variables by setting the stack size back to its value before we entered this scope
-        PopBytes(StackSize - scope.StackSizeBefore);
+        EmitPop(StackSize - scope.StackSizeBefore);
     }
 
     /// <summary>
@@ -131,7 +126,7 @@ internal sealed class CodeHandler {
         }
 
         // create a new variable
-        Variable variable = new(name, new ExpressionResult(new MemoryAddress((ulong)(StackSize - type.Size), MemoryLocation.Stack), type));
+        Variable variable = new(name, new ExpressionResult(StackSize - type.Size, type));
 
         // get the current scope
         Scope scope = StackScopes.Peek();
@@ -203,7 +198,7 @@ internal sealed class CodeHandler {
     /// </summary>
     /// <param name="type">The type of the expression.</param>
     public void DiscardExpressionResult(TypeIdentifier type) {
-        PopBytes(type.Size);
+        EmitPop(type.Size);
     }
 
     /// <summary>
@@ -215,6 +210,55 @@ internal sealed class CodeHandler {
         // emit the instruction
         Instructions.Add(new Instruction {
             Code = code,
+            TypeSize = size
+        });
+
+        // decrease stack size by the operand size
+        StackSize -= size;
+    }
+
+    /// <summary>
+    /// Emit a bit shift operation.
+    /// </summary>
+    /// <param name="size">The size of the left operand in bytes.</param>
+    /// <param name="code">The code of the operation.</param>
+    public void EmitShiftOperation(ushort size, OperationCode code) {
+        // emit the instruction
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
+        });
+
+        // decrease stack size by the size of the right operand, which should always be 4
+        StackSize -= 4;
+    }
+
+    /// <summary>
+    /// Emit a comparison operation.
+    /// </summary>
+    /// <param name="size">The size of the operands in bytes.</param>
+    /// <param name="code">The code of the operation.</param>
+    public void EmitComparisonOperation(ushort size, OperationCode code) {
+        // emit the instruction
+        Instructions.Add(new Instruction {
+            Code = code,
+            TypeSize = size
+        });
+
+        // decrease stack size by the size of both operands, minus 1 because the result is a bool
+        StackSize -= size * 2 - 1;
+    }
+
+    /// <summary>
+    /// Emit an assignment operation.
+    /// </summary>
+    /// <param name="size">The size of the operands in bytes.</param>
+    /// <param name="address">The destination stack address.</param>
+    public void EmitAssignmentOperation(ushort size, int address) {
+        // emit the instruction
+        Instructions.Add(new Instruction {
+            Code = OperationCode.asgm,
+            Address = address,
             TypeSize = size
         });
 
@@ -235,55 +279,6 @@ internal sealed class CodeHandler {
         });
 
         // leave the stack size unchanged
-    }
-
-    /// <summary>
-    /// Emit a bit shift operation.
-    /// </summary>
-    /// <param name="size">The size of the left operand in bytes.</param>
-    /// <param name="code">The code of the operation.</param>
-    public void PrimitiveShiftOperation(ushort size, OperationCode code) {
-        // emit the instruction
-        Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
-
-        // decrease stack size by the size of the right operand, which should always be 4
-        StackSize -= 4;
-    }
-
-    /// <summary>
-    /// Emit a comparison operation.
-    /// </summary>
-    /// <param name="size">The size of the operands in bytes.</param>
-    /// <param name="code">The code of the operation.</param>
-    public void PrimitiveComparisonOperation(ushort size, OperationCode code) {
-        // emit the instruction
-        Instructions.Add(new Instruction {
-            Code = code,
-            TypeSize = size
-        });
-
-        // decrease stack size by the size of both operands, minus 1 because the result is a bool
-        StackSize -= size * 2 - 1;
-    }
-
-    /// <summary>
-    /// Emit an assignment operation.
-    /// </summary>
-    /// <param name="size">The size of the operands in bytes.</param>
-    /// <param name="address">The destination stack address.</param>
-    public void PrimitiveAssignmentOperation(ushort size, int address) {
-        // emit the instruction
-        Instructions.Add(new Instruction {
-            Code = OperationCode.asgm,
-            Address = address,
-            TypeSize = size
-        });
-
-        // decrease stack size by the operand size
-        StackSize -= size;
     }
 
     /// <summary>
@@ -371,7 +366,7 @@ internal sealed class CodeHandler {
     /// Decrease the stack size.
     /// </summary>
     /// <param name="count">The number of bytes.</param>
-    private void PopBytes(int count) {
+    private void EmitPop(int count) {
         // do not emit when count is 0 or negative
         if (count <= 0) {
             return;
@@ -406,7 +401,7 @@ internal sealed class CodeHandler {
         /// The name of the variable.
         /// </summary>
         public string Name { get; } = name;
-        
+
         /// <summary>
         /// The address and type of the variable.
         /// </summary>
@@ -422,7 +417,7 @@ internal sealed class CodeHandler {
         /// The stack size in bytes before entering the scope.
         /// </summary>
         public int StackSizeBefore { get; } = stackSizeBefore;
-        
+
         /// <summary>
         /// The variable declared in this scope.
         /// Does not contain variables declared in other scopes inside this one.

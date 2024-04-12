@@ -1,13 +1,16 @@
 ﻿namespace Interpreter;
 
 using Types;
+using Bytecode;
+using System.Security.Cryptography;
+using System.Text;
 using System.Reflection;
 using Runtime.Internal;
 
 /// <summary>
 /// This class is responsible for loading defined types.
 /// </summary>
-public static class ClassLoader {
+public static unsafe class ClassLoader {
     /// <summary>
     /// The namespace which is included by force.
     /// Contains core types that should always be available.
@@ -75,14 +78,14 @@ public static class ClassLoader {
 
             // load type
             TypeDefinition typeDefinition = new() {
+                Id = GetTypeIdentifier(module, name),
                 Modifiers = default,
                 IsReference = type.IsClass,
                 Name = name,
-                GenericParameterCount = 0,
                 Fields = [],
                 Methods = [],
-                GenericIndex = -1,
-                StackSize = GetTypeSize(type)
+                Size = GetTypeSize(type),
+                GenericParameterCount = 0
             };
 
             // add type to the list
@@ -126,15 +129,37 @@ public static class ClassLoader {
     private static ushort GetTypeSize(Type type) {
         // reference size
         if (type.IsClass) {
-            return sizeof(ulong);
-        }
-
-        // generic struct
-        if (type.IsGenericType) {
-            return 0;
+            return (ushort)sizeof(ObjectReference);
         }
 
         // direct size of the type
         return (ushort)Marshal.SizeOf(type);
+    }
+    
+    /// <summary>
+    /// Get the unique identifier for a type.
+    /// </summary>
+    /// <param name="module">The module of the type.</param>
+    /// <param name="name">The name of the type.</param>
+    /// <returns>An identifier that is unique and consistent for the given type module and name</returns>
+    public static Guid GetTypeIdentifier(ReadOnlySpan<char> module, ReadOnlySpan<char> name) {
+        // get input length
+        int inputLength = module.Length + name.Length;
+        
+        // create a span for the input
+        Span<byte> source = inputLength > 1024 ? new byte[inputLength] : stackalloc byte[inputLength];
+        
+        // copy input to the span
+        Encoding.ASCII.GetBytes(module, source);
+        Encoding.ASCII.GetBytes(name, source[module.Length..]);
+        
+        // create a span for the hash
+        Span<byte> destination = stackalloc byte[MD5.HashSizeInBytes];
+
+        // hash the input to the destination span
+        MD5.HashData(source, destination);
+        
+        // create a new guid from the hash
+        return new Guid(destination);
     }
 }

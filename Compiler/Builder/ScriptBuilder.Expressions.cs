@@ -109,13 +109,8 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        // TODO not yet supported
-        if (context.Address.Value.Location != MemoryLocation.Stack) {
-            throw new NotImplementedException("Variable not on stack");
-        }
-
         // copy to the top of the stack
-        CodeHandler.PushBytesFromStack((int)context.Address.Value.Value, context.OriginalType.Size);
+        CodeHandler.PushBytesFromStack(context.Address.Value, context.OriginalType.Size);
 
         // cast expression
         bool success = CastExpression(context);
@@ -267,7 +262,37 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        return ResolveUnaryExpression(context, context.Expression, context.Operator.start.Type);
+        // get operator type
+        int operatorType = context.Operator.start.Type;
+
+        // pre increment or decrement
+        if (operatorType is OP_INCREMENT or OP_DECREMENT) {
+            if (context.Expression is not IdentifierExpressionContext { Address: not null } identifier) {
+                return null;
+            }
+
+            TypeIdentifier? type = VisitIdentifierExpression(identifier);
+
+            if (type is null) {
+                return null;
+            }
+            
+            if (TypeHandler.Casts.IsIntegerType(type)) {
+                CodeHandler.EmitDefaultUnaryOperation(type.Size, operatorType is OP_INCREMENT ? OperationCode.inci : OperationCode.deci);
+            }
+            else if (TypeHandler.Casts.IsFloatType(type)) {
+                CodeHandler.EmitDefaultUnaryOperation(type.Size, operatorType is OP_INCREMENT ? OperationCode.incf : OperationCode.decf);
+            }
+            else {
+                return null;
+            }
+
+            CodeHandler.EmitAssignmentOperation(type.Size, identifier.Address.Value);
+
+            return context.FinalType;
+        }
+        
+        return ResolveUnaryExpression(context, context.Expression, operatorType);
     }
 
     /// <summary>
@@ -640,37 +665,37 @@ internal sealed partial class ScriptBuilder {
 
     private TypeIdentifier? ResolveUnaryExpression(ExpressionContext context, ExpressionContext innerContext, int operatorType) {
         // resolve the inner expression
-        TypeIdentifier? inner = VisitExpression(innerContext);
+        TypeIdentifier? type = VisitExpression(innerContext);
 
         // return if an error occured
-        if (inner is null) {
+        if (type is null) {
             return null;
         }
 
         // true if the expression type is a primitive type or null
         // in this case we can use a simple instruction instead of a function call
-        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(inner);
+        bool isPrimitiveType = TypeHandler.Casts.IsPrimitiveType(type);
 
         // calculate results
         TypeIdentifier? result = operatorType switch {
-            OP_NOT => isPrimitiveType ? EmitBoolUnary(inner, OperationCode.negb) : null,
-            OP_PLUS => isPrimitiveType ? inner : null,
-            OP_MINUS => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.sswi, OperationCode.sswf) : null,
-            OP_INCREMENT => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.inci, OperationCode.incf) : null,
-            OP_DECREMENT => isPrimitiveType ? EmitNumberUnary(inner, OperationCode.deci, OperationCode.decf) : null,
+            OP_NOT => isPrimitiveType ? EmitBoolUnary(type, OperationCode.negb) : null,
+            OP_PLUS => isPrimitiveType ? type : null,
+            OP_MINUS => isPrimitiveType ? EmitNumberUnary(type, OperationCode.sswi, OperationCode.sswf) : null,
+            OP_INCREMENT => isPrimitiveType ? EmitNumberUnary(type, OperationCode.inci, OperationCode.incf, true) : null,
+            OP_DECREMENT => isPrimitiveType ? EmitNumberUnary(type, OperationCode.deci, OperationCode.decf, true) : null,
             _ => throw new ArgumentException($"Method cannot handle the provided operator type {operatorType}")
         };
 
         // operation invalid
         if (result is null) {
-            IssueHandler.Add(Issue.InvalidUnaryOperation(context, inner, DefaultVocabulary.GetDisplayName(operatorType)));
+            IssueHandler.Add(Issue.InvalidUnaryOperation(context, type, DefaultVocabulary.GetDisplayName(operatorType)));
             return null;
         }
 
         return result;
     }
 
-    private TypeIdentifier? EmitNumberUnary(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode) {
+    private TypeIdentifier? EmitNumberUnary(TypeIdentifier type, OperationCode integerCode, OperationCode floatCode, bool isAssignment = false) {
         // must be an integer or float
         if (TypeHandler.Casts.IsIntegerType(type)) {
             CodeHandler.EmitDefaultUnaryOperation(type.Size, integerCode);
@@ -738,7 +763,8 @@ internal sealed partial class ScriptBuilder {
         }
 
         // can be any type
-        CodeHandler.PrimitiveComparisonOperation(leftType.Size, code);
+        CodeHandler.EmitComparisonOperation(leftType.Size, code);
+        Console.WriteLine(leftType);
         return TypeHandler.CoreTypes.Bool;
     }
 
@@ -754,7 +780,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // can be any type
-        CodeHandler.PrimitiveShiftOperation(leftType.Size, code);
+        CodeHandler.EmitShiftOperation(leftType.Size, code);
         return leftType;
     }
 
@@ -765,7 +791,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // can be any type
-        CodeHandler.PrimitiveAssignmentOperation(left.FinalType.Size, (int)left.Address.Value.Value);
+        CodeHandler.EmitAssignmentOperation(left.FinalType.Size, left.Address.Value);
 
         // assignment returns void
         return TypeHandler.CoreTypes.Void;

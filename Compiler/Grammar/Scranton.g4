@@ -36,7 +36,7 @@ programBody
 	;
 
 typeDefinition
-	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id GenericParameters=genericParameters? BLOCK_START Body=typeBody BLOCK_END
+	: Modifiers=modifierList Keyword=(KW_STRUCT | KW_CLASS) TypeName=id (GenericParameters=genericParameters)? BLOCK_START Body=typeBody BLOCK_END
 	;
 
 typeBody
@@ -56,7 +56,7 @@ methodDefinition
 	;
 
 genericParameters
-	: OP_LESS (type PARAM_SEP)* type OP_GREATER
+	: OP_LESS (id PARAM_SEP)* id OP_GREATER
 	;
 
 statement
@@ -174,6 +174,8 @@ opLeftUnary
 	: OP_PLUS
 	| OP_MINUS
 	| OP_NOT
+	| OP_INCREMENT
+    | OP_DECREMENT
 	;
 
 opRightUnary
@@ -231,8 +233,7 @@ variableWithType
 	;
 
 type
-	: Name=id #SimpleType
-	| Name=id OP_LESS (type PARAM_SEP)* type OP_GREATER #GenericType
+	: Name=id (OP_LESS (type PARAM_SEP)* type OP_GREATER)?
 	;
 
 returnType

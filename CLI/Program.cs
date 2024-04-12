@@ -26,6 +26,12 @@ internal static class Program {
             return;
         }
 
+        // if requested, display version and exit
+        if (interfaceOptions.DisplayVersion) {
+            DisplayVersion();
+            return;
+        }
+
         // create console loggers
         CreateLoggers(interfaceOptions, out ILogger interfaceLogger, out ILogger compilerLogger, out ILogger interpreterLogger);
 
@@ -136,7 +142,7 @@ internal static class Program {
     }
 
     /// <summary>
-    /// Write the help message to the console.
+    /// Display the help message to the console.
     /// </summary>
     private static void DisplayHelp() {
         // get name and description pairs for the interface and the compiler
@@ -190,6 +196,15 @@ internal static class Program {
             // display 1 empty line after each category
             Console.WriteLine();
         }
+    }
+
+    /// <summary>
+    /// Display the application version to the console.
+    /// </summary>
+    private static void DisplayVersion() {
+        string? version = typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+        Console.WriteLine(version is null ? "undefined" : $"v{version}");
     }
 
     /// <summary>

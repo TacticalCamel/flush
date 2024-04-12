@@ -2,16 +2,17 @@
 
 using Analysis;
 using Data;
+using Types;
+using Interpreter;
+using Interpreter.Bytecode;
 using Interpreter.Types;
 using static Grammar.ScrantonParser;
 
 // ScriptBuilder.Types: methods related to visiting type definitions and type names
 internal sealed partial class ScriptBuilder {
-    
-    private void ProcessTypeDefinitions(TypeDefinitionContext[] _) {
-        // TODO implement
+    private void ProcessTypeDefinitions(TypeDefinitionContext[] typeDefinitions) {
         // create array for type drafts
-        /*TypeDraft[] drafts = new TypeDraft[typeDefinitions.Length];
+        TypeDraft[] drafts = new TypeDraft[typeDefinitions.Length];
 
         // create type drafts 
         for (int i = 0; i < typeDefinitions.Length; i++) {
@@ -24,20 +25,26 @@ internal sealed partial class ScriptBuilder {
             drafts[i] = draft;
         }
 
-        //
+        // process types recursively
+        for (int i = 0; i < typeDefinitions.Length; i++) {
+            ProcessType(typeDefinitions, drafts, i);
+        }
+        
+        foreach (TypeDraft type in drafts) {
+            Console.WriteLine(type.Name);
 
-        foreach (TypeDraft draft in drafts) {
-            Console.WriteLine($"{draft.Name} {draft.Size?.ToString() ?? "null"}");
-        }*/
+            foreach (FieldDraft field in type.Fields) {
+                Console.WriteLine($"    {field.Type ?? $"<{field.GenericIndex}>"} {field.Name}{(field.GenericIndex >= 0 ? "" : $": {field.Size}")}");
+            }
+            
+            Console.WriteLine();
+        }
+        
     }
 
-    
-    /*
     private TypeDraft? CreateTypeDraft(TypeDefinitionContext context) {
         // the modifiers of the type
-        if (VisitModifierList(context.Modifiers) is not Modifier modifiers) {
-            return null;
-        }
+        if (VisitModifierList(context.Modifiers) is not Modifier modifiers) return null;
 
         // whether the type is a reference type
         bool isReference = context.Keyword.Type == KW_CLASS;
@@ -45,90 +52,147 @@ internal sealed partial class ScriptBuilder {
         // the name of the type
         string name = VisitId(context.TypeName);
 
+        // the name of the generic parameters
+        string[] genericParameterNames = context.GenericParameters is null ? [] : VisitGenericParameters(context.GenericParameters);
+
         // create a draft
         TypeDraft draft = new() {
             Modifiers = modifiers,
             IsReference = isReference,
-            Name = name
+            Name = name,
+            GenericParameterNames = genericParameterNames
         };
-        
+
         return draft;
     }
 
-    private bool ProcessTypeDefinition(TypeDefinitionContext context) {
-        return true;
+    private void ProcessType(TypeDefinitionContext[] typeDefinitions, TypeDraft[] drafts, int index) {
+        // get current context and draft from the arrays
+        TypeDefinitionContext context = typeDefinitions[index];
+        TypeDraft draft = drafts[index];
 
-        // loading finished
-        if (context.LoadingState is not null) {
-            return true;
+        // already done processing
+        if (draft.IsComplete) {
+            return;
         }
 
-        // 1st pass: create draft
-        if (context.TypeDraft is null) {
-            // the modifiers of the type
-            if (VisitModifierList(context.Modifiers) is not Modifier modifiers) {
-                // set state to failed
-                context.LoadingState = false;
+        // already in progress, which means there is a layout circle
+        if (draft.InProgress) {
+            draft.IsComplete = true;
 
-                // finished loading
-                return true;
+            IssueHandler.Add(Issue.StructLayoutCircle(context, draft.Name));
+
+            return;
+        }
+
+        // begin processing
+        draft.InProgress = true;
+        
+        // visit each field
+        foreach (FieldDefinitionContext field in typeDefinitions[index].Body.fieldDefinition()) {
+            // process field
+            FieldDraft? fieldDraft = ProcessField(field, typeDefinitions, drafts, index);
+
+            // failed to process
+            if (fieldDraft is null) {
+                draft.IsComplete = true;
+                return;
             }
-
-            // whether the type is a reference type
-            bool isReference = context.Keyword.Type == KW_CLASS;
-
-            // the name of the type
-            string name = VisitId(context.TypeName);
-
-            // create a draft
-            context.TypeDraft = new TypeDraft {
-                Modifiers = modifiers,
-                IsReference = isReference,
-                Name = name
-            };
-
-            // register that the type exists
-            //TypeHandler.AddDraft(context.TypeDraft);
-
-            // loading continues, do not visit type body
-            // type members might contain a type that will be loaded after this one
-            return false;
+            
+            // add draft to fields
+            draft.Fields.Add(fieldDraft);
         }
 
-        // 2nd pass: get size
-        // issue: struct layouts can have circles in them
-        // solution: explore the dependencies of a type recursively and detect circles
+        // finish processing
+        draft.IsComplete = true;
+        draft.InProgress = false;
+        
+        // to actual type
+        TypeDefinition definition = ToTypeDefinition(draft);
 
-        return true;
+        TypeHandler.LoadType(definition);
     }
 
-    /// <summary>
-    /// Visit a type definition body.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitTypeBody(TypeBodyContext context) {
-        // visit type members
-        VisitChildren(context);
+    private unsafe FieldDraft? ProcessField(FieldDefinitionContext field, TypeDefinitionContext[] typeDefinitions, TypeDraft[] drafts, int index) {
+        // get current type draft from the array
+        TypeDraft draft = drafts[index];
+
+        // get field modifiers
+        if (VisitModifierList(field.Modifiers) is not Modifier modifiers) {
+            return null;
+        }
+
+        // get field name
+        string fieldName = VisitId(field.Name);
+
+        // check the field name matches any generic parameter names
+        int genericIndex = Array.IndexOf(draft.GenericParameterNames, field.Type.GetText());
+
+        if (genericIndex >= 0) {
+            return new FieldDraft {
+                Modifiers = modifiers,
+                Type = null,
+                Name = fieldName,
+                GenericIndex = genericIndex,
+                Size = -1
+            };
+        }
+
+        // check if the field name matches any type drafts
+        int draftIndex = Array.FindIndex(drafts, x => x.Name == VisitId(field.Type.Name));
+
+        if (draftIndex >= 0) {
+            ProcessType(typeDefinitions, drafts, draftIndex);
+
+            return new FieldDraft {
+                Modifiers = modifiers,
+                Type = drafts[draftIndex],
+                Name = fieldName,
+                GenericIndex = -1,
+                Size = drafts[draftIndex].IsReference ? sizeof(ObjectReference) : drafts[draftIndex].Fields.Sum(x => x.Size)
+            };
+        }
+
+        // check if the field is of a loaded type
+        TypeIdentifier? type = VisitType(field.Type);
+
+        if (type is not null) {
+            return new FieldDraft {
+                Modifiers = modifiers,
+                Type = type,
+                Name = fieldName,
+                GenericIndex = -1,
+                Size = type.Size
+            };
+        }
 
         return null;
     }
 
+    private TypeDefinition ToTypeDefinition(TypeDraft draft) {
+        return new TypeDefinition {
+            Id = ClassLoader.GetTypeIdentifier(TypeHandler.ProgramModule ?? string.Empty, draft.Name),
+            Modifiers = draft.Modifiers,
+            IsReference = draft.IsReference,
+            Name = draft.Name,
+            GenericParameterCount = draft.GenericParameterNames.Length,
+            Fields = [],
+            Methods = [],
+            Size = 8
+        };
+    }
+
     /// <summary>
-    /// Visit a field definition.
+    /// Visit a list of generic parameters.
     /// </summary>
     /// <param name="context">The node to visit.</param>
-    /// <returns>Always null.</returns>
-    public override object? VisitFieldDefinition(FieldDefinitionContext context) {
-        if (VisitModifierList(context.Modifiers) is not Modifier modifiers) return null;
-
-        return null;
+    /// <returns>The names of the parameters as an array of strings.</returns>
+    public override string[] VisitGenericParameters(GenericParametersContext context) {
+        return context.id().Select(VisitId).ToArray();
     }
-    
-    */
 
     /// <summary>
-    /// Visits a return type.
+    /// Visit a return type.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The identifier of the type if it exists, null otherwise.</returns>
@@ -146,7 +210,7 @@ internal sealed partial class ScriptBuilder {
     /// Visit a modifier list.
     /// </summary>
     /// <param name="context">The node to visit.</param>
-    /// <returns>A modifier struct if successful, null otherwise.</returns>
+    /// <returns>A modifier enum with the correct bit flags set.</returns>
     public override object? VisitModifierList(ModifierListContext context) {
         // set no flags initially
         Modifier result = default;
@@ -162,13 +226,13 @@ internal sealed partial class ScriptBuilder {
             // invalid value
             if (modifier is null) {
                 IssueHandler.Add(Issue.InvalidModifier(modifierContext, modifierContext.start.Text));
-                return null;
+                continue;
             }
 
             // flag already set
             if ((result & modifier.Value) > 0) {
                 IssueHandler.Add(Issue.DuplicateModifier(modifierContext, modifierContext.start.Text));
-                return null;
+                continue;
             }
 
             // set the flag
@@ -177,49 +241,13 @@ internal sealed partial class ScriptBuilder {
 
         return result;
     }
-    
+
     /// <summary>
     /// Visit a type name.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The type if it exists, null otherwise.</returns>
     public override TypeIdentifier? VisitType(TypeContext context) {
-        return (TypeIdentifier?)Visit(context);
-    }
-
-    /// <summary>
-    /// Visit a non-generic type.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>The identifier of the type if it exists, null otherwise.</returns>
-    public override TypeIdentifier? VisitSimpleType(SimpleTypeContext context) {
-        // get the name of the type
-        string name = VisitId(context.Name);
-
-        // search the type by name
-        TypeDefinition? type = TypeHandler.GetTypeByName(name);
-        
-        // stop if the type does not exist
-        if (type is null) {
-            IssueHandler.Add(Issue.UnrecognizedType(context, name));
-            return null;
-        }
-        
-        // generic parameter count doesn't match
-        if (type.GenericParameterCount != 0) {
-            IssueHandler.Add(Issue.GenericParameterCountMismatch(context, type.Name, type.GenericParameterCount, 0));
-            return null;
-        }
-
-        return new TypeIdentifier(type, []);
-    }
-
-    /// <summary>
-    /// Visit a generic type.
-    /// </summary>
-    /// <param name="context">The node to visit.</param>
-    /// <returns>The identifier of the type if it exists, null otherwise.</returns>
-    public override TypeIdentifier? VisitGenericType(GenericTypeContext context) {
         // get the name of the type
         string name = VisitId(context.Name);
 

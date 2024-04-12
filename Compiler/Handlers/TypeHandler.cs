@@ -26,7 +26,7 @@ internal sealed class TypeHandler {
     /// <summary>
     /// The module of the current program.
     /// </summary>
-    private string? ProgramModule { get; set; }
+    public string? ProgramModule { get; private set; }
 
     /// <summary>
     /// The address of the program module name in the data section.
@@ -103,6 +103,15 @@ internal sealed class TypeHandler {
     /// </summary>
     public void LoadTypes() {
         ClassLoader.LoadRuntime(AutoImportEnabled, Imports, Types);
+    }
+
+    public bool LoadType(TypeDefinition definition) {
+        if (Types.Any(x => x.Id == definition.Id)) {
+            return false;
+        }
+        
+        Types.Add(definition);
+        return true;
     }
 
     /// <summary>
@@ -237,22 +246,22 @@ internal sealed class TypeHandler {
                 Modifiers = default,
                 IsReference = false,
                 Name = "void",
-                GenericIndex = -1,
                 Fields = [],
                 Methods = [],
                 GenericParameterCount = 0,
-                StackSize = 0
+                Size = 0,
+                Id = default
             }, []);
             
             Null = new TypeIdentifier(new TypeDefinition {
                 Modifiers = default,
                 IsReference = true,
                 Name = "null",
-                GenericIndex = -1,
                 Fields = [],
                 Methods = [],
                 GenericParameterCount = 0,
-                StackSize = 8
+                Size = 8,
+                Id = default
             }, []);
 
             return;

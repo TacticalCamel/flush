@@ -58,11 +58,6 @@ internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonB
         // check for errors
         CancelIfHasErrors();
 
-        // warn if the code section is empty
-        if (!CodeHandler.HasInstructions) {
-            IssueHandler.Add(Issue.ProgramEmpty(programContext));
-        }
-
         // get data and code sections
         byte[] data = DataHandler.GetByteArray();
         Instruction[] instructions = CodeHandler.GetInstructionArray();

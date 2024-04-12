@@ -6,6 +6,9 @@
 internal sealed class InterfaceOptions {
     [Display(Name = "help", ShortName = "h", Description = "Show help and exit.")]
     public bool DisplayHelp { get; init; }
+    
+    [Display(Name = "version", Description = "Show the version of the application and exit.")]
+    public bool DisplayVersion { get; init; }
 
     [Display(Name = "display", ShortName = "d", Description = "Display results in plain text format.")]
     public bool DisplayResults { get; init; }

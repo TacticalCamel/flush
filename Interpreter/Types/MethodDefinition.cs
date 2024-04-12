@@ -3,7 +3,7 @@
 using Bytecode;
 
 /// <summary>
-/// Represent a method in a type definition.
+/// Represent a defined method.
 /// </summary>
 public sealed class MethodDefinition {
     /// <summary>
@@ -19,12 +19,12 @@ public sealed class MethodDefinition {
     /// <summary>
     /// The return type of the method.
     /// </summary>
-    public required TypeDefinition? ReturnType { get; init; }
+    public required Guid ReturnType { get; init; }
     
     /// <summary>
     /// The types of the method parameters in order.
     /// </summary>
-    public required TypeDefinition[] ParameterTypes { get; init; }
+    public required Guid[] ParameterTypes { get; init; }
     
     /// <summary>
     /// The instructions of the method.

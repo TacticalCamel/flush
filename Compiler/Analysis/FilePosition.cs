@@ -9,12 +9,12 @@ internal readonly struct FilePosition(int line, int column) : IComparable<FilePo
     /// <summary>
     /// The line number of the file, indexed from 1.
     /// </summary>
-    public int Line { get; } = line;
+    private int Line { get; } = line;
 
     /// <summary>
     /// The index of the position within the line, indexed from 0.
     /// </summary>
-    public int Column { get; } = column;
+    private int Column { get; } = column;
 
     public override string ToString() {
         return $"({Line},{Column})";

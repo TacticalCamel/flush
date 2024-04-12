@@ -156,16 +156,10 @@ internal sealed class Issue {
         Message = $"Cannot cast '{source}' to '{target}'"
     };
     
-    public static Issue ExplicitCastRedundant(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
+    public static Issue StructLayoutCircle(ParserRuleContext context, string name) => new(context) {
         Id = 214,
-        Severity = Severity.Warning,
-        Message = $"Explicit cast from '{source}' to '{target}' is redundant"
-    };
-    
-    public static Issue ProgramEmpty(ParserRuleContext context) => new(context) {
-        Id = 215,
-        Severity = Severity.Warning,
-        Message = "The compiled program contains no instructions"
+        Severity = Severity.Error,
+        Message = $"Struct {name} has a layout circle"
     };
     
     public static Issue InvalidModifier(ParserRuleContext context, string name) => new(context) {

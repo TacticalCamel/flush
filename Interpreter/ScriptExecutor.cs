@@ -1,13 +1,13 @@
-﻿// it's true that nothing prevents the stack allocated array from being returned
-// but we won't do that so it's okay
+﻿// it's true that nothing prevents the stack allocated array from being returned,
+// but we won't do that, so it's okay
 
-#pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside of the containing method
+#pragma warning disable CS9081 // A result of a stackalloc expression of this type in this context may be exposed outside the containing method
+
+namespace Interpreter;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Interpreter.Bytecode;
-
-namespace Interpreter;
+using Bytecode;
 
 /// <summary>
 /// Implements a virtual processor that is capable of executing instructions. 
@@ -24,14 +24,14 @@ public unsafe ref struct ScriptExecutor {
     private readonly ReadOnlySpan<Instruction> Instructions;
 
     /// <summary>
-    /// The index of the currently executed instruction.
-    /// </summary>
-    private int InstructionIndex;
-
-    /// <summary>
     /// The stack memory of the program.
     /// </summary>
     private readonly Span<byte> Stack;
+
+    /// <summary>
+    /// The index of the currently executed instruction.
+    /// </summary>
+    private int InstructionIndex;
 
     /// <summary>
     /// The first free byte in the stack.
@@ -62,8 +62,6 @@ public unsafe ref struct ScriptExecutor {
     /// </summary>
     /// <exception cref="ArgumentException">Thrown when an unknown instruction is encountered.</exception>
     public void Run() {
-        Console.WriteLine();
-
         Stopwatch stopwatch = Stopwatch.StartNew();
 
         // start label to jump back to
