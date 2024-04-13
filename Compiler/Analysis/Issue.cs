@@ -191,6 +191,12 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Variable '{name}' is already declared."
     };
+    
+    public static Issue InvalidAssigmentTarget(ParserRuleContext context) => new(context) {
+        Id = 221,
+        Severity = Severity.Error,
+        Message = "Assignment target must be a variable."
+    };
 
     #endregion
 }

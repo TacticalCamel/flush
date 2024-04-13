@@ -125,7 +125,8 @@ expression
 	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessExpression
 	| HEAD_START Type=type HEAD_END Expression=expression #CastExpression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
-	| Caller=expression HEAD_START ExpressionList=expressionList HEAD_END #FunctionCallExpression
+	| KW_NEW Type=type HEAD_START Parameters=expressionList HEAD_END #ConstructorExpression
+	| Caller=expression HEAD_START Parameters=expressionList HEAD_END #FunctionCallExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryExpression
 	| Expression=expression Operator=opRightUnary #RightUnaryExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeExpression

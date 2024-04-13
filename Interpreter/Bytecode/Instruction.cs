@@ -30,7 +30,7 @@ public unsafe struct Instruction {
     public int Address;
     
     [FieldOffset(0)]
-    public int Count;
+    public uint Count;
 
     /// <summary>
     /// The size of a second type in bytes.

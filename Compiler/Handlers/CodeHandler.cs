@@ -118,15 +118,27 @@ internal sealed class CodeHandler {
     /// </summary>
     /// <param name="name">The name of the variable.</param>
     /// <param name="type">The type of the variable.</param>
+    /// <param name="hasValue">Whether the variable was declared with a value.</param>
     /// <returns>True if the operation was successful, false otherwise.</returns>
-    public bool DefineVariable(string name, TypeIdentifier type) {
+    public bool DefineVariable(string name, TypeIdentifier type, bool hasValue) {
         // variable already declared
         if (StackScopes.Any(scope => scope.DeclaredVariables.Any(x => x.Name == name))) {
             return false;
         }
 
+        ushort typeSize = type.Definition.IsReference ? (ushort)8 : type.Size;
+            
+        if (!hasValue) {
+            Instructions.Add(new Instruction {
+                Code = OperationCode.pshz,
+                Count = typeSize
+            });
+
+            StackSize += typeSize;
+        }
+
         // create a new variable
-        Variable variable = new(name, new ExpressionResult(StackSize - type.Size, type));
+        Variable variable = new(name, new ExpressionResult(StackSize - typeSize, type));
 
         // get the current scope
         Scope scope = StackScopes.Peek();
@@ -304,7 +316,7 @@ internal sealed class CodeHandler {
                 // resize cast, pop or push bytes
                 Instructions.Add(new Instruction {
                     Code = difference > 0 ? OperationCode.pshz : OperationCode.pop,
-                    TypeSize = difference > 0 ? (ushort)difference : (ushort)-difference
+                    Count = difference > 0 ? (uint)difference : (uint)-difference
                 });
 
                 break;
@@ -375,7 +387,7 @@ internal sealed class CodeHandler {
         // emit the instruction
         Instructions.Add(new Instruction {
             Code = OperationCode.pop,
-            Count = count
+            Count = (uint)count
         });
 
         // decrease stack size

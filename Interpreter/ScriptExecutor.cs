@@ -119,10 +119,10 @@ public unsafe ref struct ScriptExecutor {
             }
 
             case OperationCode.pshz: {
-                Unsafe.InitBlockUnaligned(StackPtr, 0, i.TypeSize);
-                StackPtr += i.TypeSize;
+                Unsafe.InitBlockUnaligned(StackPtr, 0, i.Count);
+                StackPtr += i.Count;
 
-                DebugState($"{i.TypeSize}");
+                DebugState($"{i.Count}");
                 break;
             }
 

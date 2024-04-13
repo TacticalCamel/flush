@@ -30,7 +30,7 @@ internal sealed partial class ScriptBuilder {
             ProcessType(typeDefinitions, drafts, i);
         }
         
-        foreach (TypeDraft type in drafts) {
+        /*foreach (TypeDraft type in drafts) {
             Console.WriteLine(type.Name);
 
             foreach (FieldDraft field in type.Fields) {
@@ -38,7 +38,7 @@ internal sealed partial class ScriptBuilder {
             }
             
             Console.WriteLine();
-        }
+        }*/
         
     }
 

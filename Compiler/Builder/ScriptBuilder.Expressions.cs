@@ -172,6 +172,9 @@ internal sealed partial class ScriptBuilder {
             context.Expression.FinalType = targetType;
             context.OriginalType = targetType;
 
+            // allow explicit casts
+            context.Expression.AllowExplicitCast = true;
+
             return null;
         }
 
@@ -235,6 +238,16 @@ internal sealed partial class ScriptBuilder {
     }
 
     // TODO implement
+    public override TypeIdentifier? VisitConstructorExpression(ConstructorExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            return null;
+        }
+
+        throw new NotImplementedException();
+    }
+
+    // TODO implement
     public override TypeIdentifier? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
@@ -245,7 +258,7 @@ internal sealed partial class ScriptBuilder {
     }
 
     /// <summary>
-    /// Visits a left unary expression.
+    /// Visit a left unary expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
@@ -276,7 +289,7 @@ internal sealed partial class ScriptBuilder {
             if (type is null) {
                 return null;
             }
-            
+
             if (TypeHandler.Casts.IsIntegerType(type)) {
                 CodeHandler.EmitDefaultUnaryOperation(type.Size, operatorType is OP_INCREMENT ? OperationCode.inci : OperationCode.deci);
             }
@@ -291,12 +304,12 @@ internal sealed partial class ScriptBuilder {
 
             return context.FinalType;
         }
-        
+
         return ResolveUnaryExpression(context, context.Expression, operatorType);
     }
 
     /// <summary>
-    /// Visits a right unary expression.
+    /// Visit a right unary expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
@@ -317,73 +330,119 @@ internal sealed partial class ScriptBuilder {
     }
 
     /// <summary>
-    /// Visits a multiplicative expression.
+    /// Visit a multiplicative expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
+        // preprocessor mode on
         if (IsPreprocessorMode) {
+            // preprocess with default behaviour
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
-            
+
             return null;
         }
 
-        
-        
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     /// <summary>
-    /// Visits a additive expression.
+    /// Visit a additive expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitAdditiveExpression(AdditiveExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            // preprocess with default behaviour
+            PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
+
+            return null;
+        }
+
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     /// <summary>
-    /// Visits a shift expression.
+    /// Visit a shift expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitShiftExpression(ShiftExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            // resolve both operands
+            VisitExpression(context.Left);
+            VisitExpression(context.Right);
+            
+            // do not change the type of the left side 
+            context.Left.FinalType = context.Left.OriginalType;
+            
+            // right side must be i32
+            context.Right.FinalType = TypeHandler.CoreTypes.I32;
+            
+            // result type is the type of the left side
+            context.OriginalType = context.Left.FinalType;
+
+            return null;
+        }
+
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     /// <summary>
-    /// Visits a comparison expression.
+    /// Visit a comparison expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitComparisonExpression(ComparisonExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            // override return type to bool
+            PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type, true, TypeHandler.CoreTypes.Bool);
+
+            return null;
+        }
+
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     /// <summary>
-    /// Visits a logical expression.
+    /// Visit a logical expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitLogicalExpression(LogicalExpressionContext context) {
+        // preprocessor mode on
+        if (IsPreprocessorMode) {
+            // preprocess with default behaviour
+            PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
+
+            return null;
+        }
+
         return ResolveBinaryExpression(context, context.Left, context.Right, context.Operator.start.Type);
     }
 
     /// <summary>
-    /// Visits an assignment expression.
+    /// Visit an assignment expression.
     /// </summary>
     /// <param name="context">The node to visit.</param>
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitAssigmentExpression(AssigmentExpressionContext context) {
         // preprocessor mode on
         if (IsPreprocessorMode) {
+            // resolve both operands
             VisitExpression(context.Left);
             VisitExpression(context.Right);
-            
-            context.OriginalType = TypeHandler.CoreTypes.Void;
+
+            // do not change operand types
             context.Left.FinalType = context.Left.OriginalType;
             context.Right.FinalType = context.Left.OriginalType;
             
+            // return type is void
+            context.OriginalType = TypeHandler.CoreTypes.Void;
+
             return null;
         }
 
@@ -392,7 +451,7 @@ internal sealed partial class ScriptBuilder {
             return null;
         }
 
-        // calculate result
+        // call operator if necessary
         TypeIdentifier? result = context.Operator.start.Type switch {
             OP_ASSIGN => VisitExpression(context.Right),
             OP_MULTIPLY_ASSIGN => ResolveBinaryExpression(context, context.Left, context.Right, OP_MULTIPLY),
@@ -408,7 +467,14 @@ internal sealed partial class ScriptBuilder {
             _ => null
         };
 
-        if (result is null || context.Left is not IdentifierExpressionContext variable) {
+        // left side must be a valid assignment target
+        if (context.Left is not IdentifierExpressionContext variable) {
+            IssueHandler.Add(Issue.InvalidAssigmentTarget(context.Left));
+            return null;
+        }
+
+        // error resolving the expression
+        if (result is null) {
             return null;
         }
 
@@ -416,7 +482,19 @@ internal sealed partial class ScriptBuilder {
         return EmitAssignment(variable, context.Right.FinalType);
     }
 
+    /// <summary>
+    /// Visit an expression list.
+    /// </summary>
+    /// <param name="context">The node to visit.</param>
+    /// <returns>The address and type of the expression.</returns>
+    public override object? VisitExpressionList(ExpressionListContext context) {
+        return null;
+    }
+
     #endregion
+
+
+    #region Helper methods
 
     private void PreprocessBinaryDefault(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType, bool allowLeftCast = true, TypeIdentifier? overrideResultType = null) {
         // resolve left and right side
@@ -429,7 +507,6 @@ internal sealed partial class ScriptBuilder {
         }
 
         // calculate results
-        // we do not care if the operation for the common type exists or not
         TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, allowLeftCast, true);
 
         // no valid common type exists
@@ -444,7 +521,7 @@ internal sealed partial class ScriptBuilder {
         leftContext.FinalType = commonType;
         rightContext.FinalType = commonType;
     }
-    
+
     /// <summary>
     /// Finds the best common type for a binary expression.
     /// </summary>
@@ -506,10 +583,6 @@ internal sealed partial class ScriptBuilder {
             }
         }
 
-        if (!bestCast.IsImplicit()) {
-            return null;
-        }
-
         return bestType;
     }
 
@@ -528,7 +601,7 @@ internal sealed partial class ScriptBuilder {
         PrimitiveCast cast = TypeHandler.Casts.GetPrimitiveCast(context.OriginalType, context.FinalType);
 
         // stop if failed
-        if (cast == PrimitiveCast.None) {
+        if (cast == PrimitiveCast.None || (!context.AllowExplicitCast && cast.IsExplicit())) {
             IssueHandler.Add(Issue.InvalidCast(context, context.OriginalType, context.FinalType));
             return false;
         }
@@ -538,72 +611,8 @@ internal sealed partial class ScriptBuilder {
 
         return true;
     }
-    
-    #region Helper methods
-    
+
     private TypeIdentifier? ResolveBinaryExpression(ExpressionContext context, ExpressionContext leftContext, ExpressionContext rightContext, int operatorType) {
-        if (IsPreprocessorMode) {
-            // resolve left and right side
-            VisitExpression(leftContext);
-            VisitExpression(rightContext);
-
-            // stop if an error occured
-            if (leftContext.OriginalType is null || rightContext.OriginalType is null) {
-                return null;
-            }
-
-            // for shift operators, the left cast is not converted and the right side is converted to i32
-            bool isShiftOperator = operatorType switch {
-                OP_SHIFT_LEFT => true,
-                OP_SHIFT_RIGHT => true,
-                _ => false
-            };
-
-            if (isShiftOperator) {
-                leftContext.FinalType = leftContext.OriginalType;
-                rightContext.FinalType = TypeHandler.CoreTypes.I32;
-                context.OriginalType = leftContext.FinalType;
-
-                return null;
-            }
-
-            // calculate results
-            // we do not care if the operation for the common type exists or not
-            TypeIdentifier? commonType = FindCommonType(leftContext, rightContext, true, true);
-
-            // no valid common type exists
-            if (commonType is null) {
-                IssueHandler.Add(Issue.InvalidBinaryOperation(context, leftContext.OriginalType, rightContext.OriginalType, DefaultVocabulary.GetDisplayName(operatorType)));
-            }
-
-            // return type is bool for comparison operators
-            // return type is void for assignment operators
-            context.OriginalType = operatorType switch {
-                OP_EQ => TypeHandler.CoreTypes.Bool,
-                OP_NOT_EQ => TypeHandler.CoreTypes.Bool,
-                OP_LESS => TypeHandler.CoreTypes.Bool,
-                OP_GREATER => TypeHandler.CoreTypes.Bool,
-                OP_LESS_EQ => TypeHandler.CoreTypes.Bool,
-                OP_GREATER_EQ => TypeHandler.CoreTypes.Bool,
-                OP_MULTIPLY_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_DIVIDE_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_MODULUS_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_PLUS_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_MINUS_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_SHIFT_LEFT_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_SHIFT_RIGHT_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_AND_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_OR_ASSIGN => TypeHandler.CoreTypes.Void,
-                OP_XOR_ASSIGN => TypeHandler.CoreTypes.Void,
-                _ => commonType
-            };
-
-            leftContext.FinalType = commonType;
-            rightContext.FinalType = commonType;
-
-            return null;
-        }
-
         // resolve left side
         TypeIdentifier? left = VisitExpression(leftContext);
 
@@ -764,7 +773,6 @@ internal sealed partial class ScriptBuilder {
 
         // can be any type
         CodeHandler.EmitComparisonOperation(leftType.Size, code);
-        Console.WriteLine(leftType);
         return TypeHandler.CoreTypes.Bool;
     }
 

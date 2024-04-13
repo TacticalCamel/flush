@@ -1,7 +1,12 @@
 import auto
 
-for(f16 f = -0.1h; f < 10; f *= 2.1){
-} 
+i32 f = 3;
+
+for(f16 f = 0.1h; f < 10; f *= 2.1h){
+	
+}
+
+//v2 v = new v4(1.1f, 2.2f);
 
 struct v4{
 	v2 a;

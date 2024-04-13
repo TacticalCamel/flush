@@ -121,24 +121,12 @@ internal sealed partial class ScriptBuilder {
             context.Expression.FinalType = type;
 
             // visit expression
-            TypeIdentifier? result = VisitExpression(context.Expression);
-            
-            if (result is null) {
-                return null;
-            }
-        }
-        else if(type.Definition.IsReference){
-            // assign null reference
-            CodeHandler.EmitCast(0, 8, PrimitiveCast.ResizeImplicit);
-        }
-        else {
-            // assign default value
-            CodeHandler.EmitCast(0, type.Definition.Size, PrimitiveCast.ResizeImplicit);
+            VisitExpression(context.Expression);
         }
 
         // define variable
         // do not pop result, it will be on the stack until the variable is out of scope
-        bool success = CodeHandler.DefineVariable(name, type);
+        bool success = CodeHandler.DefineVariable(name, type, context.Expression is not null);
 
         if (!success) {
             IssueHandler.Add(Issue.VariableAlreadyDeclared(context, name));
