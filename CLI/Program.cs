@@ -4,7 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Bytecode;
+using Interpreter.Structs;
+using Interpreter.Serialization;
 using Options;
 
 /// <summary>

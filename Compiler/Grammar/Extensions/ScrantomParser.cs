@@ -2,6 +2,7 @@
 
 namespace Compiler.Grammar;
 
+using Types;
 using Data;
 
 public partial class ScrantonParser {
@@ -49,5 +50,13 @@ public partial class ScrantonParser {
         /// Assigned when the expression is visited.
         /// </summary>
         internal int? Address { get; set; }
+    }
+
+    public partial class TypeDefinitionContext {
+        /// <summary>
+        /// The draft associated to the type definition.
+        /// Assumed to not be null after the type definition is visited.
+        /// </summary>
+        internal TypeDraft TypeDraft { get; set; }
     }
 }

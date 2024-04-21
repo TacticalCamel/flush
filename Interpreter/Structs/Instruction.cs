@@ -1,4 +1,4 @@
-﻿namespace Interpreter.Bytecode;
+﻿namespace Interpreter.Structs;
 
 /// <summary>
 /// Represents an atomic operation that the interpreter can execute.
@@ -29,6 +29,10 @@ public unsafe struct Instruction {
     [FieldOffset(0)]
     public int Address;
     
+    /// <summary>
+    /// The number of bytes to operate with.
+    /// Used when modifying the stack size.
+    /// </summary>
     [FieldOffset(0)]
     public uint Count;
 

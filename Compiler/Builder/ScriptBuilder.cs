@@ -4,7 +4,8 @@ using static Grammar.ScrantonParser;
 using Handlers;
 using Grammar;
 using Analysis;
-using Interpreter.Bytecode;
+using Interpreter.Structs;
+using Interpreter.Serialization;
 
 /// <summary>
 /// Implements the traversal of the syntax tree with the visitor pattern. 
@@ -41,7 +42,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonB
     /// Indicates that preprocessor mode is enabled.
     /// Visit methods may change behaviour depending on this value.
     /// </summary>
-    private bool IsPreprocessorMode { get; set; }
+    private ContextHandler ContextHandler { get; set; } = new();
 
     /// <summary>
     /// Visit a syntax tree and transform it to an executable program.

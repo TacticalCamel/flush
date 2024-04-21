@@ -1,7 +1,7 @@
 ﻿// ReSharper disable InconsistentNaming
 // ReSharper disable IdentifierTypo
 
-namespace Interpreter.Bytecode;
+namespace Interpreter.Structs;
 
 /// <summary>
 /// Represents an identifier for the operation type of an instruction.

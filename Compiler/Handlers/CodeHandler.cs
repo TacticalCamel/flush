@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Handlers;
 
 using Data;
-using Interpreter.Bytecode;
+using Interpreter.Structs;
 
 /// <summary>
 /// This class manages the instructions and variables of the program.

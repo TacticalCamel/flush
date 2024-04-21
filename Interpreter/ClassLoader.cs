@@ -1,7 +1,7 @@
 ﻿namespace Interpreter;
 
 using Types;
-using Bytecode;
+using Structs;
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection;
@@ -78,14 +78,14 @@ public static unsafe class ClassLoader {
 
             // load type
             TypeDefinition typeDefinition = new() {
-                Id = GetTypeIdentifier(module, name),
+                Id = GenerateTypeId(module, name),
                 Modifiers = default,
                 IsReference = type.IsClass,
                 Name = name,
                 Fields = [],
                 Methods = [],
                 Size = GetTypeSize(type),
-                GenericParameterCount = 0
+                GenericParameterCount = type.GenericTypeArguments.Length
             };
 
             // add type to the list
@@ -129,7 +129,7 @@ public static unsafe class ClassLoader {
     private static ushort GetTypeSize(Type type) {
         // reference size
         if (type.IsClass) {
-            return (ushort)sizeof(ObjectReference);
+            return sizeof(ulong);
         }
 
         // direct size of the type
@@ -142,7 +142,7 @@ public static unsafe class ClassLoader {
     /// <param name="module">The module of the type.</param>
     /// <param name="name">The name of the type.</param>
     /// <returns>An identifier that is unique and consistent for the given type module and name</returns>
-    public static Guid GetTypeIdentifier(ReadOnlySpan<char> module, ReadOnlySpan<char> name) {
+    public static Guid GenerateTypeId(ReadOnlySpan<char> module, ReadOnlySpan<char> name) {
         // get input length
         int inputLength = module.Length + name.Length;
         

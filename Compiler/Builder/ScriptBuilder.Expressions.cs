@@ -2,7 +2,7 @@
 
 using Data;
 using Analysis;
-using Interpreter.Bytecode;
+using Interpreter.Structs;
 using static Grammar.ScrantonParser;
 
 // ScriptBuilder.Expressions: methods related to visiting expressions
@@ -26,9 +26,9 @@ internal sealed partial class ScriptBuilder {
     /// <returns>A null reference.</returns>
     public override TypeIdentifier? VisitNullExpression(NullExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // assign the null type
-            context.OriginalType = TypeHandler.CoreTypes.Null;
+            context.OriginalType = TypeHandler.CoreTypes.VoidPtr;
 
             return null;
         }
@@ -45,7 +45,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitConstantExpression(ConstantExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // store the constant
             ConstantResult? result = VisitConstant(context.Constant);
 
@@ -84,7 +84,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitIdentifierExpression(IdentifierExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // get variable name
             string name = VisitId(context.Identifier);
 
@@ -122,7 +122,7 @@ internal sealed partial class ScriptBuilder {
     // TODO implement
     public override TypeIdentifier? VisitMemberAccessExpression(MemberAccessExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             return null;
         }
 
@@ -137,7 +137,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitCastExpression(CastExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // get the target type
             TypeIdentifier? targetType = VisitType(context.Type);
 
@@ -206,7 +206,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitNestedExpression(NestedExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // visit inner expression
             VisitExpression(context.Body);
 
@@ -240,7 +240,7 @@ internal sealed partial class ScriptBuilder {
     // TODO implement
     public override TypeIdentifier? VisitConstructorExpression(ConstructorExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             return null;
         }
 
@@ -250,7 +250,7 @@ internal sealed partial class ScriptBuilder {
     // TODO implement
     public override TypeIdentifier? VisitFunctionCallExpression(FunctionCallExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             return null;
         }
 
@@ -264,7 +264,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitLeftUnaryExpression(LeftUnaryExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // visit inner expression
             VisitExpression(context.Expression);
 
@@ -315,7 +315,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitRightUnaryExpression(RightUnaryExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // visit inner expression
             VisitExpression(context.Expression);
 
@@ -336,7 +336,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitMultiplicativeExpression(MultiplicativeExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // preprocess with default behaviour
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
 
@@ -353,7 +353,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitAdditiveExpression(AdditiveExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // preprocess with default behaviour
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
 
@@ -370,7 +370,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitShiftExpression(ShiftExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // resolve both operands
             VisitExpression(context.Left);
             VisitExpression(context.Right);
@@ -397,7 +397,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitComparisonExpression(ComparisonExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // override return type to bool
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type, true, TypeHandler.CoreTypes.Bool);
 
@@ -414,7 +414,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitLogicalExpression(LogicalExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // preprocess with default behaviour
             PreprocessBinaryDefault(context, context.Left, context.Right, context.Operator.start.Type);
 
@@ -431,7 +431,7 @@ internal sealed partial class ScriptBuilder {
     /// <returns>The address and type of the expression.</returns>
     public override TypeIdentifier? VisitAssigmentExpression(AssigmentExpressionContext context) {
         // preprocessor mode on
-        if (IsPreprocessorMode) {
+        if (ContextHandler.IsPreprocessorMode) {
             // resolve both operands
             VisitExpression(context.Left);
             VisitExpression(context.Right);

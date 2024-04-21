@@ -1,4 +1,6 @@
-﻿namespace Interpreter.Bytecode;
+﻿namespace Interpreter.Serialization;
+
+using Structs;
 
 /// <summary>
 /// Represents a compiled program.
@@ -37,15 +39,16 @@ public sealed unsafe class Script {
     /// <param name="data">The data array.</param>
     /// <param name="instructions">The instruction array.</param>
     /// <param name="moduleNameAddress">The address of the module name.</param>
-    public Script(byte[] data, Instruction[] instructions, int moduleNameAddress) {
+    public Script(byte[] data, Instruction[] instructions, DataAddress moduleNameAddress) {
         // create a new header
         Header = new FileHeader {
             Signature = FileHeader.VALID_SIGNATURE,
-            Version = BinarySerializer.VersionToU64(BinarySerializer.BytecodeVersion),
+            BytecodeVersion = BinarySerializer.BytecodeVersion,
             CompilationTime = DateTime.Now,
             DataStart = sizeof(FileHeader),
             CodeStart = sizeof(FileHeader) + data.Length,
-            ModuleNameAddress = moduleNameAddress
+            ModuleNameAddress = moduleNameAddress,
+            TypeDefinitionInfoAddress = DataAddress.Undefined
         };
 
         // assign array fields
@@ -61,13 +64,13 @@ public sealed unsafe class Script {
         // header
         stream.WriteLine(".header");
         stream.WriteLine($"    signature     0x{Header.Signature:X16}");
-        stream.WriteLine($"    version       {BinarySerializer.U64ToVersion(Header.Version)}");
+        stream.WriteLine($"    version       {Header.BytecodeVersion}");
         stream.WriteLine($"    compiled      {Header.CompilationTime:O}");
         stream.WriteLine($"    data-start    0x{Header.DataStart:X8}");
         stream.WriteLine($"    code-start    0x{Header.CodeStart:X8}");
         stream.Write("    module        ");
 
-        if (Header.ModuleNameAddress >= 0) {
+        if (Header.ModuleNameAddress != DataAddress.Undefined) {
             fixed (byte* ptr = &Data.Span[Header.ModuleNameAddress]) {
                 int length = *(int*)ptr;
                 string value = new((char*)(ptr + 4), 0, length);
@@ -76,8 +79,10 @@ public sealed unsafe class Script {
             }
         }
         else {
-            stream.WriteLine("null");
+            stream.WriteLine(DataAddress.Undefined.ToString());
         }
+        
+        stream.WriteLine($"    type-defs     {Header.TypeDefinitionInfoAddress}");
 
         stream.WriteLine();
 

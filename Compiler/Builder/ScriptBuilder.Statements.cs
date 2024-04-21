@@ -321,11 +321,11 @@ internal sealed partial class ScriptBuilder {
     /// </summary>
     /// <param name="context">The node to visit.</param>
     private void PreprocessExpression(ExpressionContext context) {
-        IsPreprocessorMode = true;
+        ContextHandler.IsPreprocessorMode = true;
 
         VisitExpression(context);
 
-        IsPreprocessorMode = false;
+        ContextHandler.IsPreprocessorMode = false;
     }
 
     /// <summary>

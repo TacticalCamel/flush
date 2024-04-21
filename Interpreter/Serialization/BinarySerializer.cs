@@ -1,36 +1,21 @@
-﻿namespace Interpreter;
+﻿namespace Interpreter.Serialization;
 
-using Bytecode;
+using Structs;
 using System.Buffers;
 
 /// <summary>
-/// Class with methods that help conversion between some managed types and their binary representation.
+/// Class with methods that help conversion between managed types and their binary representation.
 /// </summary>
 public static class BinarySerializer {
     /// <summary>
     /// Get the current version of the interpreter assembly.
     /// </summary>
-    public static Version BytecodeVersion => typeof(BinarySerializer).Assembly.GetName().Version ?? new Version();
+    public static BytecodeVersion BytecodeVersion {
+        get {
+            Version version = typeof(BinarySerializer).Assembly.GetName().Version ?? new Version();
 
-    /// <summary>
-    /// Convert a version to an unsigned 64-bit integer.
-    /// </summary>
-    /// <remarks>
-    /// Using 16 bits for each field is enough, since assembly versions are limited to this value.
-    /// </remarks>
-    /// <param name="version">The version to convert.</param>
-    /// <returns>The value representing the version.</returns>
-    public static ulong VersionToU64(Version version) {
-        return ((ulong)version.Major << 48) + ((ulong)version.Minor << 32) + ((ulong)version.Build << 16) + (ulong)version.Revision;
-    }
-
-    /// <summary>
-    /// Convert an unsigned 64-bit integer to a version.
-    /// </summary>
-    /// <param name="value">The value to convert.</param>
-    /// <returns>The created version.</returns>
-    public static Version U64ToVersion(ulong value) {
-        return new Version((ushort)(value >> 48), (ushort)(value >> 32), (ushort)(value >> 16), (ushort)value);
+            return new BytecodeVersion((ushort)version.Major, (ushort)version.Minor, (ushort)version.Build, (ushort)version.Revision);
+        }
     }
 
     /// <summary>
@@ -80,12 +65,10 @@ public static class BinarySerializer {
             logger.BytecodeCorrupted();
             return null;
         }
-
-        Version targetVersion = U64ToVersion(meta.Version);
-
+        
         // bytecode version is different
-        if (BytecodeVersion != targetVersion) {
-            logger.BytecodeVersionMismatch(targetVersion, BytecodeVersion);
+        if (BytecodeVersion != meta.BytecodeVersion) {
+            logger.BytecodeVersionMismatch(meta.BytecodeVersion.ToString(), BytecodeVersion.ToString());
             return null;
         }
 

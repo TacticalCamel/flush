@@ -1,5 +1,7 @@
 ﻿namespace Interpreter.Types;
 
+using Structs;
+
 /// <summary>
 /// Represents a defined type.
 /// </summary>

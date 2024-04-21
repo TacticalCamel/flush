@@ -2,6 +2,7 @@
 
 using Data;
 using Interpreter;
+using Interpreter.Structs;
 using Interpreter.Types;
 
 /// <summary>
@@ -21,7 +22,7 @@ internal sealed class TypeHandler {
     /// <summary>
     /// The list of currently visible types.
     /// </summary>
-    private List<TypeDefinition> Types { get; }
+    private List<TypeDefinition> LoadedTypes { get; }
 
     /// <summary>
     /// The module of the current program.
@@ -31,7 +32,7 @@ internal sealed class TypeHandler {
     /// <summary>
     /// The address of the program module name in the data section.
     /// </summary>
-    public int ModuleNameAddress { get; private set; } = -1;
+    public DataAddress ModuleNameAddress { get; private set; } = DataAddress.Undefined;
 
     /// <summary>
     /// Helper to retrieve type identifiers for core types.
@@ -52,8 +53,8 @@ internal sealed class TypeHandler {
 
         // assign properties
         Imports = imports;
-        Types = types;
-        CoreTypes = new CoreTypeHelper(Types);
+        LoadedTypes = types;
+        CoreTypes = new CoreTypeHelper(LoadedTypes);
         Casts = new CastHelper(CoreTypes);
     }
 
@@ -69,7 +70,7 @@ internal sealed class TypeHandler {
         }
 
         // set address and name
-        ModuleNameAddress = address;
+        ModuleNameAddress = new DataAddress(address);
         ProgramModule = name;
 
         // add module to imports
@@ -102,15 +103,25 @@ internal sealed class TypeHandler {
     /// Load all currently visible types.
     /// </summary>
     public void LoadTypes() {
-        ClassLoader.LoadRuntime(AutoImportEnabled, Imports, Types);
+        ClassLoader.LoadRuntime(AutoImportEnabled, Imports, LoadedTypes);
     }
 
-    public bool LoadType(TypeDefinition definition) {
-        if (Types.Any(x => x.Id == definition.Id)) {
+    /// <summary>
+    /// Add a type definition to the list of loaded types and store it in the program data.
+    /// </summary>
+    /// <param name="definition">The type definition.</param>
+    /// <returns>True if the operation was successful, false otherwise.</returns>
+    public bool RegisterTypeDefinition(TypeDefinition definition) {
+        // the defined type already exists
+        if (LoadedTypes.Any(x => x.Id == definition.Id)) {
             return false;
         }
+
+        // add to loaded types
+        LoadedTypes.Add(definition);
         
-        Types.Add(definition);
+        // TODO store in program data
+
         return true;
     }
 
@@ -120,7 +131,7 @@ internal sealed class TypeHandler {
     /// <param name="name">The name of the type.</param>
     /// <returns>The type if it was found, null otherwise.</returns>
     public TypeDefinition? GetTypeByName(string name) {
-        return Types.FirstOrDefault(type => type.Name == name);
+        return LoadedTypes.FirstOrDefault(type => type.Name == name);
     }
 
     /// <summary>
@@ -211,14 +222,14 @@ internal sealed class TypeHandler {
         /// Identifier for a return type that does not exist.
         /// </summary>
         public TypeIdentifier Void { get; }
-        
+
         /// <summary>
-        /// The type of a null reference.
+        /// The type of null reference.
         /// </summary>
         /// <remarks>
         /// Assignable to any reference type. Equivalent to a void pointer.
         /// </remarks>
-        public TypeIdentifier Null { get; }
+        public TypeIdentifier VoidPtr { get; }
 
         /// <summary>
         /// Create a new core type helper.
@@ -241,22 +252,12 @@ internal sealed class TypeHandler {
             Bool = GetCoreType<Runtime.Core.Bool>();
             Char = GetCoreType<Runtime.Core.Char>();
             Str = GetCoreType<Runtime.Core.Str>();
+            Void = GetCoreType<Runtime.Core.Void>();
 
-            Void = new TypeIdentifier(new TypeDefinition {
-                Modifiers = default,
-                IsReference = false,
-                Name = "void",
-                Fields = [],
-                Methods = [],
-                GenericParameterCount = 0,
-                Size = 0,
-                Id = default
-            }, []);
-            
-            Null = new TypeIdentifier(new TypeDefinition {
+            VoidPtr = new TypeIdentifier(new TypeDefinition {
                 Modifiers = default,
                 IsReference = true,
-                Name = "null",
+                Name = "VoidPtr",
                 Fields = [],
                 Methods = [],
                 GenericParameterCount = 0,

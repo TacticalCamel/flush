@@ -1,4 +1,4 @@
-﻿namespace Interpreter.Bytecode;
+﻿namespace Interpreter.Structs;
 
 /// <summary>
 /// Represents the header of a compiled program.
@@ -19,7 +19,7 @@ public readonly struct FileHeader {
     /// <summary>
     /// The bytecode version of the program.
     /// </summary>
-    public required ulong Version { get; init; }
+    public required BytecodeVersion BytecodeVersion { get; init; }
 
     /// <summary>
     /// The timestamp when the program was created.
@@ -40,5 +40,10 @@ public readonly struct FileHeader {
     /// The address of the module name of the program.
     /// Negative values mean no module name was specified.
     /// </summary>
-    public required int ModuleNameAddress { get; init; }
+    public required DataAddress ModuleNameAddress { get; init; }
+    
+    /// <summary>
+    /// The address of the module name of the program.
+    /// </summary>
+    public required DataAddress TypeDefinitionInfoAddress { get; init; }
 }

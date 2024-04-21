@@ -1,4 +1,4 @@
-﻿namespace Interpreter.Types;
+﻿namespace Interpreter.Structs;
 
 /// <summary>
 /// Represents a modifier that can be applied to a type, field or method.

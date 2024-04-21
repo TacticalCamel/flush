@@ -1,6 +1,6 @@
 ﻿namespace Interpreter.Types;
 
-using Bytecode;
+using Structs;
 
 /// <summary>
 /// Represent a defined method.
@@ -19,12 +19,12 @@ public sealed class MethodDefinition {
     /// <summary>
     /// The return type of the method.
     /// </summary>
-    public required Guid ReturnType { get; init; }
+    public required TypeTree ReturnType { get; init; }
     
     /// <summary>
     /// The types of the method parameters in order.
     /// </summary>
-    public required Guid[] ParameterTypes { get; init; }
+    public required TypeTree[] ParameterTypes { get; init; }
     
     /// <summary>
     /// The instructions of the method.

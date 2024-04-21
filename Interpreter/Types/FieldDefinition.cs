@@ -1,5 +1,7 @@
 ﻿namespace Interpreter.Types;
 
+using Structs;
+
 /// <summary>
 /// Represents a defined field.
 /// </summary>
@@ -10,12 +12,12 @@ public sealed class FieldDefinition {
     public required Modifier Modifiers { get; init; }
     
     /// <summary>
+    /// The type of the field.
+    /// </summary>
+    public required TypeTree Type { get; init; }
+    
+    /// <summary>
     /// The name of the field.
     /// </summary>
     public required string Name { get; init; }
-    
-    /// <summary>
-    /// The type of the field.
-    /// </summary>
-    public required Guid Type { get; init; }
 }

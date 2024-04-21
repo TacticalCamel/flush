@@ -7,7 +7,8 @@ namespace Interpreter;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Bytecode;
+using Structs;
+using Serialization;
 
 /// <summary>
 /// Implements a virtual processor that is capable of executing instructions. 

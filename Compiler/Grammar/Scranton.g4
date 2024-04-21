@@ -122,11 +122,12 @@ expression
 	: KW_NULL #NullExpression
 	| Constant=constant #ConstantExpression
 	| Identifier=id #IdentifierExpression
-	| Type=expression OP_MEMBER_ACCESS Member=id  #MemberAccessExpression
+	| Type=expression OP_MEMBER_ACCESS Member=id #MemberAccessExpression
 	| HEAD_START Type=type HEAD_END Expression=expression #CastExpression
 	| HEAD_START Body=expression HEAD_END #NestedExpression
-	| KW_NEW Type=type HEAD_START Parameters=expressionList HEAD_END #ConstructorExpression
+	| KW_NEW Type=type HEAD_START Parameters=expressionList HEAD_END (FieldAssignmentList=fieldAssignmentList)? #ConstructorExpression
 	| Caller=expression HEAD_START Parameters=expressionList HEAD_END #FunctionCallExpression
+ 	| INDEX_START Items=expressionList INDEX_END #CollectionExpression
 	| Operator=opLeftUnary Expression=expression #LeftUnaryExpression
 	| Expression=expression Operator=opRightUnary #RightUnaryExpression
 	| Left=expression Operator=opMultiplicative Right=expression #MultiplicativeExpression
@@ -135,9 +136,6 @@ expression
 	| Left=expression Operator=opComparison Right=expression #ComparisonExpression
 	| Left=expression Operator=opLogical Right=expression #LogicalExpression
 	| Left=expression Operator=opAssignment Right=expression #AssigmentExpression
-//	| Lambda=lambda #LambdaExpression
-//	| ObjectConstructor=objectConstructor #ObjectConstructorExpression
-//	| CollectionConstructor=collectionConstructor #CollectionConstructorExpression
 	;
 
 constant
@@ -157,19 +155,13 @@ expressionList
 	: ((expression PARAM_SEP)* expression)?
 	;
 
-/*
-objectConstructor
-	: id BLOCK_START ((id OP_ASSIGN expression PARAM_SEP)* (id OP_ASSIGN expression))? BLOCK_END
+fieldAssignmentList
+	: BLOCK_START ((fieldAssignment PARAM_SEP)* fieldAssignment)? BLOCK_END
 	;
-
-collectionConstructor
-	: INDEX_START expressionList INDEX_END
+	
+fieldAssignment
+	: Name=id OP_ASSIGN Expression=expression
 	;
-
-lambda
-	: HEAD_START parameterList HEAD_END OP_POINTER (block | expression) 
-	;
-*/
 
 opLeftUnary
 	: OP_PLUS
@@ -234,7 +226,9 @@ variableWithType
 	;
 
 type
-	: Name=id (OP_LESS (type PARAM_SEP)* type OP_GREATER)?
+	: Name=id #SimpleType
+	| Name=id OP_LESS (type PARAM_SEP)* type OP_GREATER #GenericType
+	| Type=type INDEX_START INDEX_END #ArrayType
 	;
 
 returnType

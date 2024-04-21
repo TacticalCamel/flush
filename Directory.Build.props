@@ -11,6 +11,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
         <DebugType>embedded</DebugType>
+        <WarningsAsErrors>CS8625</WarningsAsErrors>
         
         <!-- build directory overrides -->
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
