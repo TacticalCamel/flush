@@ -1,10 +1,13 @@
-# Szakdolgozat
+<h1>
+    <svg style="vertical-align: middle" width="64px" height="64px" viewBox="0 0 1024 1024" class="icon" xmlns="http://www.w3.org/2000/svg"><path d="M704 192H234.666667v85.333333h469.333333c23.466667 0 42.666667 19.2 42.666667 42.666667v426.666667H490.666667v85.333333h341.333333V320c0-70.4-57.6-128-128-128z" fill="#90CAF9" /><path d="M128 128h213.333333v213.333333H128z" fill="#D81B60" /><path d="M682.666667 362.666667h213.333333v213.333333H682.666667zM341.333333 682.666667h213.333334v213.333333H341.333333z" fill="#2196F3" /><path d="M554.666667 234.666667m-106.666667 0a106.666667 106.666667 0 1 0 213.333333 0 106.666667 106.666667 0 1 0-213.333333 0Z" fill="#2196F3" /><path d="M789.333333 789.333333m-106.666666 0a106.666667 106.666667 0 1 0 213.333333 0 106.666667 106.666667 0 1 0-213.333333 0Z" fill="#2196F3" /></svg>
+    <span>Szakdolgozat</span>    
+</h1>
 
-<h3 style="text-align: center"> 
+<div style="text-align: center">
 
-    [![Publish](https://github.com/TacticalCamel/szakdolgozat/actions/workflows/dotnet.yml/badge.svg?event=push)](https://github.com/TacticalCamel/szakdolgozat/actions)
+  [![Publish](https://github.com/TacticalCamel/szakdolgozat/actions/workflows/dotnet.yml/badge.svg?event=push)](https://github.com/TacticalCamel/szakdolgozat/releases/latest)
 
-</h3>
+</div>
 
 ### A téma
 
