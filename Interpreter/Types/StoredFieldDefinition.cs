@@ -5,7 +5,7 @@ using Structs;
 /// <summary>
 /// Represents a defined field.
 /// </summary>
-public sealed class FieldDefinition {
+public sealed class StoredFieldDefinition {
     /// <summary>
     /// The modifiers of the field.
     /// </summary>

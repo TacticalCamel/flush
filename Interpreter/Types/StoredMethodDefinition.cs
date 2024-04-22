@@ -5,7 +5,7 @@ using Structs;
 /// <summary>
 /// Represent a defined method.
 /// </summary>
-public sealed class MethodDefinition {
+public sealed class StoredMethodDefinition {
     /// <summary>
     /// The modifiers of the method.
     /// </summary>

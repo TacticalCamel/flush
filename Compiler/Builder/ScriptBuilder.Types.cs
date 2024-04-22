@@ -17,7 +17,7 @@ internal sealed partial class ScriptBuilder {
     /// <param name="typeDefinitions">The type definitions.</param>
     private void ProcessTypeDefinitions(TypeDefinitionContext[] typeDefinitions) {
         // the steps of processing a type
-        Func<TypeDefinitionContext, TypeDefinitionContext[], bool>[] steps = [
+        Func<TypeDefinitionContext, bool>[] steps = [
             CreateDraft,
             CreateMemberDrafts,
             LoadType
@@ -27,12 +27,12 @@ internal sealed partial class ScriptBuilder {
         ContextHandler.ProcessedTypes = typeDefinitions;
 
         // call each step on every type
-        foreach (Func<TypeDefinitionContext, TypeDefinitionContext[], bool> step in steps) {
+        foreach (Func<TypeDefinitionContext, bool> step in steps) {
             bool success = true;
 
             // process each type definition
             foreach (TypeDefinitionContext typeDefinition in typeDefinitions) {
-                success &= step(typeDefinition, typeDefinitions);
+                success &= step(typeDefinition);
             }
 
             // if failed, stop type processing
@@ -49,9 +49,8 @@ internal sealed partial class ScriptBuilder {
     /// Create a type draft for a type definition.
     /// </summary>
     /// <param name="context">The type definition to visit.</param>
-    /// <param name="contexts">All the type definitions that are currently processed.</param>
     /// <remarks>True if the operation was successful, false otherwise.</remarks>
-    private bool CreateDraft(TypeDefinitionContext context, TypeDefinitionContext[] contexts) {
+    private bool CreateDraft(TypeDefinitionContext context) {
         // the modifiers of the type
         if (VisitModifierList(context.Modifiers) is not Modifier modifiers) {
             return false;
@@ -89,9 +88,8 @@ internal sealed partial class ScriptBuilder {
     /// Creates drafts for the members of a type definition.
     /// </summary>
     /// <param name="context">The type definition to visit.</param>
-    /// <param name="contexts">All the type definitions that are currently processed.</param>
     /// <returns>True if the operation was successful, false otherwise.</returns>
-    private bool CreateMemberDrafts(TypeDefinitionContext context, TypeDefinitionContext[] contexts) {
+    private bool CreateMemberDrafts(TypeDefinitionContext context) {
         ContextHandler.GenericParameterNames = context.TypeDraft.GenericParameterNames;
 
         // process fields
@@ -210,7 +208,7 @@ internal sealed partial class ScriptBuilder {
         }
     }
 
-    private bool LoadType(TypeDefinitionContext context, TypeDefinitionContext[] contexts) {
+    private bool LoadType(TypeDefinitionContext context) {
         ContextHandler.GenericParameterNames = context.TypeDraft.GenericParameterNames;
         
         TypeDefinition definition = new() {
@@ -225,8 +223,6 @@ internal sealed partial class ScriptBuilder {
         };
 
         bool success = TypeHandler.RegisterTypeDefinition(definition);
-
-        // TODO store type in bytecode
 
         if (!success) {
             IssueHandler.Add(Issue.DuplicateTypeId(context, definition.Name));
@@ -247,8 +243,7 @@ internal sealed partial class ScriptBuilder {
 
         return true;
     }
-
-
+    
     private TypeNode? GetTypeNode(TypeContext context) {
         string name = context switch {
             SimpleTypeContext simpleType => VisitId(simpleType.Name),

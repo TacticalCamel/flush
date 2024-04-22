@@ -39,12 +39,12 @@ public sealed class TypeDefinition {
     /// <summary>
     /// The fields defined in the type.
     /// </summary>
-    public required FieldDefinition[] Fields { get; init; }
+    public required StoredFieldDefinition[] Fields { get; init; }
 
     /// <summary>
     /// The methods defined in the type.
     /// </summary>
-    public required MethodDefinition[] Methods { get; init; }
+    public required StoredMethodDefinition[] Methods { get; init; }
 
     /// <summary>
     /// The size of the type in bytes when stored by value.
