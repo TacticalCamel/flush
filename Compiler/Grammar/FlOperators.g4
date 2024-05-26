@@ -1,4 +1,4 @@
-lexer grammar SraOperators;
+lexer grammar FlOperators;
 
 OP_MEMBER_ACCESS
 	: '.'

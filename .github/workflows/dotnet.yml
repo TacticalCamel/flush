@@ -1,4 +1,4 @@
-name: Publish release with Windows x64 AOT executable
+name: Publish Windows x64 AOT executable
 
 on:
   push:
@@ -28,6 +28,6 @@ jobs:
         with:
           name: v0.1.${{ github.run_number }}-dev
           tag_name: v0.1.${{ github.run_number }}-dev
-          files: .out/bin/native/Scranton.exe
+          files: .out/bin/native/Flush.exe
           draft: false
           prerelease: false

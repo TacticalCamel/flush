@@ -4,8 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Compiler;
 using Interpreter;
-using Interpreter.Structs;
 using Interpreter.Serialization;
+using Parser;
 using Options;
 
 /// <summary>
@@ -47,7 +47,7 @@ internal static class Program {
 
         // switch based on the extension of the source file
         switch (sourceFile.Extension) {
-            case SourceFile.FILE_SOURCE_EXTENSION: {
+            case SourceFile.SOURCE_FILE_EXTENSION: {
                 // convert from bytes to string
                 string code = Encoding.UTF8.GetString(sourceFile.Contents);
 
@@ -78,7 +78,7 @@ internal static class Program {
                 break;
             }
 
-            case SourceFile.FILE_BINARY_EXTENSION: {
+            case SourceFile.COMPILED_FILE_EXTENSION: {
                 // read from bytes
                 Script? script = BinarySerializer.BytesToScript(sourceFile.Contents, interpreterLogger);
 
@@ -99,7 +99,7 @@ internal static class Program {
 
             default: {
                 // invalid extension, log error message and exit
-                interfaceLogger.TargetExtensionInvalid(SourceFile.FILE_SOURCE_EXTENSION, SourceFile.FILE_BINARY_EXTENSION);
+                interfaceLogger.TargetExtensionInvalid(SourceFile.SOURCE_FILE_EXTENSION, SourceFile.COMPILED_FILE_EXTENSION);
                 break;
             }
         }
@@ -255,7 +255,7 @@ internal static class Program {
         try {
             FileInfo file = new(targets[0]);
 
-            // file does not exists
+            // file does not exist
             if (!file.Exists) {
                 logger.TargetDoesNotExist(file.FullName);
             }
@@ -288,7 +288,7 @@ internal static class Program {
             string filePath = interfaceOptions.OutputPath ?? sourceFile.FullPath;
 
             // get file extension
-            string fileExtension = interfaceOptions.CompileToPlainText ? SourceFile.FILE_TEXT_EXTENSION : SourceFile.FILE_BINARY_EXTENSION;
+            string fileExtension = interfaceOptions.CompileToPlainText ? SourceFile.TEXT_FILE_EXTENSION : SourceFile.COMPILED_FILE_EXTENSION;
 
             // change path extension
             filePath = Path.ChangeExtension(filePath, fileExtension);

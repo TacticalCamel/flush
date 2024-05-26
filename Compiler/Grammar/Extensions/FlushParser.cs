@@ -5,7 +5,7 @@ namespace Compiler.Grammar;
 using Types;
 using Data;
 
-public partial class ScrantonParser {
+public partial class FlushParser {
     public partial class ExpressionContext {
         /// <summary>
         /// The type of the expression.

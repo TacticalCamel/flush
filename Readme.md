@@ -1,26 +1,23 @@
-<h1>
-  <img src="icon.svg" style="height: 64px" alt="icon" />
-  <span>Szakdolgozat</span>    
-</h1>
+<div align="center">
+  <img src="icon.svg" style="height: 128px" alt="icon" />
+</div>
 
-<div style="text-align: center">
+<div align="center">
 
-  [![Publish](https://github.com/TacticalCamel/szakdolgozat/actions/workflows/dotnet.yml/badge.svg?event=push)](https://github.com/TacticalCamel/szakdolgozat/releases/latest)
+[![Latest Release](https://img.shields.io/badge/Latest_release-6d28d9)](https://github.com/TacticalCamel/flush/releases/latest)
+[![Publish](https://github.com/TacticalCamel/flush/actions/workflows/dotnet.yml/badge.svg?event=push)](https://github.com/TacticalCamel/flush/releases/latest)
 
 </div>
 
-### A téma
+# Flush
 
-A szakdolgozat témája egy programozási nyelv és az ehhez tartozó fordítóprogram megtervezése és elkészítése.
-A forráskódból a fordítás során bájtkód készül, ami fájlba írható, innen visszaolvasható, illetve végrehajtható.
-A lefordított kódot egy szintén egyénileg írt virtuális processzor hajtja végre.
+#### Compiler and interpreter for a custom programming language. 
 
-### Miért ez?
+### Project status
 
-Egy érdekes témát szerettem volna választani, ami nem egy ezredik unalmas webalkalmazás. Mindig is érdekelt a fordítóprogramok témaköre, így logikus lépés volt készíteni egyet.
+In progress, early development.
 
-### Felhasznált eszközök
+### Technologies Used
 
-- <a href="https://www.jetbrains.com/rider/">Jetbrains Rider</a> - Fejlesztői környezet
-- <a href="https://dotnet.microsoft.com/en-us/languages/csharp">C# 12 (.NET Core 8)</a> - A projekt programozási nyelve
-- <a href="https://github.com/antlr/antlr4">ANTLR4</a> - Nyelvtani szabályok, fordító kódgenerálás
+- <a href="https://dotnet.microsoft.com/en-us/languages/csharp">C# 12 (.NET Core 8)</a> - The programming language of the project
+- <a href="https://github.com/antlr/antlr4">ANTLR4</a> - Grammar rules, compiler source generation

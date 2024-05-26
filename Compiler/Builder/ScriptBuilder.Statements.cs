@@ -2,7 +2,7 @@
 
 using Data;
 using Analysis;
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 
 // ScriptBuilder.Statements: methods related to visiting statements
 internal sealed partial class ScriptBuilder {

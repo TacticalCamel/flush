@@ -26,7 +26,7 @@ public static unsafe class ClassLoader {
     /// <summary>
     /// All the types available in the runtime.
     /// </summary>
-    private static Type[] RuntimeTypes { get; } = typeof(Runtime.Core.ScrantonObject).Assembly.GetExportedTypes();
+    private static Type[] RuntimeTypes { get; } = typeof(Runtime.Core.FlushObject).Assembly.GetExportedTypes();
 
     /// <summary>
     /// Load the initially included types from the runtime.

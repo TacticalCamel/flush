@@ -1,4 +1,4 @@
-lexer grammar SraSeparators;
+lexer grammar FlSeparators;
 
 BLOCK_START
 	: '{'

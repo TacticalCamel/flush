@@ -3,7 +3,7 @@
 using Data;
 using Analysis;
 using Interpreter.Structs;
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 
 // ScriptBuilder.Expressions: methods related to visiting expressions
 internal sealed partial class ScriptBuilder {

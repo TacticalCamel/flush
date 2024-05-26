@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <ApplicationIcon>..\icon.ico</ApplicationIcon>
-        <AssemblyName>Scranton</AssemblyName>
+        <AssemblyName>Flush</AssemblyName>
         <PublishAot>true</PublishAot>
     </PropertyGroup>
 

@@ -1,6 +1,6 @@
 ﻿namespace Compiler.Handlers;
 
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 
 internal sealed class ContextHandler {
     /// <summary>

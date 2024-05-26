@@ -1,6 +1,6 @@
-grammar Scranton;
+grammar Flush;
 
-import SraKeywords, SraLiterals, SraSeparators, SraOperators, SraCommon;
+import FlKeywords, FlLiterals, FlSeparators, FlOperators, FlCommon;
 
 program
 	: Header=programHeader Body=programBody EOF

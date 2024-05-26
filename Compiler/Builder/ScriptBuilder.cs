@@ -1,6 +1,6 @@
 namespace Compiler.Builder;
 
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 using Handlers;
 using Grammar;
 using Analysis;
@@ -11,7 +11,7 @@ using Interpreter.Serialization;
 /// Implements the traversal of the syntax tree with the visitor pattern. 
 /// </summary>
 /// <param name="options">The setting to use during compilation.</param>
-internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonBaseVisitor<object?> {
+internal sealed partial class ScriptBuilder(CompilerOptions options) : FlushBaseVisitor<object?> {
     /// <summary>
     /// The setting to use during compilation.
     /// This is the only form of state the builder is initialized with.

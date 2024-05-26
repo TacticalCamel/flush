@@ -1,4 +1,4 @@
-lexer grammar SraCommon;
+lexer grammar FlCommon;
 
 WS
 	: [ \t\r\n]+ -> skip

@@ -1,4 +1,4 @@
-lexer grammar SraKeywords;
+lexer grammar FlKeywords;
 
 KW_MODULE
 	: 'module'

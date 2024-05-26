@@ -2,8 +2,8 @@
     <PropertyGroup>
         <!-- metadata -->
         <Authors>Takács Balázs</Authors>
-        <Version>0.1.21-dev</Version>
-        <PackageProjectUrl>https://github.com/TacticalCamel/szakdolgozat</PackageProjectUrl>
+        <Version>0.1.22-dev</Version>
+        <PackageProjectUrl>https://github.com/TacticalCamel/flush</PackageProjectUrl>
 
         <!-- common project properties -->
         <TargetFramework>net8.0</TargetFramework>

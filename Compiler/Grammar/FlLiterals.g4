@@ -1,4 +1,4 @@
-lexer grammar SraLiterals;
+lexer grammar FlLiterals;
 
 DECIMAL_INTEGER
 	: NUMBER_SIGN? DECIMAL_DIGIT+

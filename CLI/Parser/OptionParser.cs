@@ -1,4 +1,4 @@
-﻿namespace CLI.Options;
+﻿namespace CLI.Parser;
 
 using System.Diagnostics.CodeAnalysis;
 

@@ -7,7 +7,7 @@ using Interpreter;
 using Interpreter.Types;
 using Interpreter.Structs;
 using System.Diagnostics;
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 
 // ScriptBuilder.Types: methods related to visiting type definitions and type names
 internal sealed partial class ScriptBuilder {

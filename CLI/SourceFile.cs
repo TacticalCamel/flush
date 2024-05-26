@@ -9,17 +9,17 @@ internal sealed class SourceFile(FileSystemInfo file, byte[] contents) {
     /// <summary>
     /// The valid extension for source files.
     /// </summary>
-    public const string FILE_SOURCE_EXTENSION = ".sra";
+    public const string SOURCE_FILE_EXTENSION = ".fl";
 
     /// <summary>
     /// The valid extension for compiled files.
     /// </summary>
-    public const string FILE_BINARY_EXTENSION = ".bin";
+    public const string COMPILED_FILE_EXTENSION = ".flc";
 
     /// <summary>
     /// The valid extension for plain text files.
     /// </summary>
-    public const string FILE_TEXT_EXTENSION = ".txt";
+    public const string TEXT_FILE_EXTENSION = ".txt";
 
     /// <summary>
     /// The extension of the file, including the leading dot.

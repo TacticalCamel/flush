@@ -1,7 +1,7 @@
 ﻿// ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedParameter.Global
 
-namespace CLI.Options;
+namespace CLI.Parser;
 
 /// <summary>
 /// A class containing method definitions for command line argument parsing.
