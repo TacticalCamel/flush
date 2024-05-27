@@ -1,4 +1,4 @@
-﻿namespace CLI;
+﻿namespace CLI.IO;
 
 /// <summary>
 /// Represents a file loaded into memory.

@@ -51,7 +51,7 @@ internal sealed class Issue {
     /// <param name="overrideLevel">The severity to use.</param>
     /// <returns>A string that represents the current object.</returns>
     public string ToString(Severity overrideLevel) {
-        return $"{Position}: {overrideLevel} SRA{Id:D3}: {Message}";
+        return $"{Position}: {overrideLevel} FL{Id:D3}: {Message}";
     }
 
     /// <summary>

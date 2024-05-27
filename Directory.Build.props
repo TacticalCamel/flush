@@ -2,7 +2,7 @@
     <PropertyGroup>
         <!-- metadata -->
         <Authors>Takács Balázs</Authors>
-        <Version>0.1.22-dev</Version>
+        <Version>0.2.0.0-dev</Version>
         <PackageProjectUrl>https://github.com/TacticalCamel/flush</PackageProjectUrl>
 
         <!-- common project properties -->

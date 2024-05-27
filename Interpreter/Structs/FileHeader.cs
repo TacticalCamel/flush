@@ -8,7 +8,7 @@ public readonly struct FileHeader {
     /// <summary>
     /// The valid signature value.
     /// </summary>
-    public const ulong VALID_SIGNATURE = 0x_42FF_54FF_0061_7273;
+    public const ulong VALID_SIGNATURE = 0x_5C68_7375_6C66_2E5C;
 
     /// <summary>
     /// The signature of the header.

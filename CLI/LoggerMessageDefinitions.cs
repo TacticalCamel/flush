@@ -17,24 +17,6 @@ internal static partial class LoggerMessageDefinitions {
 
     #endregion
 
-
-    #region Flags
-
-    [LoggerMessage(EventId = 100, Level = LogLevel.Error, Message = "Property of type {propertyType} in class {objectType} can not be parsed")]
-    public static partial void PropertyNotParseable(this ILogger logger, Type propertyType, Type objectType);
-
-    [LoggerMessage(EventId = 101, Level = LogLevel.Warning, Message = "Flag \"{flag}\" is used multiple times, ignoring duplicate values")]
-    public static partial void DuplicateFlag(this ILogger logger, string flag);
-
-    [LoggerMessage(EventId = 102, Level = LogLevel.Warning, Message = "Unknown flag \"{flag}\"")]
-    public static partial void UnknownFlag(this ILogger logger, string flag);
-
-    [LoggerMessage(EventId = 103, Level = LogLevel.Warning, Message = "Value {values} for flag \"{flag}\" is invalid")]
-    public static partial void InvalidFlagValue(this ILogger logger, string flag, string[] values);
-
-    #endregion
-
-
     #region Target
 
     [LoggerMessage(EventId = 200, Level = LogLevel.Error, Message = "Multiple targets are not supported")]
