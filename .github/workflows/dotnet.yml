@@ -1,4 +1,4 @@
-name: Publish Windows x64 AOT executable
+name: Windows x64 AOT release
 
 on:
   push:

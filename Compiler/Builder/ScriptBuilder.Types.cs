@@ -230,7 +230,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         // debug
-
+        /*
         Console.WriteLine($"{context.TypeDraft.Name}: {context.TypeDraft.Id}");
 
         foreach (FieldDraft field in context.TypeDraft.Fields) {
@@ -238,6 +238,7 @@ internal sealed partial class ScriptBuilder {
         }
 
         Console.WriteLine();
+        */
 
         ContextHandler.GenericParameterNames = null;
 

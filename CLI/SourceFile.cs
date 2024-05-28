@@ -1,12 +1,53 @@
-﻿namespace CLI.IO;
+﻿namespace CLI;
 
 using System.Text;
 using Interpreter.Serialization;
 
 /// <summary>
-/// Class containing static methods for file operations.
+/// Represents a file loaded into memory.
 /// </summary>
-internal static class FileOperations {
+internal sealed class SourceFile {
+    /// <summary>
+    /// The extension of source files.
+    /// </summary>
+    public const string SOURCE_FILE_EXTENSION = ".fl";
+
+    /// <summary>
+    /// The extension of compiled files.
+    /// </summary>
+    public const string COMPILED_FILE_EXTENSION = ".flc";
+
+    /// <summary>
+    /// The extension of plain text files.
+    /// </summary>
+    public const string TEXT_FILE_EXTENSION = ".txt";
+
+    /// <summary>
+    /// The extension of the file, including the leading dot.
+    /// </summary>
+    public string Extension { get; }
+
+    /// <summary>
+    /// The full path of the file.
+    /// </summary>
+    public string FullPath { get; }
+
+    /// <summary>
+    /// The contents of the file as an array of bytes.
+    /// </summary>
+    public byte[] Contents { get; }
+
+    /// <summary>
+    /// Represents a file loaded into memory.
+    /// </summary>
+    /// <param name="file">The file system entry for the source file.</param>
+    /// <param name="contents">The contents of the file as an array of bytes.</param>
+    private SourceFile(FileSystemInfo file, byte[] contents) {
+        Extension = file.Extension;
+        FullPath = file.FullName;
+        Contents = contents;
+    }
+
     /// <summary>
     /// Attempt to read a file from the file system.
     /// </summary>
@@ -31,10 +72,10 @@ internal static class FileOperations {
             byte[] contents = File.ReadAllBytes(file.FullName);
             return new SourceFile(file, contents);
         }
-        
+
         // catch any IO error
         catch (Exception e) {
-            logger.FileWriteFailed(e.Message);
+            logger.GeneralFileError(e.Message);
             return null;
         }
     }
@@ -52,7 +93,7 @@ internal static class FileOperations {
         string filePath = outputPath ?? sourceFile.FullPath;
 
         // get file extension
-        string fileExtension = compileToPlainText ? SourceFile.TEXT_FILE_EXTENSION : SourceFile.COMPILED_FILE_EXTENSION;
+        string fileExtension = compileToPlainText ? TEXT_FILE_EXTENSION : COMPILED_FILE_EXTENSION;
 
         // correct the file extension
         filePath = Path.ChangeExtension(filePath, fileExtension);
@@ -77,10 +118,10 @@ internal static class FileOperations {
 
             logger.FileWriteSuccess(filePath);
         }
-        
+
         // catch any IO error
         catch (Exception e) {
-            logger.FileWriteFailed(e.Message);
+            logger.GeneralFileError(e.Message);
         }
     }
 }
