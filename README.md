@@ -26,3 +26,4 @@ In progress, early development.
 
 - [C# 12 (.NET Core 8)](https://dotnet.microsoft.com/en-us/languages/csharp) - The programming language of the project
 - [ANTLR4](https://github.com/antlr/antlr4) - Grammar rules, compiler source generation
+- [System.CommandLine](https://github.com/dotnet/command-line-api) - Command line argument parsing

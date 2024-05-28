@@ -1,11 +1,11 @@
 ﻿namespace CLI;
 
 using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Help;
+using System.CommandLine.Parsing;
 using Commands;
 
-/// <summary>
-/// The starting point of the application, interacts with the public interfaces of the compiler and the interpreter.
-/// </summary>
 internal static class Program {
     /// <summary>
     /// The entry point of the application.
@@ -13,11 +13,22 @@ internal static class Program {
     /// <param name="args">The command line arguments.</param>
     /// <returns>The exit code of the application.</returns>
     private static int Main(string[] args) {
+        // create the root command
         RootCommand root = new(description: "Root command.") {
             new BuildCommand(),
             new RunCommand()
         };
 
-        return root.Invoke(args);
+        // override settings
+        Parser parser = new CommandLineBuilder(root)
+            .UseDefaults()
+            .UseHelp(customize: helpContext => {
+                root.Name = "flush";
+                helpContext.HelpBuilder.CustomizeLayout(_ => HelpBuilder.Default.GetLayout().Skip(1));
+            })
+            .Build();
+
+        // invoke with the current command line arguments
+        return parser.Invoke(args);
     }
 }
