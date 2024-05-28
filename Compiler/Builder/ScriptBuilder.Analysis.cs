@@ -28,13 +28,13 @@ internal partial class ScriptBuilder {
     /// <returns>An array of issues converted to strings.</returns>
     public string[] GetIssuesWithSeverity(Severity severity) {
         Severity minimumSeverity = severity switch {
-            Severity.Warning when Options.TreatWarningsAsErrors => Severity.Error,
-            Severity.Error when Options.TreatWarningsAsErrors => Severity.Warning,
+            Severity.Warning when Options.WarningsAsErrors => Severity.Error,
+            Severity.Error when Options.WarningsAsErrors => Severity.Warning,
             _ => severity
         };
 
         return IssueHandler
-            .Where(issue => issue.Severity >= minimumSeverity && issue.Severity <= severity && (issue.Severity >= Severity.Error || !Options.IgnoredIssues.Contains(issue.Id)))
+            .Where(issue => issue.Severity >= minimumSeverity && issue.Severity <= severity && (issue.Severity >= Severity.Error || !Options.SuppressIssues.Contains(issue.Id)))
             .OrderBy(issue => issue.Position)
             .Select(issue => issue.ToString(severity))
             .ToArray();
@@ -45,9 +45,9 @@ internal partial class ScriptBuilder {
     /// </summary>
     /// <exception cref="OperationCanceledException">Thrown when there is at least 1 error.</exception>
     private void CancelIfHasErrors() {
-        Severity errorSeverity = Options.TreatWarningsAsErrors ? Severity.Warning : Severity.Error;
+        Severity errorSeverity = Options.WarningsAsErrors ? Severity.Warning : Severity.Error;
 
-        if (IssueHandler.Any(issue => issue.Severity >= errorSeverity && (issue.Severity >= Severity.Error || !Options.IgnoredIssues.Contains(issue.Id)))) {
+        if (IssueHandler.Any(issue => issue.Severity >= errorSeverity && (issue.Severity >= Severity.Error || !Options.SuppressIssues.Contains(issue.Id)))) {
             throw new OperationCanceledException();
         }
     }

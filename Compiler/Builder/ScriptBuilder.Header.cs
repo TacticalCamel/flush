@@ -1,7 +1,7 @@
 ﻿namespace Compiler.Builder;
 
 using Analysis;
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 
 // ScriptBuilder.Header: methods related to visiting the program header
 internal partial class ScriptBuilder {

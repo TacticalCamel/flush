@@ -1,6 +1,6 @@
 ﻿namespace Compiler.Builder;
 
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 using System.Globalization;
 using Data;
 using Analysis;

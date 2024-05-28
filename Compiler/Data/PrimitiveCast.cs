@@ -67,7 +67,7 @@ internal enum PrimitiveCast : byte {
 internal static class CastEnumExtensions {
     public static bool IsImplicit(this PrimitiveCast cast) {
         return cast switch {
-            PrimitiveCast.FloatToFloatExplicit => true,
+            PrimitiveCast.FloatToFloatImplicit => true,
             PrimitiveCast.UnsignedToFloatImplicit => true,
             PrimitiveCast.SignedToFloatImplicit => true,
             PrimitiveCast.ResizeImplicit => true,
@@ -78,7 +78,8 @@ internal static class CastEnumExtensions {
     
     public static bool IsExplicit(this PrimitiveCast cast) {
         return cast switch {
-            PrimitiveCast.FloatToFloatImplicit => true,
+            PrimitiveCast.None => true,
+            PrimitiveCast.FloatToFloatExplicit => true,
             PrimitiveCast.FloatToUnsignedExplicit => true,
             PrimitiveCast.FloatToSignedExplicit => true,
             PrimitiveCast.ResizeExplicit => true,

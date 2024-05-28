@@ -10,7 +10,7 @@ using Grammar;
 using Builder;
 using Analysis;
 using Antlr4.Runtime;
-using Interpreter.Bytecode;
+using Interpreter.Serialization;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -41,12 +41,12 @@ public sealed class CompilerService(CompilerOptions options, ILogger logger) {
 
         // create lexer and listen to errors
         AntlrInputStream inputStream = new(code);
-        ScrantonLexer lexer = new(inputStream);
+        FlushLexer lexer = new(inputStream);
         scriptBuilder.BindToLexerErrorListener(lexer);
 
         // create parser and listen to errors
         CommonTokenStream tokenStream = new(lexer);
-        ScrantonParser parser = new(tokenStream);
+        FlushParser parser = new(tokenStream);
         scriptBuilder.BindToParserErrorListener(parser);
 
         try {

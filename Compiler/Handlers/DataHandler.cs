@@ -210,7 +210,7 @@ internal sealed unsafe class DataHandler {
         /// Write all stored objects to a byte array using their memory addresses.
         /// </summary>
         /// <param name="bytes">The destination array.</param>
-        public void WriteContents(byte[] bytes);
+        public void WriteContents(Span<byte> bytes);
     }
 
     /// <summary>
@@ -249,11 +249,11 @@ internal sealed unsafe class DataHandler {
             return address;
         }
 
-        public void WriteContents(byte[] bytes) {
+        public void WriteContents(Span<byte> bytes) {
             // simple foreach through all objects
             foreach (KeyValuePair<T, int> pair in Objects) {
                 // create a span starting at the object address
-                Span<byte> destination = bytes.AsSpan(pair.Value);
+                Span<byte> destination = bytes[pair.Value..];
 
                 // this method can be used only because T is unmanaged
                 MemoryMarshal.Write(destination, pair.Key);
@@ -298,11 +298,11 @@ internal sealed unsafe class DataHandler {
             return address;
         }
 
-        public void WriteContents(byte[] bytes) {
+        public void WriteContents(Span<byte> bytes) {
             // simple foreach through all objects
             foreach (KeyValuePair<string, int> pair in Objects) {
                 // create a span starting at the object address
-                Span<byte> destination = bytes.AsSpan(pair.Value);
+                Span<byte> destination = bytes[pair.Value..];
 
                 // store the length of the string as a 32-bit integer
                 MemoryMarshal.Write(destination, pair.Key.Length);
@@ -315,6 +315,19 @@ internal sealed unsafe class DataHandler {
             }
         }
     }
+
+    /// <summary>
+    /// An implementation of IObjectCollection for types.
+    /// </summary>
+    /// <param name="dataHandler">The data handler to use.</param>
+   /* private sealed class TypeCollection(DataHandler dataHandler): IObjectCollection<Type> {
+        /// <summary>
+        /// To determine the actual address of an object, the current DataHandler instance must be used.
+        /// </summary>
+        private DataHandler DataHandler { get; } = dataHandler;
+
+        private Dictionary<Guid, Type> Objects { get; } = [];
+    }*/
 
     /// <summary>
     /// A simple class to represent a small region of memory.

@@ -1,16 +1,17 @@
 namespace Compiler.Builder;
 
-using static Grammar.ScrantonParser;
+using static Grammar.FlushParser;
 using Handlers;
 using Grammar;
 using Analysis;
-using Interpreter.Bytecode;
+using Interpreter.Structs;
+using Interpreter.Serialization;
 
 /// <summary>
 /// Implements the traversal of the syntax tree with the visitor pattern. 
 /// </summary>
 /// <param name="options">The setting to use during compilation.</param>
-internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonBaseVisitor<object?> {
+internal sealed partial class ScriptBuilder(CompilerOptions options) : FlushBaseVisitor<object?> {
     /// <summary>
     /// The setting to use during compilation.
     /// This is the only form of state the builder is initialized with.
@@ -41,7 +42,7 @@ internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonB
     /// Indicates that preprocessor mode is enabled.
     /// Visit methods may change behaviour depending on this value.
     /// </summary>
-    private bool IsPreprocessorMode { get; set; }
+    private ContextHandler ContextHandler { get; set; } = new();
 
     /// <summary>
     /// Visit a syntax tree and transform it to an executable program.
@@ -57,11 +58,6 @@ internal sealed partial class ScriptBuilder(CompilerOptions options) : ScrantonB
 
         // check for errors
         CancelIfHasErrors();
-
-        // warn if the code section is empty
-        if (!CodeHandler.HasInstructions) {
-            IssueHandler.Add(Issue.ProgramEmpty(programContext));
-        }
 
         // get data and code sections
         byte[] data = DataHandler.GetByteArray();

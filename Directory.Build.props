@@ -1,21 +1,24 @@
 <Project>
     <PropertyGroup>
-        <!-- intermediate output directory -->
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-        <IntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</IntermediateOutputPath>
-        <BaseIntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+        <!-- metadata -->
+        <Authors>Takács Balázs</Authors>
+        <Version>0.2.0.0-dev</Version>
+        <PackageProjectUrl>https://github.com/TacticalCamel/flush</PackageProjectUrl>
 
-        <!-- build output directory -->
-        <OutputPath>$(SolutionDir).out\bin\</OutputPath>
-        <OutDir>$(OutputPath)</OutDir>
-
-        <!-- other common properties -->
+        <!-- common project properties -->
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>12</LangVersion>
         <DebugType>embedded</DebugType>
-        <AssemblyVersion>0.1.21</AssemblyVersion>
+        <WarningsAsErrors>CS8625</WarningsAsErrors>
+        
+        <!-- build directory overrides -->
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <IntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</IntermediateOutputPath>
+        <BaseIntermediateOutputPath>$(SolutionDir).out\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+        <OutputPath>$(SolutionDir).out\bin\</OutputPath>
+        <OutDir>$(OutputPath)</OutDir>
     </PropertyGroup>
 </Project>

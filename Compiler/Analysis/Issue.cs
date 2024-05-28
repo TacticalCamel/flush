@@ -51,7 +51,7 @@ internal sealed class Issue {
     /// <param name="overrideLevel">The severity to use.</param>
     /// <returns>A string that represents the current object.</returns>
     public string ToString(Severity overrideLevel) {
-        return $"{Position}: {overrideLevel} SRA{Id:D3}: {Message}";
+        return $"{Position}: {overrideLevel} FL{Id:D3}: {Message}";
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Operator {op} cannot be applied to '{left}' and '{right}'"
     };
-    
+
     public static Issue InvalidUnaryOperation(ParserRuleContext context, TypeIdentifier type, string op) => new(context) {
         Id = 212,
         Severity = Severity.Error,
@@ -155,47 +155,59 @@ internal sealed class Issue {
         Severity = Severity.Error,
         Message = $"Cannot cast '{source}' to '{target}'"
     };
-    
-    public static Issue ExplicitCastRedundant(ParserRuleContext context, TypeIdentifier source, TypeIdentifier target) => new(context) {
+
+    public static Issue StructLayoutCircle(ParserRuleContext context, string name) => new(context) {
         Id = 214,
-        Severity = Severity.Warning,
-        Message = $"Explicit cast from '{source}' to '{target}' is redundant"
+        Severity = Severity.Error,
+        Message = $"Struct {name} has a layout circle"
     };
-    
-    public static Issue ProgramEmpty(ParserRuleContext context) => new(context) {
-        Id = 215,
-        Severity = Severity.Warning,
-        Message = "The compiled program contains no instructions"
-    };
-    
+
     public static Issue InvalidModifier(ParserRuleContext context, string name) => new(context) {
         Id = 216,
         Severity = Severity.Error,
         Message = $"'{name}' is not a valid modifier"
     };
-    
+
     public static Issue DuplicateModifier(ParserRuleContext context, string name) => new(context) {
         Id = 217,
         Severity = Severity.Error,
         Message = $"Modifier '{name}' is already present"
     };
-    
+
     public static Issue UnknownVariable(ParserRuleContext context, string name) => new(context) {
         Id = 218,
         Severity = Severity.Error,
         Message = $"Variable '{name}' does not exist in the current context"
     };
-    
+
     public static Issue GenericParameterCountMismatch(ParserRuleContext context, string typeName, int expected, int actual) => new(context) {
         Id = 219,
         Severity = Severity.Error,
         Message = $"{typeName} expects {expected} generic parameters, but got {actual}"
     };
-    
+
     public static Issue VariableAlreadyDeclared(ParserRuleContext context, string name) => new(context) {
         Id = 220,
         Severity = Severity.Error,
-        Message = $"Variable '{name}' is already declared."
+        Message = $"Variable '{name}' is already declared"
+    };
+
+    public static Issue InvalidAssigmentTarget(ParserRuleContext context) => new(context) {
+        Id = 221,
+        Severity = Severity.Error,
+        Message = "Assignment target must be a variable"
+    };
+
+    public static Issue DuplicateTypeParameterName(ParserRuleContext context) => new(context) {
+        Id = 222,
+        Severity = Severity.Error,
+        Message = "Duplicate type parameter name"
+    };
+    
+    public static Issue DuplicateTypeId(ParserRuleContext context, string name) => new(context) {
+        Id = 223,
+        Severity = Severity.Error,
+        Message = $"Type {name} is already defined"
     };
 
     #endregion
